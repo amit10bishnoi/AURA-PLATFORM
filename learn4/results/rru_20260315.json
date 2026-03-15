@@ -1,0 +1,24 @@
+{
+  "company": "rru",
+  "industry": "education ",
+  "employees": 42,
+  "date": "2026-03-15 13:45",
+  "risk_score": 74.5,
+  "risk_level": "HIGH",
+  "financial_exposure": 242274,
+  "recommendations": [
+    "Enable MFA across all systems immediately",
+    "Complete security training for all staff"
+  ],
+  "inputs": {
+    "name": "rru",
+    "industry": "education ",
+    "employees": 42,
+    "has_mfa": false,
+    "mfa_coverage": 0,
+    "patch_days": 7,
+    "training_percent": 40,
+    "has_irp": true,
+    "vulnerabilities": 3
+  }
+}

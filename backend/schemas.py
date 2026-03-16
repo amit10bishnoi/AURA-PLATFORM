@@ -22,3 +22,21 @@ class AssessmentResult(BaseModel):
     risk_level: str
     financial_exposure: int
     recommendations: List[str]
+
+
+class RegisterInput(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
+class LoginInput(BaseModel):
+    email: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    name: str
+    email: str

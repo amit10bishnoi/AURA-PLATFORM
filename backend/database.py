@@ -3,7 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
-DATABASE_URL = "postgresql://greenchip@localhost/aura_db"
+import os
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://greenchip@localhost/aura_db")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)

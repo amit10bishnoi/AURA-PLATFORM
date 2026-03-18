@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Shield, AlertTriangle, TrendingUp, LogOut, ChevronRight, Lock, Mail, User, Activity, DollarSign, Zap } from "lucide-react";
 
-const API = "http://localhost:8000";
+const API = "https://aura-platform-production.up.railway.app";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');

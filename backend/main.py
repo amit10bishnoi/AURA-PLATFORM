@@ -11,6 +11,7 @@ from schemas import AssessmentInput, AssessmentResult, RegisterInput, LoginInput
 from scoring import get_risk_level, get_financial_exposure, get_recommendations
 from predict import predict_risk, predict_trend
 from auth import hash_password, verify_password, create_token, get_current_user
+from audit_chain import anchor_assessment
 
 Base.metadata.create_all(bind=engine)
 
@@ -103,6 +104,7 @@ def assess(data: AssessmentInput, db: Session = Depends(get_db), current_user: U
     db.add(record)
     db.commit()
     db.refresh(record)
+    anchor_assessment(data.org_name, score, level, record.id)
     return AssessmentResult(
         org_name=data.org_name,
         industry=data.industry,
@@ -141,3 +143,16 @@ def get_me(current_user: User = Depends(get_current_user)):
         "email": current_user.email,
         "created_at": current_user.created_at
     }
+
+@app.get("/audit-trail/{org_name}")
+def audit_trail(org_name: str, current_user: User = Depends(get_current_user)):
+    from audit_chain import get_audit_trail
+    return get_audit_trail(org_name)
+
+@app.get("/verify/{org_name}/{assessment_id}")
+def verify(org_name: str, assessment_id: int, current_user: User = Depends(get_current_user)):
+    from audit_chain import verify_assessment
+    record = db.query(Assessment).filter(Assessment.id == assessment_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+    return verify_assessment(org_name, record.risk_score, record.risk_level, assessment_id)

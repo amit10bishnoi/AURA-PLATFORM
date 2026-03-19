@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { Shield, AlertTriangle, LogOut, ChevronRight, Lock, Mail, User, Zap } from "lucide-react";
+import { useState, useRef } from "react";
+import { Shield, AlertTriangle, LogOut, ChevronRight, Lock, Mail, User, Zap, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const API = "https://aura-platform-production.up.railway.app";
 
@@ -530,6 +532,18 @@ function Dashboard({ userName, onLogout }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const reportRef = useRef(null);
+
+  async function downloadPDF() {
+  const element = reportRef.current;
+  const canvas = await html2canvas(element, { backgroundColor: "#080B14", scale: 2 });
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+  pdf.save(`AURA_Report_${result?.org_name || "assessment"}.pdf`);
+}
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -641,8 +655,16 @@ function Dashboard({ userName, onLogout }) {
           </div>
 
           {result && (
-            <div className="form-card">
-              <div className="form-section-title">Assessment Results — {result.org_name}</div>
+            <div className="form-card" ref={reportRef}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <div className="form-section-title" style={{ marginBottom: 0 }}>Assessment Results — {result.org_name}</div>
+           <button
+         onClick={downloadPDF}
+       style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", background: "#DC322F", color: "white", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "bold", cursor: "pointer" }}
+       >
+     <Download size={14} /> Download PDF
+   </button>
+ </div>
 
               <div className="results-grid">
                 <div className="result-card" style={{ "--accent": getRiskColor(result.risk_level) }}>

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Shield, AlertTriangle, TrendingUp, LogOut, ChevronRight, Lock, Mail, User, Activity, DollarSign, Zap } from "lucide-react";
+import { useState } from "react";
+import { Shield, AlertTriangle, LogOut, ChevronRight, Lock, Mail, User, Zap } from "lucide-react";
 
 const API = "https://aura-platform-production.up.railway.app";
 

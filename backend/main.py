@@ -12,6 +12,7 @@ from scoring import get_risk_level, get_financial_exposure, get_recommendations
 from predict import predict_risk, predict_trend
 from auth import hash_password, verify_password, create_token, get_current_user
 from audit_chain import anchor_assessment
+from controls import get_controls, calculate_checklist_score
 
 Base.metadata.create_all(bind=engine)
 
@@ -144,15 +145,50 @@ def get_me(current_user: User = Depends(get_current_user)):
         "created_at": current_user.created_at
     }
 
+
 @app.get("/audit-trail/{org_name}")
 def audit_trail(org_name: str, current_user: User = Depends(get_current_user)):
     from audit_chain import get_audit_trail
     return get_audit_trail(org_name)
 
+
 @app.get("/verify/{org_name}/{assessment_id}")
-def verify(org_name: str, assessment_id: int, current_user: User = Depends(get_current_user)):
+def verify(org_name: str, assessment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     from audit_chain import verify_assessment
     record = db.query(Assessment).filter(Assessment.id == assessment_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="Assessment not found")
     return verify_assessment(org_name, record.risk_score, record.risk_level, assessment_id)
+
+
+@app.get("/controls")
+def list_controls(current_user: User = Depends(get_current_user)):
+    return get_controls()
+
+
+@app.post("/controls/score")
+def score_controls(data: dict, current_user: User = Depends(get_current_user)):
+    implemented = data.get("implemented_ids", [])
+    score = calculate_checklist_score(implemented)
+
+    if score >= 75:
+        level = "CRITICAL"
+    elif score >= 55:
+        level = "HIGH"
+    elif score >= 35:
+        level = "MEDIUM"
+    else:
+        level = "LOW"
+
+    total_reduction = 100 - score
+    all_controls = get_controls()
+    max_possible = sum(c["risk_reduction"] for c in all_controls)
+
+    return {
+        "risk_score": score,
+        "risk_level": level,
+        "total_reduction": total_reduction,
+        "controls_implemented": len(implemented),
+        "controls_total": len(all_controls),
+        "max_possible_reduction": max_possible
+    }

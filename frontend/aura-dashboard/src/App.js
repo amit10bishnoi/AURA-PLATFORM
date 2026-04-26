@@ -1,9 +1,9 @@
 import { useState, useRef } from "react";
-import { Shield, AlertTriangle, LogOut, ChevronRight, Lock, Mail, User, Zap, Download } from "lucide-react";
+import { Shield, AlertTriangle, LogOut, ChevronRight, Lock, Mail, User, Zap, Download, CheckSquare, Square } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
-const API = "https://aura-platform-production.up.railway.app";
+const API = "http://localhost:8000";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
@@ -424,6 +424,16 @@ const styles = `
     align-items: center;
     gap: 8px;
   }
+
+  .tab-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.2s;
+  }
 `;
 
 function getRiskColor(level) {
@@ -534,16 +544,57 @@ function Dashboard({ userName, onLogout }) {
   const [error, setError] = useState("");
   const reportRef = useRef(null);
 
+  const [activeTab, setActiveTab] = useState("assessment");
+  const [controls, setControls] = useState([]);
+  const [implemented, setImplemented] = useState([]);
+  const [checklistScore, setChecklistScore] = useState(null);
+
   async function downloadPDF() {
-  const element = reportRef.current;
-  const canvas = await html2canvas(element, { backgroundColor: "#080B14", scale: 2 });
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-  pdf.save(`AURA_Report_${result?.org_name || "assessment"}.pdf`);
-}
+    const element = reportRef.current;
+    const canvas = await html2canvas(element, { backgroundColor: "#080B14", scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`AURA_Report_${result?.org_name || "assessment"}.pdf`);
+  }
+
+  async function loadControls() {
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${API}/controls`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setControls(data);
+    } catch {
+      console.error("Could not load controls");
+    }
+  }
+
+  async function toggleControl(id) {
+    const token = localStorage.getItem("token");
+    const newImplemented = implemented.includes(id)
+      ? implemented.filter(i => i !== id)
+      : [...implemented, id];
+    setImplemented(newImplemented);
+
+    try {
+      const res = await fetch(`${API}/controls/score`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ implemented_ids: newImplemented })
+      });
+      const data = await res.json();
+      setChecklistScore(data);
+    } catch {
+      console.error("Could not score controls");
+    }
+  }
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -610,89 +661,181 @@ function Dashboard({ userName, onLogout }) {
 
         <div className="main-content">
           <div className="page-header">
-            <div className="page-title">Risk Assessment</div>
-            <div className="page-sub">Enter your organisation's security posture to generate a predictive risk score</div>
+            <div className="page-title">AURA Dashboard</div>
+            <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
+              <button
+                className="tab-btn"
+                onClick={() => setActiveTab("assessment")}
+                style={{
+                  background: activeTab === "assessment" ? "#DC322F" : "transparent",
+                  color: activeTab === "assessment" ? "white" : "rgba(255,255,255,0.5)",
+                  border: `1px solid ${activeTab === "assessment" ? "#DC322F" : "rgba(255,255,255,0.15)"}`,
+                }}
+              >
+                Risk Assessment
+              </button>
+              <button
+                className="tab-btn"
+                onClick={() => { setActiveTab("checklist"); loadControls(); }}
+                style={{
+                  background: activeTab === "checklist" ? "#DC322F" : "transparent",
+                  color: activeTab === "checklist" ? "white" : "rgba(255,255,255,0.5)",
+                  border: `1px solid ${activeTab === "checklist" ? "#DC322F" : "rgba(255,255,255,0.15)"}`,
+                }}
+              >
+                Control Checklist
+              </button>
+            </div>
           </div>
 
-          <div className="form-card">
-            <div className="form-section-title">Organisation Details</div>
-            <form onSubmit={handleSubmit}>
-              <div className="form-grid">
-                {fields.map(f => (
-                  <div className="form-field" key={f.name}>
-                    <label>{f.label}</label>
-                    <input name={f.name} type={f.type} value={form[f.name]} onChange={handleChange} required placeholder={f.placeholder} />
+          {activeTab === "assessment" && (
+            <>
+              <div className="form-card">
+                <div className="form-section-title">Organisation Details</div>
+                <form onSubmit={handleSubmit}>
+                  <div className="form-grid">
+                    {fields.map(f => (
+                      <div className="form-field" key={f.name}>
+                        <label>{f.label}</label>
+                        <input name={f.name} type={f.type} value={form[f.name]} onChange={handleChange} required placeholder={f.placeholder} />
+                      </div>
+                    ))}
                   </div>
-                ))}
+
+                  <div className="form-section-title" style={{ marginTop: "8px" }}>Security Controls</div>
+                  <div className="checkbox-row">
+                    <div className="checkbox-item">
+                      <input name="has_mfa" type="checkbox" id="mfa" checked={form.has_mfa} onChange={handleChange} />
+                      <label htmlFor="mfa">MFA Enabled</label>
+                    </div>
+                    <div className="checkbox-item">
+                      <input name="has_irp" type="checkbox" id="irp" checked={form.has_irp} onChange={handleChange} />
+                      <label htmlFor="irp">Incident Response Plan</label>
+                    </div>
+                  </div>
+
+                  {form.has_mfa && (
+                    <div className="form-field" style={{ maxWidth: "300px", marginBottom: "20px" }}>
+                      <label>MFA Coverage %</label>
+                      <input name="mfa_coverage" type="number" value={form.mfa_coverage} onChange={handleChange} placeholder="e.g. 85" />
+                    </div>
+                  )}
+
+                  {error && <div className="error-msg">{error}</div>}
+
+                  <button className="submit-btn" type="submit" disabled={loading}>
+                    <Zap size={16} />
+                    {loading ? "Analysing..." : "Run Risk Assessment"}
+                  </button>
+                </form>
               </div>
 
-              <div className="form-section-title" style={{ marginTop: "8px" }}>Security Controls</div>
-              <div className="checkbox-row">
-                <div className="checkbox-item">
-                  <input name="has_mfa" type="checkbox" id="mfa" checked={form.has_mfa} onChange={handleChange} />
-                  <label htmlFor="mfa">MFA Enabled</label>
-                </div>
-                <div className="checkbox-item">
-                  <input name="has_irp" type="checkbox" id="irp" checked={form.has_irp} onChange={handleChange} />
-                  <label htmlFor="irp">Incident Response Plan</label>
-                </div>
-              </div>
+              {result && (
+                <div className="form-card" ref={reportRef}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                    <div className="form-section-title" style={{ marginBottom: 0 }}>Assessment Results — {result.org_name}</div>
+                    <button
+                      onClick={downloadPDF}
+                      style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", background: "#DC322F", color: "white", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "bold", cursor: "pointer" }}
+                    >
+                      <Download size={14} /> Download PDF
+                    </button>
+                  </div>
 
-              {form.has_mfa && (
-                <div className="form-field" style={{ maxWidth: "300px", marginBottom: "20px" }}>
-                  <label>MFA Coverage %</label>
-                  <input name="mfa_coverage" type="number" value={form.mfa_coverage} onChange={handleChange} placeholder="e.g. 85" />
+                  <div className="results-grid">
+                    <div className="result-card" style={{ "--accent": getRiskColor(result.risk_level) }}>
+                      <div className="result-value">{parseFloat(result.risk_score.toFixed(1))}</div>
+                      <div className="result-label">Risk Score</div>
+                    </div>
+                    <div className="result-card" style={{ "--accent": getRiskColor(result.risk_level) }}>
+                      <div className="result-value medium">{result.risk_level}</div>
+                      <div className="result-label">Risk Level</div>
+                    </div>
+                    <div className="result-card" style={{ "--accent": "#6366F1" }}>
+                      <div className="result-value medium" style={{ fontSize: "22px" }}>${result.financial_exposure.toLocaleString()}</div>
+                      <div className="result-label">Financial Exposure</div>
+                    </div>
+                  </div>
+
+                  <div className="results-section-title">
+                    <AlertTriangle size={15} color="#DC322F" />
+                    Recommendations
+                  </div>
+                  {result.recommendations.map((rec, i) => (
+                    <div className="rec-item" key={i}>
+                      <ChevronRight className="rec-icon" size={14} />
+                      {rec}
+                    </div>
+                  ))}
                 </div>
               )}
+            </>
+          )}
 
-              {error && <div className="error-msg">{error}</div>}
-
-              <button className="submit-btn" type="submit" disabled={loading}>
-                <Zap size={16} />
-                {loading ? "Analysing..." : "Run Risk Assessment"}
-              </button>
-            </form>
-          </div>
-
-          {result && (
-            <div className="form-card" ref={reportRef}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <div className="form-section-title" style={{ marginBottom: 0 }}>Assessment Results — {result.org_name}</div>
-           <button
-         onClick={downloadPDF}
-       style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", background: "#DC322F", color: "white", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "bold", cursor: "pointer" }}
-       >
-     <Download size={14} /> Download PDF
-   </button>
- </div>
-
-              <div className="results-grid">
-                <div className="result-card" style={{ "--accent": getRiskColor(result.risk_level) }}>
-                  <div className="result-value">{parseFloat(result.risk_score.toFixed(1))}</div>
-                  <div className="result-label">Risk Score</div>
-                </div>
-                <div className="result-card" style={{ "--accent": getRiskColor(result.risk_level) }}>
-                  <div className="result-value medium">{result.risk_level}</div>
-                  <div className="result-label">Risk Level</div>
-                </div>
-                <div className="result-card" style={{ "--accent": "#6366F1" }}>
-                  <div className="result-value medium" style={{ fontSize: "22px" }}>${result.financial_exposure.toLocaleString()}</div>
-                  <div className="result-label">Financial Exposure</div>
-                </div>
+          {activeTab === "checklist" && (
+            <div className="form-card">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+                <div className="form-section-title" style={{ marginBottom: 0 }}>NIST CSF / ISO 27001 Control Checklist</div>
+                {checklistScore && (
+                  <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "28px", fontWeight: "800", color: getRiskColor(checklistScore.risk_level), fontFamily: "Syne, sans-serif" }}>{checklistScore.risk_score}</div>
+                      <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", letterSpacing: "1px" }}>RISK SCORE</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "16px", fontWeight: "700", color: getRiskColor(checklistScore.risk_level) }}>{checklistScore.risk_level}</div>
+                      <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", letterSpacing: "1px" }}>LEVEL</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "16px", fontWeight: "700", color: "#10B981" }}>{checklistScore.controls_implemented}/{checklistScore.controls_total}</div>
+                      <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", letterSpacing: "1px" }}>CONTROLS</div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="results-section-title">
-                <AlertTriangle size={15} color="#DC322F" />
-                Recommendations
-              </div>
-              {result.recommendations.map((rec, i) => (
-                <div className="rec-item" key={i}>
-                  <ChevronRight className="rec-icon" size={14} />
-                  {rec}
-                </div>
-              ))}
+              {controls.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px", color: "rgba(255,255,255,0.3)" }}>Loading controls...</div>
+              )}
+
+              {["Protect", "Identify", "Detect", "Respond", "Recover"].map(fn => {
+                const group = controls.filter(c => c.function === fn);
+                if (group.length === 0) return null;
+                return (
+                  <div key={fn} style={{ marginBottom: "24px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "600", letterSpacing: "2px", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: "12px", paddingBottom: "8px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>{fn}</div>
+                    {group.map(control => (
+                      <div
+                        key={control.id}
+                        onClick={() => toggleControl(control.id)}
+                        style={{
+                          display: "flex", alignItems: "flex-start", gap: "14px",
+                          padding: "14px 16px", marginBottom: "8px",
+                          background: implemented.includes(control.id) ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.02)",
+                          border: "1px solid",
+                          borderColor: implemented.includes(control.id) ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.06)",
+                          borderRadius: "10px", cursor: "pointer", transition: "all 0.2s"
+                        }}
+                      >
+                        <div style={{ flexShrink: 0, marginTop: "2px", color: implemented.includes(control.id) ? "#10B981" : "rgba(255,255,255,0.2)" }}>
+                          {implemented.includes(control.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "13px", color: implemented.includes(control.id) ? "#E8ECF4" : "rgba(255,255,255,0.6)", marginBottom: "4px" }}>{control.control}</div>
+                          <div style={{ display: "flex", gap: "12px" }}>
+                            <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)" }}>NIST: {control.nist_ref}</span>
+                            <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)" }}>ISO: {control.iso_ref}</span>
+                          </div>
+                        </div>
+                        <div style={{ flexShrink: 0, fontSize: "11px", color: "#10B981", fontWeight: "600" }}>-{control.risk_reduction} pts</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
           )}
+
         </div>
       </div>
     </>

@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aura-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./aura.db}
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SCHEDULER_ENABLED=${SCHEDULER_ENABLED:-true}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID:-}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - GOOGLE_WORKSPACE_DOMAIN=${GOOGLE_WORKSPACE_DOMAIN:-}
+    volumes:
+      - aura_data:/app/data
+    networks:
+      - aura-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend/aura-dashboard
+      dockerfile: Dockerfile
+    container_name: aura-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - aura-net
+
+volumes:
+  aura_data:
+
+networks:
+  aura-net:
+    driver: bridge

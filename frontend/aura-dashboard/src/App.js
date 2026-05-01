@@ -1,908 +1,662 @@
-import { useState, useRef, useEffect } from "react";
-import { Shield, AlertTriangle, LogOut, ChevronRight, Lock, Mail, User, Zap, Download, CheckSquare, Square, Activity, Globe, ClipboardList, Clock } from "lucide-react";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-
-const API = "http://localhost:8000";
-
-const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: #080B14;
-    color: #E8ECF4;
-    min-height: 100vh;
-  }
-
-  .auth-bg {
-    min-height: 100vh;
-    background: #080B14;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .auth-bg::before {
-    content: '';
-    position: absolute;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(220,50,47,0.12) 0%, transparent 70%);
-    top: -100px;
-    right: -100px;
-    border-radius: 50%;
-  }
-
-  .auth-bg::after {
-    content: '';
-    position: absolute;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
-    bottom: -50px;
-    left: -50px;
-    border-radius: 50%;
-  }
-
-  .auth-card {
-    width: 420px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 20px;
-    padding: 44px;
-    position: relative;
-    z-index: 1;
-    backdrop-filter: blur(20px);
-  }
-
-  .logo {
-    font-family: 'Syne', sans-serif;
-    font-size: 32px;
-    font-weight: 800;
-    letter-spacing: -1px;
-    color: #fff;
-    margin-bottom: 4px;
-  }
-
-  .logo span { color: #DC322F; }
-
-  .tagline {
-    font-size: 12px;
-    color: rgba(255,255,255,0.35);
-    letter-spacing: 0.5px;
-    margin-bottom: 36px;
-    font-weight: 300;
-  }
-
-  .auth-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 24px;
-    color: #fff;
-  }
-
-  .field { margin-bottom: 16px; }
-
-  .field label {
-    display: block;
-    font-size: 11px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.45);
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .input-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-
-  .input-icon {
-    position: absolute;
-    left: 14px;
-    color: rgba(255,255,255,0.25);
-    width: 15px;
-    height: 15px;
-  }
-
-  .field input {
-    width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 10px;
-    padding: 12px 14px 12px 40px;
-    color: #fff;
-    font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
-    transition: border-color 0.2s;
-    outline: none;
-  }
-
-  .field input:focus { border-color: rgba(220,50,47,0.5); }
-
-  .btn-primary {
-    width: 100%;
-    padding: 13px;
-    background: #DC322F;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: 'Syne', sans-serif;
-    letter-spacing: 0.3px;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .btn-primary:hover { background: #c42b28; transform: translateY(-1px); }
-  .btn-primary:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
-
-  .auth-switch {
-    text-align: center;
-    margin-top: 24px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.35);
-  }
-
-  .auth-switch span {
-    color: #DC322F;
-    cursor: pointer;
-    font-weight: 500;
-  }
-
-  .error-msg {
-    background: rgba(220,50,47,0.1);
-    border: 1px solid rgba(220,50,47,0.3);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 13px;
-    color: #ff6b6b;
-    margin-bottom: 16px;
-  }
-
-  .dashboard {
-    min-height: 100vh;
-    background: #080B14;
-  }
-
-  .topbar {
-    background: rgba(255,255,255,0.02);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    padding: 0 40px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .topbar-logo {
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: #fff;
-  }
-
-  .topbar-logo span { color: #DC322F; }
-
-  .topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .welcome-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.6);
-  }
-
-  .logout-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    padding: 7px 14px;
-    color: rgba(255,255,255,0.45);
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  .logout-btn:hover { border-color: rgba(220,50,47,0.4); color: #DC322F; }
-
-  .main-content {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 48px 24px;
-  }
-
-  .page-header { margin-bottom: 36px; }
-
-  .page-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 28px;
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: -0.5px;
-    margin-bottom: 6px;
-  }
-
-  .page-sub {
-    font-size: 14px;
-    color: rgba(255,255,255,0.35);
-    font-weight: 300;
-  }
-
-  .form-card {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 16px;
-    padding: 32px;
-    margin-bottom: 24px;
-  }
-
-  .form-section-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
-    margin-bottom: 20px;
-  }
-
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-
-  .form-field label {
-    display: block;
-    font-size: 11px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .form-field input[type="text"],
-  .form-field input[type="number"] {
-    width: 100%;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 10px;
-    padding: 11px 14px;
-    color: #fff;
-    font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .form-field input:focus { border-color: rgba(220,50,47,0.4); }
-
-  .checkbox-row {
-    display: flex;
-    gap: 24px;
-    margin-bottom: 16px;
-  }
-
-  .checkbox-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-  }
-
-  .checkbox-item input { width: 16px; height: 16px; cursor: pointer; accent-color: #DC322F; }
-
-  .checkbox-item label {
-    font-size: 13px;
-    color: rgba(255,255,255,0.6);
-    cursor: pointer;
-    font-weight: 400;
-  }
-
-  .submit-btn {
-    width: 100%;
-    padding: 14px;
-    background: #DC322F;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 700;
-    font-family: 'Syne', sans-serif;
-    letter-spacing: 0.3px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-
-  .submit-btn:hover { background: #c42b28; transform: translateY(-1px); }
-  .submit-btn:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
-
-  .results-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-
-  .result-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 14px;
-    padding: 24px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .result-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--accent);
-  }
-
-  .result-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 36px;
-    font-weight: 800;
-    color: var(--accent);
-    letter-spacing: -1px;
-    line-height: 1;
-    margin-bottom: 6px;
-  }
-
-  .result-value.medium { font-size: 26px; }
-
-  .result-label {
-    font-size: 11px;
-    color: rgba(255,255,255,0.3);
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    font-weight: 500;
-  }
-
-  .rec-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 14px 16px;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-left: 3px solid #DC322F;
-    border-radius: 10px;
-    margin-bottom: 8px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.7);
-    line-height: 1.5;
-  }
-
-  .rec-icon { color: #DC322F; flex-shrink: 0; margin-top: 1px; }
-
-  .results-section-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .tab-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Syne', sans-serif;
-    transition: all 0.2s;
-  }
-
-  /* ---- OVERVIEW TAB ---- */
-  .overview-grid {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-  }
-
-  .gauge-card {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 16px;
-    padding: 28px 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .stats-col {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .stat-card {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 14px;
-    padding: 20px 24px;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .stat-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .stat-val {
-    font-family: 'Syne', sans-serif;
-    font-size: 24px;
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: -0.5px;
-    line-height: 1;
-  }
-
-  .stat-lbl {
-    font-size: 11px;
-    color: rgba(255,255,255,0.3);
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    margin-top: 3px;
-  }
-
-  /* ---- THREAT MAP ---- */
-  .threat-map-wrap {
-    background: rgba(255,255,255,0.015);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 16px;
-    overflow: hidden;
-    position: relative;
-    margin-bottom: 20px;
-  }
-
-  .threat-legend {
-    display: flex;
-    gap: 20px;
-    padding: 16px 24px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: rgba(255,255,255,0.45);
-  }
-
-  .legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-
-  .live-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(220,50,47,0.15);
-    border: 1px solid rgba(220,50,47,0.3);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 11px;
-    color: #DC322F;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-  }
-
-  .live-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #DC322F;
-    animation: pulse-dot 1.2s ease-in-out infinite;
-  }
-
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.7); }
-  }
-
-  .threat-sidebar {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 16px;
-    padding: 24px;
-  }
-
-  .threat-event {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-  }
-
-  .threat-event:last-child { border-bottom: none; }
-
-  .threat-dot-sm {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    margin-top: 4px;
-  }
-
-  /* ---- COMPLIANCE ---- */
-  .compliance-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-
-  .compliance-card {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 14px;
-    padding: 24px;
-  }
-
-  .compliance-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 16px;
-  }
-
-  .compliance-framework {
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    font-weight: 800;
-    color: #fff;
-    margin-bottom: 2px;
-  }
-
-  .compliance-desc {
-    font-size: 11px;
-    color: rgba(255,255,255,0.3);
-  }
-
-  .compliance-pct {
-    font-family: 'Syne', sans-serif;
-    font-size: 28px;
-    font-weight: 800;
-    letter-spacing: -1px;
-  }
-
-  .progress-bar-wrap {
-    background: rgba(255,255,255,0.06);
-    border-radius: 4px;
-    height: 6px;
-    overflow: hidden;
-    margin-bottom: 16px;
-  }
-
-  .progress-bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .compliance-items {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .compliance-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    color: rgba(255,255,255,0.5);
-  }
-
-  .comp-check {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: 9px;
-    font-weight: 700;
-  }
-
-  /* ---- AUDIT TRAIL ---- */
-  .audit-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .audit-table th {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.25);
-    padding: 0 16px 16px 16px;
-    text-align: left;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-  }
-
-  .audit-table td {
-    padding: 14px 16px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.65);
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    vertical-align: middle;
-  }
-
-  .audit-table tr:hover td { background: rgba(255,255,255,0.02); }
-
-  .risk-badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-  }
-
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .fade-in { animation: fadeInUp 0.35s ease forwards; }
-
-  @keyframes threat-ping {
-    0% { transform: scale(1); opacity: 0.8; }
-    100% { transform: scale(3); opacity: 0; }
-  }
-`;
-
+import { useState, useEffect, useCallback } from "react";
+import {
+  Shield, AlertTriangle, LogOut, ChevronRight, Lock, Mail, User,
+  Download, CheckSquare, Square, Activity, ClipboardList, Clock,
+  Eye, Code2, FileCheck, TrendingUp, BarChart3, ShieldAlert, Terminal,
+  AlertOctagon, Users, Plus, Trash2, Send, CheckCircle,
+  ArrowUpRight, ArrowDownRight, Minus, RefreshCw, Wifi, WifiOff,
+  FileBarChart, Building2, Bell, Search, ChevronDown, LayoutDashboard,
+  GitBranch, Zap, Globe, Database, Lock as LockIcon, Settings,
+  ExternalLink, Info, AlertCircle, X, Check, Filter
+} from "lucide-react";
+
+const BACKEND_URL = "http://localhost:8000";
+const PROXY_KEY   = "aura-dev-key-change-in-production";
+const API         = BACKEND_URL;
+
+function authHeaders(token, tenantId) {
+  return { "Content-Type": "application/json", Authorization: `Bearer ${token}`, "X-Tenant-Id": tenantId || "" };
+}
+function proxyHeaders(token, tenantId) {
+  return { ...authHeaders(token, tenantId), "X-Proxy-Key": PROXY_KEY };
+}
 function getRiskColor(level) {
-  if (level === "CRITICAL") return "#DC322F";
-  if (level === "HIGH") return "#F59E0B";
-  if (level === "MEDIUM") return "#EAB308";
-  return "#10B981";
+  return level === "CRITICAL" ? "#F87171" : level === "HIGH" ? "#FB923C" : level === "MEDIUM" ? "#FBBF24" : "#34D399";
 }
-
 function getRiskBg(level) {
-  if (level === "CRITICAL") return "rgba(220,50,47,0.15)";
-  if (level === "HIGH") return "rgba(245,158,11,0.15)";
-  if (level === "MEDIUM") return "rgba(234,179,8,0.15)";
-  return "rgba(16,185,129,0.15)";
+  return level === "CRITICAL" ? "rgba(248,113,113,.15)" : level === "HIGH" ? "rgba(251,146,60,.15)" : level === "MEDIUM" ? "rgba(251,191,36,.15)" : "rgba(52,211,153,.15)";
+}
+function getRiskBorder(level) {
+  return level === "CRITICAL" ? "rgba(248,113,113,.3)" : level === "HIGH" ? "rgba(251,146,60,.3)" : level === "MEDIUM" ? "rgba(251,191,36,.3)" : "rgba(52,211,153,.3)";
+}
+function fmtDate(iso) {
+  try { return new Date(iso).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric", timeZone:"Asia/Kolkata" }); } catch { return "—"; }
+}
+function fmtDateTime(iso) {
+  try { return new Date(iso).toLocaleString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit", timeZone:"Asia/Kolkata", hour12:true }); } catch { return "—"; }
 }
 
-// ---- GAUGE COMPONENT ----
-function RiskGauge({ score }) {
-  const radius = 80;
-  const cx = 110;
-  const cy = 110;
-  const startAngle = -210;
-  const endAngle = 30;
-  const totalArc = endAngle - startAngle;
-  const pct = Math.min(Math.max(score / 100, 0), 1);
-  const filled = totalArc * pct;
+const realServer = {
+  async login(email, password) {
+    const res = await fetch(`${API}/login`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ email, password }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Login failed.");
+    return { token: data.access_token, name: data.name, role: data.role || "developer", org: data.email, tenantId: data.tenant_id || "", tenantName: data.tenant_name || "Default Tenant" };
+  },
+  async register(payload) {
+    const res = await fetch(`${API}/register`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Registration failed.");
+    return data;
+  },
+  async assess(token, tenantId, raw) {
+    const res = await fetch(`${API}/assess`, { method:"POST", headers: authHeaders(token, tenantId), body: JSON.stringify({ org_name: raw.orgname, industry: raw.industry, employees: parseInt(raw.employees,10)||1, has_mfa: Boolean(raw.hasmfa), mfa_coverage: parseInt(raw.mfacoverage,10)||0, patch_days: parseInt(raw.patchdays,10)||0, training_percent: parseInt(raw.trainingpercent,10)||0, has_irp: Boolean(raw.hasirp), vulnerabilities: parseInt(raw.vulnerabilities,10)||0 }) });
+    const data = await res.json();
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    if (!res.ok) throw new Error(data.detail || "Assessment failed.");
+    return data;
+  },
+  async getAuditTrail(token, tenantId) {
+    const res = await fetch(`${API}/assessments`, { headers: authHeaders(token, tenantId) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    return res.json();
+  },
+  async getTasks(token, tenantId) {
+    const res = await fetch(`${API}/tasks`, { headers: authHeaders(token, tenantId) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    return res.json();
+  },
+  async addTask(token, tenantId, task) {
+    const res = await fetch(`${API}/tasks`, { method:"POST", headers: authHeaders(token, tenantId), body: JSON.stringify(task) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    return res.json();
+  },
+  async updateTask(token, tenantId, id, changes) {
+    const res = await fetch(`${API}/tasks/${id}`, { method:"PUT", headers: authHeaders(token, tenantId), body: JSON.stringify(changes) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    return res.json();
+  },
+  async deleteTask(token, tenantId, id) {
+    const res = await fetch(`${API}/tasks/${id}`, { method:"DELETE", headers: authHeaders(token, tenantId) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    return res.json();
+  },
+  async getUsers(token, tenantId) {
+    const res = await fetch(`${API}/users`, { headers: authHeaders(token, tenantId) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    return res.json();
+  },
+  async inviteUser(token, tenantId, tenantName, email, role) {
+    const res = await fetch(`${API}/register`, { method:"POST", headers: authHeaders(token, tenantId), body: JSON.stringify({ email, role, name: email.split("@")[0], password:"ChangeMe123!", tenant_id: tenantId, join_existing_tenant: true }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Invite failed.");
+    return { message:`Account created for ${email}. Temp password: ChangeMe123!` };
+  },
+  async removeUser(token, tenantId, email) {
+    const res = await fetch(`${API}/users/${encodeURIComponent(email)}`, { method:"DELETE", headers: authHeaders(token, tenantId) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    return res.json();
+  },
+  async changeRole(token, tenantId, email, newRole) {
+    const res = await fetch(`${API}/users/${encodeURIComponent(email)}/role`, { method:"PUT", headers: authHeaders(token, tenantId), body: JSON.stringify({ role: newRole }) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    return res.json();
+  },
+  async validateToken(token, tenantId) {
+    try { const res = await fetch(`${API}/me`, { headers: authHeaders(token, tenantId) }); return res.ok ? await res.json() : null; } catch { return null; }
+  },
+  async health(token, tenantId) {
+    const res = await fetch(`${BACKEND_URL}/api/health`, { headers: proxyHeaders(token, tenantId) });
+    return res.json();
+  },
+  async pullVulns(token, tenantId, source, keyword) {
+    const params = new URLSearchParams({ source });
+    if (keyword && source === "nvd") params.set("keyword", keyword);
+    const res = await fetch(`${BACKEND_URL}/api/vulns/pull?${params}`, { headers: proxyHeaders(token, tenantId) });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || "Scanner error.");
+    return json.data;
+  },
+  async generateBoardReport(token, tenantId, payload) {
+    const res = await fetch(`${BACKEND_URL}/api/report/board`, { method:"POST", headers: proxyHeaders(token, tenantId), body: JSON.stringify(payload) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.detail || "Report failed."); }
+    return res.blob();
+  },
+  async getComplianceResults(token, tenantId, assessmentId) {
+    const res = await fetch(`${API}/api/compliance/assessments/${assessmentId}`, { headers: authHeaders(token, tenantId) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    if (!res.ok) throw new Error("Failed to load compliance results.");
+    return res.json();
+  },
+  async runComplianceMapping(token, tenantId, assessmentId) {
+    const res = await fetch(`${API}/api/compliance/assessments/${assessmentId}`, { method:"POST", headers: authHeaders(token, tenantId) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    if (!res.ok) throw new Error("Compliance mapping failed.");
+    return res.json();
+  },
+  async getComplianceSummary(token, tenantId) {
+    const res = await fetch(`${API}/api/compliance/summary`, { headers: authHeaders(token, tenantId) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    if (!res.ok) throw new Error("Failed to load compliance summary.");
+    return res.json();
+  },
+  getFrameworkControls() { return ALL_FRAMEWORK_CONTROLS; },
+  async getRemediationAdvice(token, tenantId, findings, orgName, industry, employees) {
+    const res = await fetch(`${API}/api/p2/remediation-advice`, {
+      method: "POST", headers: authHeaders(token, tenantId),
+      body: JSON.stringify({ findings, org_name: orgName, industry, employees })
+    });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    return res.json();
+  },
+  async getExecutiveSummary(token, tenantId, payload) {
+    const res = await fetch(`${API}/api/p2/executive-summary`, {
+      method: "POST", headers: authHeaders(token, tenantId),
+      body: JSON.stringify(payload)
+    });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    return res.json();
+  },
+  async getP2Status(token, tenantId) {
+    const res = await fetch(`${API}/api/p2/status`, { headers: authHeaders(token, tenantId) });
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    return res.json();
+  },
+  async autoAssess(token, tenantId, orgName, employees) {
+    const res = await fetch(`${API}/api/auto/assess`, {
+      method: "POST",
+      headers: authHeaders(token, tenantId),
+      body: JSON.stringify({ org_name: orgName, industry: "Technology", employees: parseInt(employees) || 100 })
+    });
+    const data = await res.json();
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    if (!res.ok) throw new Error(data.detail || "Auto assessment failed.");
+    return data;
+  },
+};
 
-  function polarToXY(angle, r) {
-    const rad = (angle * Math.PI) / 180;
-    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-  }
-
-  function arc(startA, endA, r) {
-    const s = polarToXY(startA, r);
-    const e = polarToXY(endA, r);
-    const large = endA - startA > 180 ? 1 : 0;
-    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
-  }
-
-  const color = score >= 75 ? "#DC322F" : score >= 50 ? "#F59E0B" : score >= 25 ? "#EAB308" : "#10B981";
-  const level = score >= 75 ? "CRITICAL" : score >= 50 ? "HIGH" : score >= 25 ? "MEDIUM" : "LOW";
-  const needleAngle = startAngle + filled;
-  const needleEnd = polarToXY(needleAngle, 60);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <svg width="220" height="160" viewBox="0 0 220 160">
-        {/* Track */}
-        <path d={arc(startAngle, endAngle, radius)} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="14" strokeLinecap="round" />
-        {/* Filled */}
-        {score > 0 && (
-          <path d={arc(startAngle, startAngle + filled, radius)} fill="none" stroke={color} strokeWidth="14" strokeLinecap="round" />
-        )}
-        {/* Needle */}
-        <line x1={cx} y1={cy} x2={needleEnd.x} y2={needleEnd.y} stroke={color} strokeWidth="2.5" strokeLinecap="round" />
-        <circle cx={cx} cy={cy} r="6" fill={color} />
-        {/* Score */}
-        <text x={cx} y={cy + 36} textAnchor="middle" fill="#fff" fontSize="32" fontWeight="800" fontFamily="Syne, sans-serif" letterSpacing="-1">{score.toFixed(0)}</text>
-        <text x={cx} y={cy + 54} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="10" letterSpacing="2" fontFamily="DM Sans, sans-serif">RISK SCORE</text>
-      </svg>
-      <div style={{ background: getRiskBg(level), border: `1px solid ${color}40`, borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: "700", color, letterSpacing: "1px", marginTop: "8px" }}>{level}</div>
-    </div>
-  );
-}
-
-// ---- THREAT MAP COMPONENT ----
-const THREATS = [
-  { id: 1, x: 22, y: 38, type: "critical", city: "Moscow", attack: "Ransomware", time: "12s ago" },
-  { id: 2, x: 48, y: 44, type: "high", city: "Beijing", attack: "SQL Injection", time: "34s ago" },
-  { id: 3, x: 78, y: 55, type: "medium", city: "Jakarta", attack: "Phishing", time: "1m ago" },
-  { id: 4, x: 15, y: 50, type: "critical", city: "Lagos", attack: "DDoS", time: "2m ago" },
-  { id: 5, x: 30, y: 30, type: "high", city: "Berlin", attack: "Brute Force", time: "3m ago" },
-  { id: 6, x: 62, y: 60, type: "medium", city: "Mumbai", attack: "XSS", time: "4m ago" },
-  { id: 7, x: 88, y: 40, type: "critical", city: "Tokyo", attack: "Zero-Day Exploit", time: "5m ago" },
-  { id: 8, x: 72, y: 28, type: "high", city: "Almaty", attack: "Credential Stuffing", time: "6m ago" },
+const ALL_FRAMEWORK_CONTROLS = [
+  { id:"A.5.1",  framework:"ISO27001", function:"Govern",   control:"Policies for information security",             isoref:"A.5.1",  nistref:"GV.PO-01", riskreduction:4 },
+  { id:"A.5.2",  framework:"ISO27001", function:"Govern",   control:"Information security roles & responsibilities",  isoref:"A.5.2",  nistref:"GV.RR-02", riskreduction:4 },
+  { id:"A.5.3",  framework:"ISO27001", function:"Govern",   control:"Segregation of duties",                         isoref:"A.5.3",  nistref:"GV.RR-02", riskreduction:3 },
+  { id:"A.5.4",  framework:"ISO27001", function:"Govern",   control:"Management responsibilities",                   isoref:"A.5.4",  nistref:"GV.RR-01", riskreduction:3 },
+  { id:"A.5.5",  framework:"ISO27001", function:"Respond",  control:"Contact with authorities",                      isoref:"A.5.5",  nistref:"RS.CO-03", riskreduction:2 },
+  { id:"A.5.6",  framework:"ISO27001", function:"Govern",   control:"Contact with special interest groups",          isoref:"A.5.6",  nistref:"GV.RR-02", riskreduction:2 },
+  { id:"A.5.7",  framework:"ISO27001", function:"Identify", control:"Threat intelligence",                           isoref:"A.5.7",  nistref:"ID.RA-02", riskreduction:4 },
+  { id:"A.5.8",  framework:"ISO27001", function:"Govern",   control:"Information security in project management",    isoref:"A.5.8",  nistref:"GV.PO-01", riskreduction:3 },
+  { id:"A.5.9",  framework:"ISO27001", function:"Identify", control:"Inventory of information & assets",             isoref:"A.5.9",  nistref:"ID.AM-01", riskreduction:4 },
+  { id:"A.5.10", framework:"ISO27001", function:"Govern",   control:"Acceptable use of information & assets",        isoref:"A.5.10", nistref:"GV.PO-01", riskreduction:3 },
+  { id:"A.5.11", framework:"ISO27001", function:"Protect",  control:"Return of assets",                              isoref:"A.5.11", nistref:"PR.AA-05", riskreduction:2 },
+  { id:"A.5.12", framework:"ISO27001", function:"Protect",  control:"Classification of information",                 isoref:"A.5.12", nistref:"PR.DS-01", riskreduction:4 },
+  { id:"A.5.13", framework:"ISO27001", function:"Protect",  control:"Labelling of information",                      isoref:"A.5.13", nistref:"PR.DS-01", riskreduction:3 },
+  { id:"A.5.14", framework:"ISO27001", function:"Protect",  control:"Information transfer",                          isoref:"A.5.14", nistref:"PR.DS-02", riskreduction:4 },
+  { id:"A.5.15", framework:"ISO27001", function:"Protect",  control:"Access control",                                isoref:"A.5.15", nistref:"PR.AA-05", riskreduction:6 },
+  { id:"A.5.16", framework:"ISO27001", function:"Protect",  control:"Identity management",                           isoref:"A.5.16", nistref:"PR.AA-01", riskreduction:5 },
+  { id:"A.5.17", framework:"ISO27001", function:"Protect",  control:"Authentication information management",         isoref:"A.5.17", nistref:"PR.AA-03", riskreduction:5 },
+  { id:"A.5.18", framework:"ISO27001", function:"Protect",  control:"Access rights lifecycle",                       isoref:"A.5.18", nistref:"PR.AA-05", riskreduction:5 },
+  { id:"A.5.19", framework:"ISO27001", function:"Govern",   control:"Information security in supplier relationships", isoref:"A.5.19", nistref:"GV.SC-05", riskreduction:3 },
+  { id:"A.5.20", framework:"ISO27001", function:"Govern",   control:"Addressing security within supplier agreements", isoref:"A.5.20", nistref:"GV.SC-05", riskreduction:3 },
+  { id:"A.5.21", framework:"ISO27001", function:"Govern",   control:"Managing security in ICT supply chain",         isoref:"A.5.21", nistref:"GV.SC-03", riskreduction:3 },
+  { id:"A.5.22", framework:"ISO27001", function:"Govern",   control:"Monitoring & change management of suppliers",   isoref:"A.5.22", nistref:"GV.SC-10", riskreduction:3 },
+  { id:"A.5.23", framework:"ISO27001", function:"Protect",  control:"Information security for cloud services",       isoref:"A.5.23", nistref:"PR.DS-01", riskreduction:4 },
+  { id:"A.5.24", framework:"ISO27001", function:"Respond",  control:"Incident management planning & preparation",    isoref:"A.5.24", nistref:"RS.MA-01", riskreduction:6 },
+  { id:"A.5.25", framework:"ISO27001", function:"Respond",  control:"Assessment & decision on security events",      isoref:"A.5.25", nistref:"RS.MA-02", riskreduction:4 },
+  { id:"A.5.26", framework:"ISO27001", function:"Respond",  control:"Response to information security incidents",    isoref:"A.5.26", nistref:"RS.MA-01", riskreduction:5 },
+  { id:"A.5.27", framework:"ISO27001", function:"Respond",  control:"Learning from information security incidents",  isoref:"A.5.27", nistref:"ID.IM-01", riskreduction:3 },
+  { id:"A.5.28", framework:"ISO27001", function:"Respond",  control:"Collection of evidence",                        isoref:"A.5.28", nistref:"RS.AN-06", riskreduction:3 },
+  { id:"A.5.29", framework:"ISO27001", function:"Recover",  control:"Information security during disruption",        isoref:"A.5.29", nistref:"RC.RP-04", riskreduction:5 },
+  { id:"A.5.30", framework:"ISO27001", function:"Recover",  control:"ICT readiness for business continuity",         isoref:"A.5.30", nistref:"RC.RP-01", riskreduction:5 },
+  { id:"A.5.31", framework:"ISO27001", function:"Govern",   control:"Legal, statutory & regulatory requirements",    isoref:"A.5.31", nistref:"GV.OC-03", riskreduction:4 },
+  { id:"A.5.32", framework:"ISO27001", function:"Protect",  control:"Intellectual property rights",                  isoref:"A.5.32", nistref:"PR.DS-01", riskreduction:2 },
+  { id:"A.5.33", framework:"ISO27001", function:"Protect",  control:"Protection of records",                         isoref:"A.5.33", nistref:"PR.DS-11", riskreduction:4 },
+  { id:"A.5.34", framework:"ISO27001", function:"Protect",  control:"Privacy & protection of PII",                   isoref:"A.5.34", nistref:"GV.OC-03", riskreduction:5 },
+  { id:"A.5.35", framework:"ISO27001", function:"Govern",   control:"Independent review of information security",    isoref:"A.5.35", nistref:"GV.OV-01", riskreduction:4 },
+  { id:"A.5.36", framework:"ISO27001", function:"Govern",   control:"Compliance with policies & standards",          isoref:"A.5.36", nistref:"GV.OV-02", riskreduction:3 },
+  { id:"A.5.37", framework:"ISO27001", function:"Govern",   control:"Documented operating procedures",               isoref:"A.5.37", nistref:"GV.PO-01", riskreduction:3 },
+  { id:"A.6.1",  framework:"ISO27001", function:"Govern",   control:"Screening (background verification)",           isoref:"A.6.1",  nistref:"GV.RR-04", riskreduction:3 },
+  { id:"A.6.2",  framework:"ISO27001", function:"Govern",   control:"Terms & conditions of employment",              isoref:"A.6.2",  nistref:"GV.RR-04", riskreduction:3 },
+  { id:"A.6.3",  framework:"ISO27001", function:"Protect",  control:"Security awareness, education & training",      isoref:"A.6.3",  nistref:"PR.AT-01", riskreduction:6 },
+  { id:"A.6.4",  framework:"ISO27001", function:"Govern",   control:"Disciplinary process",                          isoref:"A.6.4",  nistref:"GV.RR-04", riskreduction:2 },
+  { id:"A.6.5",  framework:"ISO27001", function:"Protect",  control:"Responsibilities after termination",            isoref:"A.6.5",  nistref:"PR.AA-05", riskreduction:3 },
+  { id:"A.6.6",  framework:"ISO27001", function:"Protect",  control:"Confidentiality / NDA agreements",              isoref:"A.6.6",  nistref:"PR.DS-01", riskreduction:3 },
+  { id:"A.6.7",  framework:"ISO27001", function:"Protect",  control:"Remote working security measures",              isoref:"A.6.7",  nistref:"PR.AA-06", riskreduction:4 },
+  { id:"A.6.8",  framework:"ISO27001", function:"Detect",   control:"Information security event reporting",          isoref:"A.6.8",  nistref:"DE.AE-06", riskreduction:4 },
+  { id:"A.7.1",  framework:"ISO27001", function:"Protect",  control:"Physical security perimeters",                  isoref:"A.7.1",  nistref:"PR.AA-06", riskreduction:3 },
+  { id:"A.7.2",  framework:"ISO27001", function:"Protect",  control:"Physical entry controls",                       isoref:"A.7.2",  nistref:"PR.AA-06", riskreduction:4 },
+  { id:"A.7.3",  framework:"ISO27001", function:"Protect",  control:"Securing offices, rooms & facilities",          isoref:"A.7.3",  nistref:"PR.AA-06", riskreduction:3 },
+  { id:"A.7.4",  framework:"ISO27001", function:"Detect",   control:"Physical security monitoring",                  isoref:"A.7.4",  nistref:"DE.CM-02", riskreduction:3 },
+  { id:"A.7.5",  framework:"ISO27001", function:"Protect",  control:"Protection against physical & environmental threats", isoref:"A.7.5", nistref:"PR.IR-02", riskreduction:3 },
+  { id:"A.7.6",  framework:"ISO27001", function:"Protect",  control:"Working in secure areas",                       isoref:"A.7.6",  nistref:"PR.AA-06", riskreduction:2 },
+  { id:"A.7.7",  framework:"ISO27001", function:"Protect",  control:"Clear desk & clear screen policy",              isoref:"A.7.7",  nistref:"PR.DS-01", riskreduction:2 },
+  { id:"A.7.8",  framework:"ISO27001", function:"Protect",  control:"Equipment siting & protection",                 isoref:"A.7.8",  nistref:"PR.IR-02", riskreduction:2 },
+  { id:"A.7.9",  framework:"ISO27001", function:"Protect",  control:"Security of assets off-premises",               isoref:"A.7.9",  nistref:"PR.DS-01", riskreduction:3 },
+  { id:"A.7.10", framework:"ISO27001", function:"Protect",  control:"Storage media lifecycle management",             isoref:"A.7.10", nistref:"PR.DS-01", riskreduction:3 },
+  { id:"A.7.11", framework:"ISO27001", function:"Protect",  control:"Supporting utilities (power, cooling)",          isoref:"A.7.11", nistref:"PR.IR-04", riskreduction:3 },
+  { id:"A.7.12", framework:"ISO27001", function:"Protect",  control:"Cabling security",                              isoref:"A.7.12", nistref:"PR.IR-01", riskreduction:2 },
+  { id:"A.7.13", framework:"ISO27001", function:"Protect",  control:"Equipment maintenance",                         isoref:"A.7.13", nistref:"PR.PS-03", riskreduction:2 },
+  { id:"A.7.14", framework:"ISO27001", function:"Protect",  control:"Secure disposal or re-use of equipment",        isoref:"A.7.14", nistref:"PR.DS-01", riskreduction:3 },
+  { id:"A.8.1",  framework:"ISO27001", function:"Protect",  control:"User endpoint device security",                 isoref:"A.8.1",  nistref:"PR.PS-02", riskreduction:5 },
+  { id:"A.8.2",  framework:"ISO27001", function:"Protect",  control:"Privileged access rights",                      isoref:"A.8.2",  nistref:"PR.AA-05", riskreduction:6 },
+  { id:"A.8.3",  framework:"ISO27001", function:"Protect",  control:"Information access restriction",                isoref:"A.8.3",  nistref:"PR.AA-05", riskreduction:5 },
+  { id:"A.8.4",  framework:"ISO27001", function:"Protect",  control:"Access to source code",                         isoref:"A.8.4",  nistref:"PR.AA-05", riskreduction:4 },
+  { id:"A.8.5",  framework:"ISO27001", function:"Protect",  control:"Secure authentication",                         isoref:"A.8.5",  nistref:"PR.AA-03", riskreduction:6 },
+  { id:"A.8.6",  framework:"ISO27001", function:"Protect",  control:"Capacity management",                           isoref:"A.8.6",  nistref:"PR.IR-04", riskreduction:3 },
+  { id:"A.8.7",  framework:"ISO27001", function:"Protect",  control:"Protection against malware",                    isoref:"A.8.7",  nistref:"DE.CM-09", riskreduction:6 },
+  { id:"A.8.8",  framework:"ISO27001", function:"Identify", control:"Management of technical vulnerabilities",        isoref:"A.8.8",  nistref:"ID.RA-01", riskreduction:6 },
+  { id:"A.8.9",  framework:"ISO27001", function:"Protect",  control:"Configuration management",                      isoref:"A.8.9",  nistref:"PR.PS-01", riskreduction:4 },
+  { id:"A.8.10", framework:"ISO27001", function:"Protect",  control:"Information deletion",                          isoref:"A.8.10", nistref:"PR.DS-01", riskreduction:3 },
+  { id:"A.8.11", framework:"ISO27001", function:"Protect",  control:"Data masking",                                  isoref:"A.8.11", nistref:"PR.DS-01", riskreduction:3 },
+  { id:"A.8.12", framework:"ISO27001", function:"Protect",  control:"Data leakage prevention (DLP)",                 isoref:"A.8.12", nistref:"PR.DS-02", riskreduction:5 },
+  { id:"A.8.13", framework:"ISO27001", function:"Protect",  control:"Information backup",                            isoref:"A.8.13", nistref:"PR.DS-11", riskreduction:6 },
+  { id:"A.8.14", framework:"ISO27001", function:"Protect",  control:"Redundancy of information processing facilities",isoref:"A.8.14", nistref:"PR.IR-03", riskreduction:4 },
+  { id:"A.8.15", framework:"ISO27001", function:"Detect",   control:"Logging",                                       isoref:"A.8.15", nistref:"DE.CM-03", riskreduction:5 },
+  { id:"A.8.16", framework:"ISO27001", function:"Detect",   control:"Monitoring activities",                         isoref:"A.8.16", nistref:"DE.CM-01", riskreduction:5 },
+  { id:"A.8.17", framework:"ISO27001", function:"Detect",   control:"Clock synchronisation",                         isoref:"A.8.17", nistref:"DE.CM-03", riskreduction:2 },
+  { id:"A.8.18", framework:"ISO27001", function:"Protect",  control:"Use of privileged utility programs",            isoref:"A.8.18", nistref:"PR.AA-05", riskreduction:4 },
+  { id:"A.8.19", framework:"ISO27001", function:"Protect",  control:"Installation of software on operational systems",isoref:"A.8.19", nistref:"PR.PS-05", riskreduction:4 },
+  { id:"A.8.20", framework:"ISO27001", function:"Protect",  control:"Network security",                              isoref:"A.8.20", nistref:"PR.IR-01", riskreduction:5 },
+  { id:"A.8.21", framework:"ISO27001", function:"Protect",  control:"Security of network services",                  isoref:"A.8.21", nistref:"PR.IR-01", riskreduction:4 },
+  { id:"A.8.22", framework:"ISO27001", function:"Protect",  control:"Segregation of networks",                       isoref:"A.8.22", nistref:"PR.IR-01", riskreduction:4 },
+  { id:"A.8.23", framework:"ISO27001", function:"Protect",  control:"Web filtering",                                 isoref:"A.8.23", nistref:"PR.PS-05", riskreduction:3 },
+  { id:"A.8.24", framework:"ISO27001", function:"Protect",  control:"Use of cryptography",                           isoref:"A.8.24", nistref:"PR.DS-02", riskreduction:6 },
+  { id:"A.8.25", framework:"ISO27001", function:"Protect",  control:"Secure development lifecycle",                  isoref:"A.8.25", nistref:"PR.PS-06", riskreduction:4 },
+  { id:"A.8.26", framework:"ISO27001", function:"Protect",  control:"Application security requirements",             isoref:"A.8.26", nistref:"PR.PS-06", riskreduction:3 },
+  { id:"A.8.27", framework:"ISO27001", function:"Protect",  control:"Secure system architecture & engineering",      isoref:"A.8.27", nistref:"PR.PS-06", riskreduction:4 },
+  { id:"A.8.28", framework:"ISO27001", function:"Protect",  control:"Secure coding",                                 isoref:"A.8.28", nistref:"PR.PS-06", riskreduction:4 },
+  { id:"A.8.29", framework:"ISO27001", function:"Protect",  control:"Security testing in development",               isoref:"A.8.29", nistref:"ID.IM-02", riskreduction:4 },
+  { id:"A.8.30", framework:"ISO27001", function:"Govern",   control:"Outsourced development oversight",              isoref:"A.8.30", nistref:"GV.SC-08", riskreduction:2 },
+  { id:"A.8.31", framework:"ISO27001", function:"Protect",  control:"Separation of dev, test & production",          isoref:"A.8.31", nistref:"PR.PS-01", riskreduction:4 },
+  { id:"A.8.32", framework:"ISO27001", function:"Protect",  control:"Change management",                             isoref:"A.8.32", nistref:"PR.PS-01", riskreduction:5 },
+  { id:"A.8.33", framework:"ISO27001", function:"Protect",  control:"Test information protection",                   isoref:"A.8.33", nistref:"PR.DS-01", riskreduction:3 },
+  { id:"A.8.34", framework:"ISO27001", function:"Protect",  control:"Protection during audit testing",               isoref:"A.8.34", nistref:"ID.IM-02", riskreduction:3 },
+  { id:"GV.OC-01", framework:"NIST_CSF", function:"Govern",   control:"Organisational mission informs cybersecurity",          isoref:"A.5.1",  nistref:"GV.OC-01", riskreduction:2 },
+  { id:"GV.OC-02", framework:"NIST_CSF", function:"Govern",   control:"Internal & external stakeholder needs understood",      isoref:"A.5.2",  nistref:"GV.OC-02", riskreduction:2 },
+  { id:"GV.OC-03", framework:"NIST_CSF", function:"Govern",   control:"Legal & regulatory requirements understood",            isoref:"A.5.31", nistref:"GV.OC-03", riskreduction:3 },
+  { id:"GV.OC-04", framework:"NIST_CSF", function:"Govern",   control:"Critical objectives & activities established",          isoref:"A.5.29", nistref:"GV.OC-04", riskreduction:2 },
+  { id:"GV.OC-05", framework:"NIST_CSF", function:"Govern",   control:"Organisational dependencies communicated",              isoref:"A.5.9",  nistref:"GV.OC-05", riskreduction:2 },
+  { id:"GV.RM-01", framework:"NIST_CSF", function:"Govern",   control:"Risk management objectives established",                isoref:"A.5.1",  nistref:"GV.RM-01", riskreduction:3 },
+  { id:"GV.RM-02", framework:"NIST_CSF", function:"Govern",   control:"Risk appetite & tolerance defined",                     isoref:"A.5.1",  nistref:"GV.RM-02", riskreduction:3 },
+  { id:"GV.RM-03", framework:"NIST_CSF", function:"Govern",   control:"Cybersecurity risk in enterprise risk management",      isoref:"A.5.35", nistref:"GV.RM-03", riskreduction:3 },
+  { id:"GV.RM-04", framework:"NIST_CSF", function:"Govern",   control:"Strategic direction for risk response established",     isoref:"A.5.1",  nistref:"GV.RM-04", riskreduction:2 },
+  { id:"GV.RM-05", framework:"NIST_CSF", function:"Govern",   control:"Lines of communication for cybersecurity risk",         isoref:"A.5.2",  nistref:"GV.RM-05", riskreduction:2 },
+  { id:"GV.RM-06", framework:"NIST_CSF", function:"Govern",   control:"Standardised risk methodology established",             isoref:"A.5.35", nistref:"GV.RM-06", riskreduction:2 },
+  { id:"GV.RM-07", framework:"NIST_CSF", function:"Govern",   control:"Strategic opportunities characterised",                 isoref:"A.5.35", nistref:"GV.RM-07", riskreduction:1 },
+  { id:"GV.RR-01", framework:"NIST_CSF", function:"Govern",   control:"Organisational leadership accountable for cybersecurity",isoref:"A.5.4",  nistref:"GV.RR-01", riskreduction:3 },
+  { id:"GV.RR-02", framework:"NIST_CSF", function:"Govern",   control:"Cybersecurity roles & responsibilities established",    isoref:"A.5.2",  nistref:"GV.RR-02", riskreduction:4 },
+  { id:"GV.RR-03", framework:"NIST_CSF", function:"Govern",   control:"Adequate resources allocated",                          isoref:"A.5.4",  nistref:"GV.RR-03", riskreduction:2 },
+  { id:"GV.RR-04", framework:"NIST_CSF", function:"Govern",   control:"Cybersecurity in human resources practices",            isoref:"A.6.3",  nistref:"GV.RR-04", riskreduction:3 },
+  { id:"GV.PO-01", framework:"NIST_CSF", function:"Govern",   control:"Cybersecurity policy established",                      isoref:"A.5.1",  nistref:"GV.PO-01", riskreduction:4 },
+  { id:"GV.PO-02", framework:"NIST_CSF", function:"Govern",   control:"Cybersecurity policy reviewed & updated",               isoref:"A.5.1",  nistref:"GV.PO-02", riskreduction:3 },
+  { id:"GV.OV-01", framework:"NIST_CSF", function:"Govern",   control:"Cybersecurity risk management strategy reviewed",       isoref:"A.5.35", nistref:"GV.OV-01", riskreduction:2 },
+  { id:"GV.OV-02", framework:"NIST_CSF", function:"Govern",   control:"Cybersecurity programme state reviewed",                isoref:"A.5.35", nistref:"GV.OV-02", riskreduction:2 },
+  { id:"GV.OV-03", framework:"NIST_CSF", function:"Govern",   control:"Outcomes inform cybersecurity updates",                 isoref:"A.5.36", nistref:"GV.OV-03", riskreduction:2 },
+  { id:"GV.SC-01", framework:"NIST_CSF", function:"Govern",   control:"Supply chain cybersecurity programme established",      isoref:"A.5.19", nistref:"GV.SC-01", riskreduction:3 },
+  { id:"GV.SC-02", framework:"NIST_CSF", function:"Govern",   control:"Cybersecurity roles in supply chain defined",           isoref:"A.5.20", nistref:"GV.SC-02", riskreduction:2 },
+  { id:"GV.SC-03", framework:"NIST_CSF", function:"Govern",   control:"Supply chain risk integrated into ERM",                 isoref:"A.5.21", nistref:"GV.SC-03", riskreduction:2 },
+  { id:"GV.SC-04", framework:"NIST_CSF", function:"Govern",   control:"Suppliers known & prioritised by criticality",          isoref:"A.5.21", nistref:"GV.SC-04", riskreduction:2 },
+  { id:"GV.SC-05", framework:"NIST_CSF", function:"Govern",   control:"Cybersecurity requirements in supplier contracts",      isoref:"A.5.20", nistref:"GV.SC-05", riskreduction:2 },
+  { id:"GV.SC-06", framework:"NIST_CSF", function:"Govern",   control:"Due diligence before supplier engagements",             isoref:"A.5.19", nistref:"GV.SC-06", riskreduction:2 },
+  { id:"GV.SC-07", framework:"NIST_CSF", function:"Govern",   control:"Risks from suppliers recorded & prioritised",           isoref:"A.5.21", nistref:"GV.SC-07", riskreduction:2 },
+  { id:"GV.SC-08", framework:"NIST_CSF", function:"Govern",   control:"Relevant suppliers routinely assessed",                 isoref:"A.5.22", nistref:"GV.SC-08", riskreduction:2 },
+  { id:"GV.SC-09", framework:"NIST_CSF", function:"Respond",  control:"Incidents involving suppliers managed",                 isoref:"A.5.26", nistref:"GV.SC-09", riskreduction:2 },
+  { id:"GV.SC-10", framework:"NIST_CSF", function:"Govern",   control:"Supply chain practices reviewed post-engagement",       isoref:"A.5.22", nistref:"GV.SC-10", riskreduction:1 },
+  { id:"ID.AM-01", framework:"NIST_CSF", function:"Identify", control:"Inventories of hardware assets maintained",              isoref:"A.8.1",  nistref:"ID.AM-01", riskreduction:4 },
+  { id:"ID.AM-02", framework:"NIST_CSF", function:"Identify", control:"Inventories of software & services maintained",          isoref:"A.5.9",  nistref:"ID.AM-02", riskreduction:4 },
+  { id:"ID.AM-03", framework:"NIST_CSF", function:"Identify", control:"Organisational network communication flows maintained",   isoref:"A.8.20", nistref:"ID.AM-03", riskreduction:3 },
+  { id:"ID.AM-04", framework:"NIST_CSF", function:"Identify", control:"Inventories of external information systems",            isoref:"A.5.21", nistref:"ID.AM-04", riskreduction:3 },
+  { id:"ID.AM-05", framework:"NIST_CSF", function:"Identify", control:"Assets prioritised by classification & criticality",     isoref:"A.5.12", nistref:"ID.AM-05", riskreduction:3 },
+  { id:"ID.AM-07", framework:"NIST_CSF", function:"Identify", control:"Inventories of data & metadata maintained",              isoref:"A.5.12", nistref:"ID.AM-07", riskreduction:3 },
+  { id:"ID.AM-08", framework:"NIST_CSF", function:"Identify", control:"Assets managed throughout lifecycle",                    isoref:"A.7.13", nistref:"ID.AM-08", riskreduction:3 },
+  { id:"ID.RA-01", framework:"NIST_CSF", function:"Identify", control:"Vulnerabilities identified, validated & recorded",       isoref:"A.8.8",  nistref:"ID.RA-01", riskreduction:5 },
+  { id:"ID.RA-02", framework:"NIST_CSF", function:"Identify", control:"Cyber threat intelligence received from forums",         isoref:"A.5.7",  nistref:"ID.RA-02", riskreduction:4 },
+  { id:"ID.RA-03", framework:"NIST_CSF", function:"Identify", control:"Internal & external threats identified",                 isoref:"A.5.7",  nistref:"ID.RA-03", riskreduction:4 },
+  { id:"ID.RA-04", framework:"NIST_CSF", function:"Identify", control:"Potential impacts & likelihoods identified",             isoref:"A.5.35", nistref:"ID.RA-04", riskreduction:4 },
+  { id:"ID.RA-05", framework:"NIST_CSF", function:"Identify", control:"Threats & vulnerabilities catalogued",                   isoref:"A.5.35", nistref:"ID.RA-05", riskreduction:4 },
+  { id:"ID.RA-06", framework:"NIST_CSF", function:"Identify", control:"Risk responses chosen & tracked",                        isoref:"A.5.35", nistref:"ID.RA-06", riskreduction:4 },
+  { id:"ID.RA-07", framework:"NIST_CSF", function:"Identify", control:"Changes & exceptions assessed for risk impact",          isoref:"A.8.32", nistref:"ID.RA-07", riskreduction:3 },
+  { id:"ID.RA-08", framework:"NIST_CSF", function:"Identify", control:"Processes for receiving vulnerability reports",          isoref:"A.6.8",  nistref:"ID.RA-08", riskreduction:3 },
+  { id:"ID.RA-09", framework:"NIST_CSF", function:"Identify", control:"Authenticity of hardware & software evaluated",          isoref:"A.8.19", nistref:"ID.RA-09", riskreduction:3 },
+  { id:"ID.RA-10", framework:"NIST_CSF", function:"Identify", control:"Critical suppliers assessed prior to acquisition",       isoref:"A.5.19", nistref:"ID.RA-10", riskreduction:2 },
+  { id:"ID.IM-01", framework:"NIST_CSF", function:"Identify", control:"Improvements from evaluations & postmortems",            isoref:"A.5.27", nistref:"ID.IM-01", riskreduction:2 },
+  { id:"ID.IM-02", framework:"NIST_CSF", function:"Identify", control:"Improvements from security tests & exercises",           isoref:"A.8.29", nistref:"ID.IM-02", riskreduction:2 },
+  { id:"ID.IM-03", framework:"NIST_CSF", function:"Identify", control:"Improvements from execution of processes",               isoref:"A.5.36", nistref:"ID.IM-03", riskreduction:2 },
+  { id:"ID.IM-04", framework:"NIST_CSF", function:"Identify", control:"Plan & track improvements to risk management",           isoref:"A.5.35", nistref:"ID.IM-04", riskreduction:2 },
+  { id:"PR.AA-01", framework:"NIST_CSF", function:"Protect",  control:"Identities & credentials managed",                      isoref:"A.5.16", nistref:"PR.AA-01", riskreduction:5 },
+  { id:"PR.AA-02", framework:"NIST_CSF", function:"Protect",  control:"Identities proofed & bound to credentials",             isoref:"A.5.17", nistref:"PR.AA-02", riskreduction:4 },
+  { id:"PR.AA-03", framework:"NIST_CSF", function:"Protect",  control:"Users, services & hardware authenticated",              isoref:"A.8.5",  nistref:"PR.AA-03", riskreduction:6 },
+  { id:"PR.AA-04", framework:"NIST_CSF", function:"Protect",  control:"Identity assertions protected & verified",              isoref:"A.5.17", nistref:"PR.AA-04", riskreduction:4 },
+  { id:"PR.AA-05", framework:"NIST_CSF", function:"Protect",  control:"Access permissions managed & enforced",                 isoref:"A.5.15", nistref:"PR.AA-05", riskreduction:6 },
+  { id:"PR.AA-06", framework:"NIST_CSF", function:"Protect",  control:"Physical access managed & monitored",                   isoref:"A.7.2",  nistref:"PR.AA-06", riskreduction:4 },
+  { id:"PR.AT-01", framework:"NIST_CSF", function:"Protect",  control:"User awareness & training provided",                    isoref:"A.6.3",  nistref:"PR.AT-01", riskreduction:6 },
+  { id:"PR.AT-02", framework:"NIST_CSF", function:"Protect",  control:"Privileged role holders specially trained",             isoref:"A.6.3",  nistref:"PR.AT-02", riskreduction:5 },
+  { id:"PR.DS-01", framework:"NIST_CSF", function:"Protect",  control:"Data-at-rest protected",                                isoref:"A.8.24", nistref:"PR.DS-01", riskreduction:6 },
+  { id:"PR.DS-02", framework:"NIST_CSF", function:"Protect",  control:"Data-in-transit protected",                             isoref:"A.8.24", nistref:"PR.DS-02", riskreduction:6 },
+  { id:"PR.DS-10", framework:"NIST_CSF", function:"Protect",  control:"Data-in-use protected",                                 isoref:"A.8.11", nistref:"PR.DS-10", riskreduction:4 },
+  { id:"PR.DS-11", framework:"NIST_CSF", function:"Protect",  control:"Backups created, protected, maintained & tested",       isoref:"A.8.13", nistref:"PR.DS-11", riskreduction:6 },
+  { id:"PR.PS-01", framework:"NIST_CSF", function:"Protect",  control:"Configuration management performed",                    isoref:"A.8.9",  nistref:"PR.PS-01", riskreduction:5 },
+  { id:"PR.PS-02", framework:"NIST_CSF", function:"Protect",  control:"Software maintained, replaced & removed",               isoref:"A.8.1",  nistref:"PR.PS-02", riskreduction:5 },
+  { id:"PR.PS-03", framework:"NIST_CSF", function:"Protect",  control:"Hardware maintained, replaced & removed",               isoref:"A.7.13", nistref:"PR.PS-03", riskreduction:3 },
+  { id:"PR.PS-04", framework:"NIST_CSF", function:"Protect",  control:"Log records created to enable monitoring",              isoref:"A.8.15", nistref:"PR.PS-04", riskreduction:5 },
+  { id:"PR.PS-05", framework:"NIST_CSF", function:"Protect",  control:"Unauthorised software installation prevented",          isoref:"A.8.19", nistref:"PR.PS-05", riskreduction:5 },
+  { id:"PR.PS-06", framework:"NIST_CSF", function:"Protect",  control:"Secure software development practices used",            isoref:"A.8.25", nistref:"PR.PS-06", riskreduction:4 },
+  { id:"PR.IR-01", framework:"NIST_CSF", function:"Protect",  control:"Networks protected from unauthorised access",           isoref:"A.8.20", nistref:"PR.IR-01", riskreduction:5 },
+  { id:"PR.IR-02", framework:"NIST_CSF", function:"Protect",  control:"Technology assets protected from environmental threats", isoref:"A.7.5", nistref:"PR.IR-02", riskreduction:4 },
+  { id:"PR.IR-03", framework:"NIST_CSF", function:"Protect",  control:"Resilience mechanisms implemented",                     isoref:"A.8.14", nistref:"PR.IR-03", riskreduction:5 },
+  { id:"PR.IR-04", framework:"NIST_CSF", function:"Protect",  control:"Adequate resource capacity ensured",                    isoref:"A.7.11", nistref:"PR.IR-04", riskreduction:4 },
+  { id:"DE.CM-01", framework:"NIST_CSF", function:"Detect",   control:"Networks & network services monitored",                 isoref:"A.8.16", nistref:"DE.CM-01", riskreduction:5 },
+  { id:"DE.CM-02", framework:"NIST_CSF", function:"Detect",   control:"Physical environment monitored",                        isoref:"A.7.4",  nistref:"DE.CM-02", riskreduction:3 },
+  { id:"DE.CM-03", framework:"NIST_CSF", function:"Detect",   control:"Personnel activity & technology usage monitored",       isoref:"A.8.15", nistref:"DE.CM-03", riskreduction:5 },
+  { id:"DE.CM-06", framework:"NIST_CSF", function:"Detect",   control:"External service provider activities monitored",        isoref:"A.5.22", nistref:"DE.CM-06", riskreduction:4 },
+  { id:"DE.CM-09", framework:"NIST_CSF", function:"Detect",   control:"Computing hardware & software monitored",               isoref:"A.8.7",  nistref:"DE.CM-09", riskreduction:5 },
+  { id:"DE.AE-02", framework:"NIST_CSF", function:"Detect",   control:"Potentially adverse events analysed",                   isoref:"A.8.16", nistref:"DE.AE-02", riskreduction:4 },
+  { id:"DE.AE-03", framework:"NIST_CSF", function:"Detect",   control:"Information correlated from multiple sources",          isoref:"A.8.16", nistref:"DE.AE-03", riskreduction:4 },
+  { id:"DE.AE-04", framework:"NIST_CSF", function:"Detect",   control:"Estimated impact & scope of events understood",         isoref:"A.5.25", nistref:"DE.AE-04", riskreduction:4 },
+  { id:"DE.AE-06", framework:"NIST_CSF", function:"Detect",   control:"Information on adverse events shared to staff",         isoref:"A.6.8",  nistref:"DE.AE-06", riskreduction:3 },
+  { id:"DE.AE-07", framework:"NIST_CSF", function:"Detect",   control:"Cyber threat intelligence integrated in analysis",      isoref:"A.5.7",  nistref:"DE.AE-07", riskreduction:3 },
+  { id:"DE.AE-08", framework:"NIST_CSF", function:"Detect",   control:"Incidents declared when criteria met",                  isoref:"A.5.25", nistref:"DE.AE-08", riskreduction:4 },
+  { id:"RS.MA-01", framework:"NIST_CSF", function:"Respond",  control:"Incident response plan executed",                       isoref:"A.5.26", nistref:"RS.MA-01", riskreduction:6 },
+  { id:"RS.MA-02", framework:"NIST_CSF", function:"Respond",  control:"Incidents triaged to support analysis",                 isoref:"A.5.25", nistref:"RS.MA-02", riskreduction:4 },
+  { id:"RS.MA-03", framework:"NIST_CSF", function:"Respond",  control:"Incidents categorised & prioritised",                   isoref:"A.5.25", nistref:"RS.MA-03", riskreduction:4 },
+  { id:"RS.MA-04", framework:"NIST_CSF", function:"Respond",  control:"Incidents escalated as needed",                         isoref:"A.5.26", nistref:"RS.MA-04", riskreduction:4 },
+  { id:"RS.MA-05", framework:"NIST_CSF", function:"Respond",  control:"Criteria for initiating recovery applied",              isoref:"A.5.29", nistref:"RS.MA-05", riskreduction:3 },
+  { id:"RS.AN-03", framework:"NIST_CSF", function:"Respond",  control:"Root cause analysis performed",                         isoref:"A.5.27", nistref:"RS.AN-03", riskreduction:4 },
+  { id:"RS.AN-06", framework:"NIST_CSF", function:"Respond",  control:"Investigation actions recorded",                        isoref:"A.5.28", nistref:"RS.AN-06", riskreduction:3 },
+  { id:"RS.AN-07", framework:"NIST_CSF", function:"Respond",  control:"Incident magnitude estimated & validated",              isoref:"A.5.25", nistref:"RS.AN-07", riskreduction:3 },
+  { id:"RS.AN-08", framework:"NIST_CSF", function:"Respond",  control:"Forensics performed",                                   isoref:"A.5.28", nistref:"RS.AN-08", riskreduction:3 },
+  { id:"RS.CO-02", framework:"NIST_CSF", function:"Respond",  control:"Internal stakeholders notified of incidents",           isoref:"A.5.26", nistref:"RS.CO-02", riskreduction:4 },
+  { id:"RS.CO-03", framework:"NIST_CSF", function:"Respond",  control:"Information shared with designated stakeholders",       isoref:"A.5.5",  nistref:"RS.CO-03", riskreduction:3 },
+  { id:"RS.MI-01", framework:"NIST_CSF", function:"Respond",  control:"Incidents contained",                                   isoref:"A.5.26", nistref:"RS.MI-01", riskreduction:5 },
+  { id:"RS.MI-02", framework:"NIST_CSF", function:"Respond",  control:"Incidents eradicated",                                  isoref:"A.5.26", nistref:"RS.MI-02", riskreduction:5 },
+  { id:"RC.RP-01", framework:"NIST_CSF", function:"Recover",  control:"Recovery plan executed",                                isoref:"A.5.30", nistref:"RC.RP-01", riskreduction:5 },
+  { id:"RC.RP-02", framework:"NIST_CSF", function:"Recover",  control:"Recovery actions selected, scoped & prioritised",      isoref:"A.8.13", nistref:"RC.RP-02", riskreduction:4 },
+  { id:"RC.RP-03", framework:"NIST_CSF", function:"Recover",  control:"Integrity of backups verified before restoration",      isoref:"A.8.13", nistref:"RC.RP-03", riskreduction:4 },
+  { id:"RC.RP-04", framework:"NIST_CSF", function:"Recover",  control:"Critical mission functions prioritised in recovery",    isoref:"A.5.29", nistref:"RC.RP-04", riskreduction:4 },
+  { id:"RC.RP-05", framework:"NIST_CSF", function:"Recover",  control:"Integrity of restored assets verified",                 isoref:"A.5.30", nistref:"RC.RP-05", riskreduction:4 },
+  { id:"RC.RP-06", framework:"NIST_CSF", function:"Recover",  control:"End of incident recovery declared & documented",       isoref:"A.5.26", nistref:"RC.RP-06", riskreduction:3 },
+  { id:"RC.CO-03", framework:"NIST_CSF", function:"Recover",  control:"Recovery activities communicated to stakeholders",      isoref:"A.5.29", nistref:"RC.CO-03", riskreduction:3 },
+  { id:"RC.CO-04", framework:"NIST_CSF", function:"Recover",  control:"Public updates managed via approved channels",          isoref:"A.5.26", nistref:"RC.CO-04", riskreduction:2 },
 ];
 
-function threatColor(type) {
-  if (type === "critical") return "#DC322F";
-  if (type === "high") return "#F59E0B";
-  return "#EAB308";
+const ROLES = {
+  ciso:      { label:"CISO",      fullLabel:"Chief Information Security Officer", icon:<ShieldAlert size={14}/>, color:"#EF4444", bg:"rgba(239,68,68,.08)", border:"rgba(239,68,68,.2)", canExport:true,  canEdit:false, canRunAssessment:false },
+  developer: { label:"Developer", fullLabel:"Security Engineer",                  icon:<Code2      size={14}/>, color:"#6366F1", bg:"rgba(99,102,241,.08)", border:"rgba(99,102,241,.2)", canExport:false, canEdit:true,  canRunAssessment:true  },
+  auditor:   { label:"Auditor",   fullLabel:"Compliance Auditor",                 icon:<FileCheck  size={14}/>, color:"#10B981", bg:"rgba(16,185,129,.08)", border:"rgba(16,185,129,.2)", canExport:true,  canEdit:false, canRunAssessment:false },
+};
+
+const NAV_ITEMS = [
+  { id:"overview",    label:"Overview",        icon:LayoutDashboard, roles:["ciso"] },
+  { id:"trends",      label:"Risk Trends",     icon:TrendingUp,      roles:["ciso"] },
+  { id:"assessment",  label:"Risk Assessment", icon:Shield,          roles:["developer"] },
+  { id:"checklist",   label:"Controls",        icon:CheckSquare,     roles:["developer"] },
+  { id:"compliance",  label:"Compliance",      icon:ClipboardList,   roles:["ciso","auditor","developer"] },
+  { id:"audit",       label:"Audit Trail",     icon:Clock,           roles:["ciso","auditor"] },
+  { id:"remediation", label:"Remediation",     icon:CheckCircle,     roles:["ciso","developer"] },
+  { id:"users",       label:"Team",            icon:Users,           roles:["ciso"] },
+];
+
+/* ─── GLOBAL STYLES ─────────────────────────────────────────────────────── */
+const G = `
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0F1117;--surface:#1A1D27;--surface2:#222536;--surface3:#2A2E40;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
+  --text:#F0F2F8;--text2:#9EA3B8;--text3:#6B7190;
+  --accent:#6366F1;--accent2:#818CF8;--accentbg:rgba(99,102,241,.15);
+  --red:#F87171;--redbg:rgba(248,113,113,.12);
+  --orange:#FB923C;--orangebg:rgba(251,146,60,.12);
+  --yellow:#FBBF24;--yellowbg:rgba(251,191,36,.12);
+  --green:#34D399;--greenbg:rgba(52,211,153,.12);
+  --blue:#60A5FA;--bluebg:rgba(96,165,250,.12);
+  --nav-w:252px;--topbar-h:58px;--radius:8px;--radius-lg:12px;--radius-xl:16px;
+  --shadow:0 1px 3px rgba(0,0,0,.4);--shadow-md:0 4px 16px rgba(0,0,0,.5);--shadow-lg:0 8px 32px rgba(0,0,0,.6);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+button,input,select,textarea{font-family:inherit;}
+.auth-root{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;background:var(--bg);}
+@media(max-width:900px){.auth-root{grid-template-columns:1fr;}.auth-hero{display:none!important;}}
+.auth-hero{background:linear-gradient(160deg,#0F1117 0%,#1A1D27 40%,#1e2035 100%);display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:64px 56px;position:relative;overflow:hidden;border-right:1px solid var(--border);}
+.auth-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 60% 20%,rgba(99,102,241,.18) 0%,transparent 60%),radial-gradient(circle at 20% 80%,rgba(52,211,153,.08) 0%,transparent 50%);}
+.auth-hero-grid{position:absolute;inset:0;opacity:.04;background-image:linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px);background-size:48px 48px;}
+.auth-hero-content{position:relative;z-index:1;}
+.auth-hero-logo{display:flex;align-items:center;gap:12px;margin-bottom:56px;}
+.auth-hero-logo-mark{width:44px;height:44px;background:linear-gradient(135deg,#6366F1,#818CF8);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(99,102,241,.4);}
+.auth-hero-logo-text{font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;}
+.auth-hero h1{font-size:42px;font-weight:700;color:#fff;line-height:1.1;letter-spacing:-1.5px;margin-bottom:20px;}
+.auth-hero h1 span{color:#818CF8;}
+.auth-hero p{font-size:15px;color:var(--text3);line-height:1.75;max-width:380px;margin-bottom:44px;}
+.auth-hero-badges{display:flex;flex-wrap:wrap;gap:8px;}
+.auth-hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.3px;}
+.auth-hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.auth-hero-stat{margin-top:52px;display:flex;gap:36px;}
+.auth-hero-stat-val{font-size:30px;font-weight:700;color:#fff;letter-spacing:-1px;}
+.auth-hero-stat-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:3px;}
+.auth-form-side{display:flex;flex-direction:column;justify-content:center;padding:64px 56px;background:var(--bg);}
+.auth-form-header{margin-bottom:36px;}
+.auth-form-header h2{font-size:26px;font-weight:700;color:var(--text);letter-spacing:-0.5px;margin-bottom:6px;}
+.auth-form-header p{font-size:14px;color:var(--text3);}
+.field{margin-bottom:16px;}
+.field-label{display:block;font-size:12px;font-weight:500;color:var(--text2);letter-spacing:.3px;margin-bottom:7px;}
+.field-input-wrap{position:relative;}
+.field-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text3);width:15px;height:15px;}
+.field input,.field select{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:11px 13px 11px 40px;color:var(--text);font-size:14px;transition:border-color .15s,box-shadow .15s;outline:none;}
+.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.15);}
+.field select{padding-left:13px;appearance:none;}
+.field input::placeholder{color:var(--text3);}
+.auth-btn{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;}
+.auth-btn:hover{background:#4F52D6;box-shadow:0 4px 20px rgba(99,102,241,.4);transform:translateY(-1px);}
+.auth-btn:disabled{opacity:.5;transform:none;cursor:not-allowed;box-shadow:none;}
+.auth-switch{text-align:center;margin-top:20px;font-size:13px;color:var(--text3);}
+.auth-switch span{color:var(--accent2);cursor:pointer;font-weight:500;}
+.err-msg{background:var(--redbg);border:1px solid rgba(248,113,113,.25);border-radius:var(--radius);padding:10px 13px;font-size:13px;color:var(--red);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.ok-msg{background:var(--greenbg);border:1px solid rgba(52,211,153,.25);border-radius:var(--radius);padding:10px 13px;font-size:13px;color:var(--green);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.tenant-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
+.tenant-opt{padding:10px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text2);cursor:pointer;text-align:center;font-size:13px;font-weight:500;transition:all .15s;}
+.tenant-opt.active{border-color:var(--accent);color:var(--accent2);background:var(--accentbg);}
+.shell{display:grid;grid-template-columns:var(--nav-w) 1fr;min-height:100vh;}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;width:var(--nav-w);height:100vh;z-index:50;overflow-y:auto;}
+.sidebar-logo{padding:22px 20px 0;display:flex;align-items:center;gap:10px;margin-bottom:32px;}
+.sidebar-logo-mark{width:32px;height:32px;background:linear-gradient(135deg,#6366F1,#818CF8);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px rgba(99,102,241,.35);flex-shrink:0;}
+.sidebar-logo-text{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.3px;}
+.nav-section-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;padding:0 16px;margin-bottom:4px;margin-top:8px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;margin:1px 8px;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:400;color:var(--text2);transition:all .12s;border:none;background:none;width:calc(100% - 16px);text-align:left;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--accentbg);color:var(--accent2);font-weight:500;border:1px solid rgba(99,102,241,.2);}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.75;}
+.nav-item.active svg{opacity:1;}
+.main-area{margin-left:var(--nav-w);display:flex;flex-direction:column;min-height:100vh;width:calc(100vw - var(--nav-w));min-width:0;overflow-x:hidden;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);height:var(--topbar-h);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:40;width:100%;}
+.topbar-search{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 13px;font-size:12px;color:var(--text3);width:220px;transition:all .15s;}
+.topbar-search:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,.12);}
+.topbar-search input{background:none;border:none;outline:none;font-size:12px;color:var(--text);width:100%;}
+.topbar-btn{width:34px;height:34px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:all .12s;}
+.topbar-btn:hover{background:var(--surface3);color:var(--text);}
+.org-chip{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:5px 11px;font-size:12px;font-weight:500;color:var(--text2);}
+.page-body{padding:28px;flex:1;min-width:0;overflow-x:hidden;box-sizing:border-box;}
+.page-header{margin-bottom:24px;}
+.page-title{font-size:20px;font-weight:600;color:var(--text);letter-spacing:-0.3px;margin-bottom:3px;}
+.page-sub{font-size:12px;color:var(--text3);}
+.page-crumb{font-size:11px;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);}
+.card-header{padding:16px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:13px;font-weight:600;color:var(--text);}
+.card-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.card-body{padding:20px;}
+.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.stat-card-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.stat-card-val{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-1px;line-height:1;margin-bottom:4px;}
+.stat-card-lbl{font-size:11px;color:var(--text3);font-weight:400;}
+.stat-card-line{position:absolute;bottom:0;left:0;right:0;height:2px;}
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+.data-table td{padding:12px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:middle;}
+.data-table tbody tr:last-child td{border-bottom:none;}
+.data-table tbody tr:hover td{background:var(--surface2);}
+.data-table td strong{color:var(--text);font-weight:500;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.3px;}
+.badge-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#4F52D6;box-shadow:0 2px 12px rgba(99,102,241,.4);}
+.btn-secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border2);}
+.btn-secondary:hover{background:var(--surface3);color:var(--text);}
+.btn-danger{background:var(--redbg);color:var(--red);border:1px solid rgba(248,113,113,.2);}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid transparent;}
+.btn-ghost:hover{background:var(--surface2);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-lg{padding:10px 20px;font-size:13px;border-radius:var(--radius-lg);}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.btn-icon{padding:6px;}
+.form-section{margin-bottom:24px;}
+.form-section-title{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-field{margin-bottom:14px;}
+.form-field label{display:block;font-size:11px;font-weight:500;color:var(--text2);margin-bottom:6px;letter-spacing:.2px;}
+.form-field input,.form-field select,.form-field textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 12px;color:var(--text);font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s;}
+.form-field input:focus,.form-field select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,.12);}
+.form-field select{appearance:none;cursor:pointer;}
+.form-field input::placeholder{color:var(--text3);}
+.checkbox-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;}
+.checkbox-item{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.checkbox-item input{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;}
+.checkbox-item span{font-size:12px;color:var(--text2);font-weight:400;}
+.progress-wrap{background:var(--surface3);border-radius:20px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:20px;transition:width .7s cubic-bezier(.4,0,.2,1);}
+.notice{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--radius);font-size:12px;border:1px solid;margin-bottom:14px;}
+.notice-info{background:var(--accentbg);border-color:rgba(99,102,241,.25);color:var(--accent2);}
+.notice-warn{background:var(--yellowbg);border-color:rgba(251,191,36,.25);color:var(--yellow);}
+.notice-err{background:var(--redbg);border-color:rgba(248,113,113,.25);color:var(--red);}
+.notice-ok{background:var(--greenbg);border-color:rgba(52,211,153,.25);color:var(--green);}
+.tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;letter-spacing:.3px;}
+.empty-state{text-align:center;padding:48px 24px;color:var(--text3);}
+.empty-state svg{margin:0 auto 12px;opacity:.2;display:block;}
+.empty-state p{font-size:13px;margin-bottom:4px;font-weight:500;color:var(--text2);}
+.empty-state span{font-size:11px;}
+.spin{animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.fade-in{animation:fadeUp .2s ease forwards;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.mono{font-family:'JetBrains Mono',monospace;}
+.session-toast{position:fixed;top:14px;right:14px;z-index:999;background:var(--red);color:#fff;border-radius:var(--radius-lg);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;box-shadow:var(--shadow-lg);animation:fadeUp .3s ease;}
+.fw-tabs{display:flex;gap:4px;background:var(--surface2);border-radius:var(--radius);padding:3px;margin-bottom:18px;}
+.fw-tab{flex:1;padding:7px;border-radius:6px;border:none;font-size:11px;font-weight:500;cursor:pointer;background:transparent;color:var(--text3);transition:all .15s;}
+.fw-tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow);}
+.scanner-banner{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 22px;margin-bottom:18px;}
+.ctrl-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;margin-bottom:3px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .12s;}
+.ctrl-item:hover{border-color:var(--border2);background:var(--surface2);}
+.ctrl-item.done{background:rgba(52,211,153,.06);border-color:rgba(52,211,153,.2);}
+.fn-group{margin-bottom:10px;}
+.fn-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:var(--radius);cursor:pointer;user-select:none;transition:background .12s;margin-bottom:3px;}
+.fn-header:hover{background:var(--surface2);}
+.task-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;margin-bottom:6px;transition:all .12s;}
+.task-item:hover{border-color:var(--border2);box-shadow:var(--shadow);}
+.user-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.user-item:last-child{border-bottom:none;}
+.gauge-container{display:flex;flex-direction:column;align-items:center;}
+`
+
+/* ─── COMPONENTS ────────────────────────────────────────────────────── */
+
+function RiskGauge({ score }) {
+  const R=72, cx=100, cy=100, startA=-210, totalArc=240;
+  const pct = Math.min(Math.max(score/100,0),1);
+  const toXY = (a,r) => ({ x: cx+r*Math.cos(a*Math.PI/180), y: cy+r*Math.sin(a*Math.PI/180) });
+  const arc = (s,e,r) => { const A=toXY(s,r), B=toXY(e,r); return `M ${A.x} ${A.y} A ${r} ${r} 0 ${e-s>180?1:0} 1 ${B.x} ${B.y}`; };
+  const color = score>=75?"#EF4444":score>=50?"#F97316":score>=25?"#EAB308":"#22C55E";
+  const level = score>=75?"Critical":score>=50?"High":score>=25?"Medium":"Low";
+  const filled = totalArc*pct;
+  return (
+    <div className="gauge-container">
+      <svg width="200" height="140" viewBox="0 0 200 140">
+        <path d={arc(startA, startA+totalArc, R)} fill="none" stroke="#E4E7EF" strokeWidth="12" strokeLinecap="round"/>
+        {score>0&&<path d={arc(startA, startA+filled, R)} fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"/>}
+        <circle cx={toXY(startA+filled,R).x} cy={toXY(startA+filled,R).y} r="6" fill={color} stroke="#fff" strokeWidth="2"/>
+        <text x={cx} y={cy+28} textAnchor="middle" fill="#0F1629" fontSize="30" fontWeight="800" fontFamily="Plus Jakarta Sans,sans-serif">{score.toFixed(0)}</text>
+        <text x={cx} y={cx+46} textAnchor="middle" fill="#8A94B2" fontSize="10" letterSpacing="1.5" fontFamily="Plus Jakarta Sans,sans-serif">RISK SCORE</text>
+      </svg>
+      <span className="badge" style={{background:score>=75?"var(--redbg)":score>=50?"var(--orangebg)":score>=25?"var(--yellowbg)":"var(--greenbg)", color:score>=75?"var(--red)":score>=50?"var(--orange)":score>=25?"var(--yellow)":"var(--green)", border:`1px solid ${score>=75?"rgba(239,68,68,.25)":score>=50?"rgba(249,115,22,.25)":score>=25?"rgba(234,179,8,.25)":"rgba(34,197,94,.25)"}`}}>
+        <span className="badge-dot" style={{background:color}}/>
+        {level} Risk
+      </span>
+    </div>
+  );
 }
 
-function ThreatMap() {
-  const [active, setActive] = useState(null);
-  const [animating, setAnimating] = useState([0, 3, 6]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const idx = Math.floor(Math.random() * THREATS.length);
-      setAnimating(prev => [...new Set([...prev.slice(-3), idx])]);
-    }, 1800);
-    return () => clearInterval(interval);
-  }, []);
-
+function RiskTrendChart({ token, tenantId, onExpired }) {
+  const [history,setHistory]=useState([]);
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{
+    let c=false;
+    realServer.getAuditTrail(token,tenantId)
+      .then(d=>{if(!c){setHistory(d.slice(-8));setLoading(false);}})
+      .catch(e=>{if(e.message==="AUTH_EXPIRED")onExpired();else setLoading(false);});
+    return()=>{c=true;};
+  },[token,tenantId,onExpired]);
+  if(loading) return <div className="empty-state"><RefreshCw size={28} className="spin" style={{opacity:.3,display:"block",margin:"0 auto 12px"}}/><span>Loading trend data...</span></div>;
+  if(history.length<2) return (
+    <div className="empty-state">
+      <TrendingUp size={32}/>
+      <p>Not enough data yet</p>
+      <span>Run at least 2 assessments to see risk trends</span>
+    </div>
+  );
+  const W=480,H=140,PAD=36;
+  const xs=history.map((_,i)=>PAD+(i/(history.length-1))*(W-PAD*2));
+  const ys=history.map(r=>PAD+(r.risk_score/100)*(H-PAD*2));
+  const polyline=xs.map((x,i)=>`${x},${ys[i]}`).join(" ");
+  const latest=history[history.length-1], prev=history[history.length-2];
+  const delta=latest.risk_score-prev.risk_score;
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px 0" }}>
+    <div className="fade-in">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"20px"}}>
         <div>
-          <div style={{ fontFamily: "Syne, sans-serif", fontSize: "16px", fontWeight: "700", color: "#fff", marginBottom: "4px" }}>Global Threat Intelligence</div>
-          <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>Simulated real-time threat activity feed</div>
+          <div style={{fontSize:"15px",fontWeight:"700",color:"var(--text)",marginBottom:"3px"}}>Risk Score Over Time</div>
+          <div style={{fontSize:"12px",color:"var(--text3)"}}>Last {history.length} assessments</div>
         </div>
-        <div className="live-badge"><div className="live-dot" /> LIVE</div>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "0" }}>
-        {/* Map */}
-        <div className="threat-map-wrap" style={{ margin: "16px 0 16px 24px", borderRight: "none", borderRadius: "14px 0 0 14px" }}>
-          <svg viewBox="0 0 100 65" style={{ width: "100%", display: "block", background: "rgba(0,0,0,0.2)" }}>
-            {/* World map rough outline shapes */}
-            {/* North America */}
-            <path d="M5,15 L18,12 L22,18 L20,28 L15,35 L10,32 L6,25 Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" />
-            {/* South America */}
-            <path d="M18,38 L26,36 L28,45 L24,58 L18,55 L15,45 Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" />
-            {/* Europe */}
-            <path d="M30,12 L40,10 L42,16 L38,22 L32,20 Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" />
-            {/* Africa */}
-            <path d="M32,24 L40,22 L43,30 L42,44 L36,48 L30,42 L29,30 Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" />
-            {/* Asia */}
-            <path d="M44,10 L70,8 L75,18 L70,28 L55,30 L46,24 Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" />
-            {/* Southeast Asia */}
-            <path d="M68,32 L78,30 L82,40 L75,46 L66,42 Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" />
-            {/* Australia */}
-            <path d="M72,48 L85,46 L88,56 L80,60 L70,58 Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" />
-
-            {/* Grid lines */}
-            {[20, 40, 60, 80].map(x => (
-              <line key={`vg${x}`} x1={x} y1="0" x2={x} y2="65" stroke="rgba(255,255,255,0.03)" strokeWidth="0.3" />
-            ))}
-            {[16, 32, 48].map(y => (
-              <line key={`hg${y}`} x1="0" y1={y} x2="100" y2={y} stroke="rgba(255,255,255,0.03)" strokeWidth="0.3" />
-            ))}
-
-            {/* Threat nodes */}
-            {THREATS.map((t, i) => (
-              <g key={t.id} style={{ cursor: "pointer" }} onClick={() => setActive(active === t.id ? null : t.id)}>
-                {/* Ping animation */}
-                {animating.includes(i) && (
-                  <circle cx={t.x} cy={t.y} r="3" fill="none" stroke={threatColor(t.type)} strokeWidth="0.8" style={{ animation: "threat-ping 1.5s ease-out infinite" }} />
-                )}
-                <circle cx={t.x} cy={t.y} r="2" fill={threatColor(t.type)} opacity="0.9" />
-                <circle cx={t.x} cy={t.y} r="1" fill="#fff" opacity="0.6" />
-                {/* Tooltip */}
-                {active === t.id && (
-                  <foreignObject x={t.x + 3} y={t.y - 12} width="60" height="30">
-                    <div style={{ background: "#13172A", border: `1px solid ${threatColor(t.type)}50`, borderRadius: "4px", padding: "3px 6px", fontSize: "7px", color: "#fff", whiteSpace: "nowrap" }}>
-                      {t.city}: {t.attack}
-                    </div>
-                  </foreignObject>
-                )}
-              </g>
-            ))}
-          </svg>
-
-          <div className="threat-legend">
-            {[["critical", "#DC322F"], ["high", "#F59E0B"], ["medium", "#EAB308"]].map(([lbl, clr]) => (
-              <div className="legend-item" key={lbl}>
-                <div className="legend-dot" style={{ background: clr }} />
-                {lbl.charAt(0).toUpperCase() + lbl.slice(1)}
-              </div>
-            ))}
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:"22px",fontWeight:"800",color:delta<0?"var(--green)":delta>0?"var(--red)":"var(--yellow)",letterSpacing:"-0.5px"}}>
+            {delta<0?<ArrowDownRight size={16} style={{verticalAlign:"middle"}}/>:delta>0?<ArrowUpRight size={16} style={{verticalAlign:"middle"}}/>:<Minus size={16} style={{verticalAlign:"middle"}}/>}
+            {delta<0?`${Math.abs(delta).toFixed(1)} pts better`:delta>0?`+${delta.toFixed(1)} pts worse`:"Stable"}
           </div>
-        </div>
-
-        {/* Sidebar events */}
-        <div className="threat-sidebar" style={{ margin: "16px 24px 16px 0", borderLeft: "none", borderRadius: "0 14px 14px 0" }}>
-          <div style={{ fontSize: "11px", fontWeight: "600", letterSpacing: "1.5px", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: "16px" }}>Recent Events</div>
-          {THREATS.map(t => (
-            <div className="threat-event" key={t.id}>
-              <div className="threat-dot-sm" style={{ background: threatColor(t.type) }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.8)", marginBottom: "2px", fontWeight: "500" }}>{t.attack}</div>
-                <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>{t.city}</div>
-              </div>
-              <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.2)", flexShrink: 0 }}>{t.time}</div>
-            </div>
-          ))}
+          <div style={{fontSize:"11px",color:"var(--text3)"}}>vs. previous assessment</div>
         </div>
       </div>
-
-      {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "12px", padding: "0 24px 24px" }}>
+      <svg viewBox={`0 0 ${W} ${H+24}`} style={{width:"100%"}}>
+        <defs>
+          <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366F1" stopOpacity=".12"/>
+            <stop offset="100%" stopColor="#6366F1" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+        {[0,25,50,75,100].map(v=>{
+          const y=PAD+(v/100)*(H-PAD*2);
+          return <g key={v}>
+            <line x1={PAD} y1={y} x2={W-PAD} y2={y} stroke="#E4E7EF" strokeWidth="1" strokeDasharray="4,4"/>
+            <text x={PAD-8} y={y+4} textAnchor="end" fill="#8A94B2" fontSize="9" fontFamily="Plus Jakarta Sans">{100-v}</text>
+          </g>;
+        })}
+        <polygon points={`${xs[0]},${H-PAD} ${polyline} ${xs[xs.length-1]},${H-PAD}`} fill="url(#trendGrad)"/>
+        <polyline points={polyline} fill="none" stroke="#6366F1" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
+        {history.map((r,i)=>{
+          const c=getRiskColor(r.risk_level);
+          return <g key={i}>
+            <circle cx={xs[i]} cy={ys[i]} r="5" fill="#fff" stroke={c} strokeWidth="2.5"/>
+            <text x={xs[i]} y={H+18} textAnchor="middle" fill="#8A94B2" fontSize="9" fontFamily="Plus Jakarta Sans">{new Date(r.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short",timeZone:"Asia/Kolkata"})}</text>
+          </g>;
+        })}
+      </svg>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"12px",marginTop:"16px",paddingTop:"16px",borderTop:"1px solid var(--border)"}}>
         {[
-          { label: "Active Threats", val: "8", color: "#DC322F" },
-          { label: "Countries Affected", val: "7", color: "#F59E0B" },
-          { label: "Critical Alerts", val: "3", color: "#DC322F" },
-          { label: "Avg Response (min)", val: "4.2", color: "#10B981" },
-        ].map(s => (
-          <div key={s.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px", padding: "16px 20px" }}>
-            <div style={{ fontFamily: "Syne, sans-serif", fontSize: "22px", fontWeight: "800", color: s.color, marginBottom: "4px" }}>{s.val}</div>
-            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", letterSpacing: "0.8px", textTransform: "uppercase" }}>{s.label}</div>
+          {l:"Latest",v:Number(latest.risk_score).toFixed(0),c:getRiskColor(latest.risk_level)},
+          {l:"Highest",v:Math.max(...history.map(r=>r.risk_score)).toFixed(0),c:"var(--red)"},
+          {l:"Lowest",v:Math.min(...history.map(r=>r.risk_score)).toFixed(0),c:"var(--green)"},
+          {l:"Average",v:(history.reduce((s,r)=>s+r.risk_score,0)/history.length).toFixed(1),c:"var(--accent)"},
+        ].map(s=>(
+          <div key={s.l} style={{textAlign:"center"}}>
+            <div style={{fontSize:"20px",fontWeight:"800",color:s.c,letterSpacing:"-0.5px"}}>{s.v}</div>
+            <div style={{fontSize:"11px",color:"var(--text3)",fontWeight:"500"}}>{s.l}</div>
           </div>
         ))}
       </div>
@@ -910,289 +664,1200 @@ function ThreatMap() {
   );
 }
 
-// ---- COMPLIANCE TAB ----
-function ComplianceTab({ controls, implemented, checklistScore }) {
-  const nistControls = controls.filter(c => c.framework === "NIST");
-  const isoControls = controls.filter(c => c.framework === "ISO");
-  const nistImpl = nistControls.filter(c => implemented.includes(c.id)).length;
-  const isoImpl = isoControls.filter(c => implemented.includes(c.id)).length;
-  const nistPct = nistControls.length ? Math.round((nistImpl / nistControls.length) * 100) : 0;
-  const isoPct = isoControls.length ? Math.round((isoImpl / isoControls.length) * 100) : 0;
+function ComplianceTab({ token, tenantId, onExpired }) {
+  const [assessments,setAssessments]=useState([]);
+  const [selectedId,setSelectedId]=useState(null);
+  const [results,setResults]=useState([]);
+  const [summary,setSummary]=useState([]);
+  const [activeFramework,setActiveFramework]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [running,setRunning]=useState(false);
+  const [error,setError]=useState("");
+  const [openControl,setOpenControl]=useState(null);
 
-  const frameworks = [
-    {
-      name: "NIST CSF",
-      desc: "Cybersecurity Framework",
-      pct: nistPct,
-      impl: nistImpl,
-      total: nistControls.length,
-      color: "#6366F1",
-      items: ["Identify", "Protect", "Detect", "Respond", "Recover"],
-    },
-    {
-      name: "ISO 27001",
-      desc: "Information Security Management",
-      pct: isoPct,
-      impl: isoImpl,
-      total: isoControls.length,
-      color: "#10B981",
-      items: ["Access Control", "Cryptography", "Incident Management", "Supplier Relations"],
-    },
-    {
-      name: "PCI DSS",
-      desc: "Payment Card Industry Standard",
-      pct: Math.round(nistPct * 0.7),
-      impl: Math.round(nistImpl * 0.7),
-      total: 12,
-      color: "#F59E0B",
-      items: ["Network Security", "Cardholder Data", "Vulnerability Mgmt", "Access Control"],
-    },
-    {
-      name: "SOC 2",
-      desc: "Service Organization Controls",
-      pct: Math.round(isoPct * 0.85),
-      impl: Math.round(isoImpl * 0.85),
-      total: 10,
-      color: "#EC4899",
-      items: ["Security", "Availability", "Confidentiality", "Privacy"],
-    },
-  ];
+  useEffect(()=>{
+    let c=false;
+    (async()=>{
+      try{
+        const [a,s]=await Promise.all([realServer.getAuditTrail(token,tenantId),realServer.getComplianceSummary(token,tenantId).catch(()=>[])]);
+        if(c)return;
+        setAssessments(a); setSummary(s);
+        if(a.length>0) setSelectedId(a[a.length-1].id);
+      }catch(e){if(e.message==="AUTH_EXPIRED")onExpired();else setError(e.message);}
+      finally{if(!c)setLoading(false);}
+    })();
+    return()=>{c=true;};
+  },[token,tenantId,onExpired]);
+
+  useEffect(()=>{
+    if(!selectedId)return;
+    let c=false;
+    setResults([]); setActiveFramework(null);
+    realServer.getComplianceResults(token,tenantId,selectedId)
+      .then(d=>{if(!c){setResults(d);if(d.length>0)setActiveFramework(d[0].framework);}})
+      .catch(e=>{if(e.message==="AUTH_EXPIRED")onExpired();else setError(e.message);});
+    return()=>{c=true;};
+  },[selectedId,token,tenantId,onExpired]);
+
+  async function rerun(){
+    if(!selectedId)return; setRunning(true); setError("");
+    try{
+      const d=await realServer.runComplianceMapping(token,tenantId,selectedId);
+      setResults(d); if(d.length>0)setActiveFramework(d[0].framework);
+      const s=await realServer.getComplianceSummary(token,tenantId).catch(()=>[]);
+      setSummary(s);
+    }catch(e){if(e.message==="AUTH_EXPIRED")onExpired();else setError(e.message);}
+    finally{setRunning(false);}
+  }
+
+  const fwMeta = {
+    SOC2:     {color:"#EF4444",label:"SOC 2 Type II",desc:"Trust Service Criteria"},
+    ISO27001: {color:"#22C55E",label:"ISO 27001:2022",desc:"Information Security Management"},
+    NIST_CSF: {color:"#6366F1",label:"NIST CSF v2.0",desc:"Cybersecurity Framework"},
+  };
+  const activeResult = results.find(r=>r.framework===activeFramework);
+
+  if(loading) return <div className="empty-state"><RefreshCw size={28} className="spin" style={{opacity:.3,display:"block",margin:"0 auto 12px"}}/><span>Loading compliance data...</span></div>;
+  if(assessments.length===0) return (
+    <div className="empty-state">
+      <ClipboardList size={36}/>
+      <p>No assessments found</p>
+      <span>Complete a risk assessment first to generate compliance mappings</span>
+    </div>
+  );
 
   return (
-    <div>
-      <div className="compliance-grid">
-        {frameworks.map(fw => {
-          const status = fw.pct >= 80 ? "Compliant" : fw.pct >= 50 ? "Partial" : "Non-Compliant";
-          const statusColor = fw.pct >= 80 ? "#10B981" : fw.pct >= 50 ? "#F59E0B" : "#DC322F";
-          return (
-            <div className="compliance-card" key={fw.name}>
-              <div className="compliance-header">
-                <div>
-                  <div className="compliance-framework">{fw.name}</div>
-                  <div className="compliance-desc">{fw.desc}</div>
-                </div>
-                <div className="compliance-pct" style={{ color: fw.color }}>{fw.pct}%</div>
-              </div>
-              <div className="progress-bar-wrap">
-                <div className="progress-bar-fill" style={{ width: `${fw.pct}%`, background: `linear-gradient(90deg, ${fw.color}80, ${fw.color})` }} />
-              </div>
-              <div style={{ fontSize: "11px", color: statusColor, fontWeight: "600", letterSpacing: "0.5px", marginBottom: "12px" }}>
-                ● {status} — {fw.impl}/{fw.total} controls
-              </div>
-              <div className="compliance-items">
-                {fw.items.map((item, idx) => {
-                  const done = idx < Math.round(fw.items.length * fw.pct / 100);
-                  return (
-                    <div className="compliance-item" key={item}>
-                      <div className="comp-check" style={{ background: done ? `${fw.color}20` : "rgba(255,255,255,0.04)", color: done ? fw.color : "rgba(255,255,255,0.2)" }}>
-                        {done ? "✓" : "○"}
-                      </div>
-                      {item}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+    <div className="fade-in">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px",flexWrap:"wrap",gap:"12px"}}>
+        <div>
+          <div style={{fontSize:"15px",fontWeight:"700",color:"var(--text)",marginBottom:"3px"}}>Framework Mapping</div>
+          <div style={{fontSize:"12px",color:"var(--text3)"}}>SOC 2 · ISO 27001:2022 (93 controls) · NIST CSF v2.0 (106 subcategories)</div>
+        </div>
+        <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
+          <div className="form-field" style={{margin:0}}>
+            <select value={selectedId||""} onChange={e=>setSelectedId(e.target.value)} style={{fontSize:"12px",padding:"7px 12px",background:"#fff",border:"1.5px solid var(--border2)",borderRadius:"var(--radius)",color:"var(--text)",outline:"none"}}>
+              {assessments.map(a=><option key={a.id} value={a.id}>{a.org_name} — {fmtDate(a.created_at)}</option>)}
+            </select>
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={rerun} disabled={running||!selectedId}>
+            <RefreshCw size={12} className={running?"spin":""}/>
+            {running?"Running...":"Re-run Mapping"}
+          </button>
+        </div>
       </div>
 
-      {/* Overall compliance bar */}
-      <div className="form-card" style={{ marginBottom: 0 }}>
-        <div className="form-section-title">Overall Compliance Score</div>
-        <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "16px" }}>
-          {frameworks.map(fw => (
-            <div key={fw.name} style={{ flex: 1 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>{fw.name}</span>
-                <span style={{ fontSize: "11px", color: fw.color, fontWeight: "600" }}>{fw.pct}%</span>
+      {error&&<div className="notice notice-err"><AlertCircle size={15}/>{error}</div>}
+
+      {results.length>0&&(
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"14px",marginBottom:"20px"}}>
+          {results.map(r=>{
+            const m=fwMeta[r.framework]||{color:"#6366F1",label:r.framework,desc:""};
+            const pass=r.controls.filter(c=>c.status==="pass").length;
+            const active=activeFramework===r.framework;
+            return (
+              <div key={r.framework} onClick={()=>setActiveFramework(r.framework)} style={{
+                background:active?`${m.color}06`:"#fff",
+                border:`2px solid ${active?m.color:"var(--border)"}`,
+                borderRadius:"var(--radius-lg)",padding:"20px",cursor:"pointer",transition:"all .15s",
+                boxShadow:active?"0 4px 14px rgba(0,0,0,.06)":"var(--shadow)"
+              }}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"14px"}}>
+                  <div>
+                    <div style={{fontWeight:"700",fontSize:"14px",color:"var(--text)",marginBottom:"2px"}}>{m.label}</div>
+                    <div style={{fontSize:"11px",color:"var(--text3)"}}>{pass}/{r.controls.length} controls passing</div>
+                  </div>
+                  <div style={{fontSize:"26px",fontWeight:"800",color:m.color,letterSpacing:"-1px"}}>{r.score.toFixed(0)}<span style={{fontSize:"14px",fontWeight:"500"}}>%</span></div>
+                </div>
+                <div className="progress-wrap" style={{height:"6px",marginBottom:"12px"}}>
+                  <div className="progress-fill" style={{width:`${Math.min(r.score,100)}%`,background:m.color,height:"6px"}}/>
+                </div>
+                <span className="badge" style={{background:r.score>=75?"var(--greenbg)":r.score>=50?"var(--yellowbg)":"var(--redbg)",color:r.score>=75?"var(--green)":r.score>=50?"var(--yellow)":"var(--red)",border:"none"}}>
+                  <span className="badge-dot" style={{background:r.score>=75?"var(--green)":r.score>=50?"var(--yellow)":"var(--red)"}}/>
+                  {r.score>=75?"Compliant":r.score>=50?"Partially Compliant":"Non-Compliant"}
+                </span>
               </div>
-              <div className="progress-bar-wrap" style={{ marginBottom: 0 }}>
-                <div className="progress-bar-fill" style={{ width: `${fw.pct}%`, background: fw.color }} />
-              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {summary.length>0&&(
+        <div className="card" style={{marginBottom:"20px"}}>
+          <div className="card-header"><span className="card-title">Organisation-wide Compliance Trend</span></div>
+          <div className="card-body" style={{paddingTop:"16px"}}>
+            <div style={{display:"flex",gap:"24px",flexWrap:"wrap"}}>
+              {["SOC2","ISO27001","NIST_CSF"].map(fw=>{
+                const rows=summary.filter(s=>s.framework===fw);
+                if(!rows.length)return null;
+                const avg=rows.reduce((s,r)=>s+r.score,0)/rows.length;
+                const m=fwMeta[fw]||{color:"#6366F1",label:fw};
+                return (
+                  <div key={fw} style={{flex:1,minWidth:"140px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:"8px"}}>
+                      <span style={{fontSize:"12px",color:"var(--text2)",fontWeight:"600"}}>{m.label}</span>
+                      <span style={{fontSize:"13px",color:m.color,fontWeight:"700"}}>{avg.toFixed(1)}%</span>
+                    </div>
+                    <div className="progress-wrap" style={{height:"8px",marginBottom:"4px"}}>
+                      <div className="progress-fill" style={{width:`${Math.min(avg,100)}%`,background:m.color,height:"8px"}}/>
+                    </div>
+                    <div style={{fontSize:"11px",color:"var(--text3)"}}>{rows.length} assessment{rows.length>1?"s":""}</div>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          </div>
         </div>
-        <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", textAlign: "center" }}>
-          Complete more controls in the <span style={{ color: "#DC322F", cursor: "pointer" }}>Control Checklist</span> tab to improve compliance scores.
+      )}
+
+      {activeResult&&(
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">{(fwMeta[activeResult.framework]||{label:activeResult.framework}).label} — Control Detail</div>
+              <div className="card-sub">{activeResult.controls.length} controls evaluated</div>
+            </div>
+            <div style={{display:"flex",gap:"14px",fontSize:"12px"}}>
+              <span style={{color:"var(--green)",fontWeight:"600"}}>✓ {activeResult.controls.filter(c=>c.status==="pass").length} Pass</span>
+              <span style={{color:"var(--yellow)",fontWeight:"600"}}>◐ {activeResult.controls.filter(c=>c.status==="partial").length} Partial</span>
+              <span style={{color:"var(--red)",fontWeight:"600"}}>✗ {activeResult.controls.filter(c=>c.status==="fail").length} Fail</span>
+            </div>
+          </div>
+          <div className="card-body" style={{padding:"0"}}>
+            {activeResult.controls.map(c=>{
+              const sc=c.status==="pass"?"var(--green)":c.status==="partial"?"var(--yellow)":"var(--red)";
+              const sbg=c.status==="pass"?"var(--greenbg)":c.status==="partial"?"var(--yellowbg)":"var(--redbg)";
+              const isOpen=openControl===c.id;
+              return (
+                <div key={c.id} style={{borderBottom:"1px solid var(--border)"}}>
+                  <div onClick={()=>setOpenControl(isOpen?null:c.id)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 22px",cursor:"pointer",transition:"background .1s"}} onMouseEnter={e=>e.currentTarget.style.background="var(--surface2)"} onMouseLeave={e=>e.currentTarget.style.background=""}>
+                    <div style={{display:"flex",alignItems:"center",gap:"10px",minWidth:0}}>
+                      <span className="badge" style={{background:sbg,color:sc,border:"none",flexShrink:0}}>{c.status}</span>
+                      <span className="tag" style={{background:"var(--surface2)",color:"var(--text3)",flexShrink:0}}>{c.id}</span>
+                      <span style={{fontSize:"13px",color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.name}</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:"12px",flexShrink:0}}>
+                      <span style={{fontSize:"12px",color:"var(--text3)"}}>{c.earned.toFixed(0)}/{c.weight} pts</span>
+                      <ChevronDown size={14} style={{color:"var(--text3)",transform:isOpen?"rotate(180deg)":"",transition:"transform .15s"}}/>
+                    </div>
+                  </div>
+                  {isOpen&&(
+                    <div style={{padding:"14px 22px 18px",background:"var(--surface2)",borderTop:"1px solid var(--border)"}}>
+                      <p style={{fontSize:"12px",color:"var(--text2)",marginBottom:"12px",lineHeight:"1.6"}}>{c.description}</p>
+                      <div style={{display:"flex",gap:"20px",flexWrap:"wrap"}}>
+                        {c.passing_fields.length>0&&<div><div style={{fontSize:"11px",fontWeight:"700",color:"var(--green)",marginBottom:"6px",textTransform:"uppercase",letterSpacing:".5px"}}>✓ Passing</div><div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>{c.passing_fields.map(f=><span key={f} className="tag" style={{background:"var(--greenbg)",color:"var(--green)"}}>{f}</span>)}</div></div>}
+                        {c.failing_fields.length>0&&<div><div style={{fontSize:"11px",fontWeight:"700",color:"var(--red)",marginBottom:"6px",textTransform:"uppercase",letterSpacing:".5px"}}>✗ Gaps</div><div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>{c.failing_fields.map(f=><span key={f} className="tag" style={{background:"var(--redbg)",color:"var(--red)"}}>{f}</span>)}</div></div>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {activeResult.updated_at&&<div style={{padding:"12px 22px",borderTop:"1px solid var(--border)",fontSize:"11px",color:"var(--text3)"}}>Last analysed: {fmtDateTime(activeResult.updated_at)}</div>}
         </div>
-      </div>
+      )}
+
+      {results.length===0&&!loading&&(
+        <div className="empty-state">
+          <ClipboardList size={32}/>
+          <p>No compliance results yet</p>
+          <span>Run the compliance mapping to analyse this assessment</span>
+          <button className="btn btn-primary" style={{marginTop:"16px"}} onClick={rerun} disabled={running}>
+            <RefreshCw size={13} className={running?"spin":""}/>
+            {running?"Running...":"Run Compliance Mapping"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-// ---- AUDIT TRAIL ----
-function AuditTrail({ token }) {
-  const [history, setHistory] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(true);
+function AuditTrail({ token, tenantId, role, onExpired }) {
+  const [rows,setRows]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState("");
+  const canExport=ROLES[role]?.canExport;
 
-  useEffect(() => {
-    async function fetchHistory() {
-      try {
-        const res = await fetch(`${API}/assessments`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setHistory(Array.isArray(data) ? data : []);
-        } else {
-          setHistory([]);
-        }
-      } catch {
-        setHistory([]);
-      }
-      setLoadingHistory(false);
-    }
-    fetchHistory();
-  }, [token]);
+  useEffect(()=>{
+    let c=false;
+    realServer.getAuditTrail(token,tenantId)
+      .then(d=>{if(!c){setRows(d);setLoading(false);}})
+      .catch(e=>{if(c)return;if(e.message==="AUTH_EXPIRED")onExpired();else{setError(e.message);setLoading(false);}});
+    return()=>{c=true;};
+  },[token,tenantId,onExpired]);
 
-  // Mock data fallback if backend doesn't have /assessments
-  const displayData = history.length > 0 ? history : [
-    { id: 1, org_name: "TechCorp Ltd", industry: "Technology", risk_score: 72.4, risk_level: "HIGH", created_at: "2026-04-27T02:51:00Z" },
-    { id: 2, org_name: "MedCare Hospital", industry: "Healthcare", risk_score: 88.1, risk_level: "CRITICAL", created_at: "2026-04-26T18:30:00Z" },
-    { id: 3, org_name: "FinanceHub", industry: "Finance", risk_score: 45.2, risk_level: "MEDIUM", created_at: "2026-04-25T10:15:00Z" },
-    { id: 4, org_name: "RetailPlus", industry: "Retail", risk_score: 21.8, risk_level: "LOW", created_at: "2026-04-24T08:00:00Z" },
-  ];
-
-  function fmtDate(iso) {
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  function exportCSV(){
+    const header=["ID","Organisation","Industry","Score","Level","Exposure","Date"];
+    const lines=rows.map(r=>[r.id,r.org_name,r.industry,r.risk_score,r.risk_level,r.financial_exposure,fmtDateTime(r.created_at)].join(","));
+    const blob=new Blob([[header,...lines].join("\n")],{type:"text/csv"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="aura_audit_trail.csv";a.click();
   }
 
   return (
-    <div className="form-card">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div className="form-section-title" style={{ marginBottom: 0 }}>Assessment Audit Trail</div>
-        <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>{displayData.length} record{displayData.length !== 1 ? "s" : ""}</div>
+    <div className="card fade-in">
+      <div className="card-header">
+        <div>
+          <div className="card-title">Assessment History</div>
+          <div className="card-sub">{rows.length} records in this workspace</div>
+        </div>
+        {canExport&&<button className="btn btn-secondary btn-sm" onClick={exportCSV}><Download size={13}/> Export CSV</button>}
       </div>
-
-      {loadingHistory && history.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px", color: "rgba(255,255,255,0.3)" }}>Loading...</div>
-      ) : (
-        <table className="audit-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Organisation</th>
-              <th>Industry</th>
-              <th>Risk Score</th>
-              <th>Risk Level</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayData.map((row, i) => {
-              const color = getRiskColor(row.risk_level);
-              return (
-                <tr key={row.id || i}>
-                  <td style={{ color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>{String(i + 1).padStart(2, "0")}</td>
-                  <td style={{ color: "#fff", fontWeight: "500" }}>{row.org_name}</td>
-                  <td>{row.industry}</td>
-                  <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ width: "60px", height: "4px", background: "rgba(255,255,255,0.06)", borderRadius: "2px", overflow: "hidden" }}>
-                        <div style={{ width: `${row.risk_score}%`, height: "100%", background: color, borderRadius: "2px" }} />
-                      </div>
-                      <span style={{ color, fontWeight: "600", fontFamily: "Syne, sans-serif" }}>{typeof row.risk_score === "number" ? row.risk_score.toFixed(1) : row.risk_score}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="risk-badge" style={{ color, background: getRiskBg(row.risk_level) }}>{row.risk_level}</span>
-                  </td>
-                  <td style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <Clock size={11} />
-                      {fmtDate(row.created_at)}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
-
-      {/* Summary row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginTop: "24px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        {[
-          { label: "Total Assessments", val: displayData.length },
-          { label: "Critical", val: displayData.filter(r => r.risk_level === "CRITICAL").length, color: "#DC322F" },
-          { label: "Avg Risk Score", val: (displayData.reduce((s, r) => s + (r.risk_score || 0), 0) / Math.max(displayData.length, 1)).toFixed(1), color: "#F59E0B" },
-          { label: "Low Risk", val: displayData.filter(r => r.risk_level === "LOW").length, color: "#10B981" },
-        ].map(s => (
-          <div key={s.label} style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "Syne, sans-serif", fontSize: "22px", fontWeight: "800", color: s.color || "#fff" }}>{s.val}</div>
-            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", letterSpacing: "0.8px", textTransform: "uppercase" }}>{s.label}</div>
-          </div>
-        ))}
+      <div style={{padding:0}}>
+        {loading&&<div className="empty-state"><RefreshCw size={28} className="spin" style={{opacity:.3,display:"block",margin:"0 auto 12px"}}/><span>Loading records...</span></div>}
+        {error&&<div className="notice notice-err" style={{margin:"16px"}}><AlertCircle size={15}/>{error}</div>}
+        {!loading&&!error&&rows.length===0&&<div className="empty-state"><Clock size={32}/><p>No assessments yet</p><span>Your assessment history will appear here</span></div>}
+        {!loading&&!error&&rows.length>0&&(
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Organisation</th><th>Industry</th><th>Risk Score</th><th>Level</th><th>Financial Exposure</th><th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row,i)=>{
+                const color=getRiskColor(row.risk_level);
+                return (
+                  <tr key={row.id}>
+                    <td><span className="mono" style={{fontSize:"12px",color:"var(--text3)"}}>{String(i+1).padStart(2,"0")}</span></td>
+                    <td><strong>{row.org_name}</strong></td>
+                    <td>{row.industry}</td>
+                    <td><span style={{fontWeight:"700",fontSize:"15px",color,fontFamily:"'Plus Jakarta Sans',sans-serif"}}>{Number(row.risk_score).toFixed(1)}</span></td>
+                    <td>
+                      <span className="badge" style={{background:getRiskBg(row.risk_level),color,border:`1px solid ${getRiskBorder(row.risk_level)}`}}>
+                        <span className="badge-dot" style={{background:color}}/>
+                        {row.risk_level}
+                      </span>
+                    </td>
+                    <td><span style={{fontWeight:"600",color:"var(--text)"}}>${(row.financial_exposure||0).toLocaleString()}</span></td>
+                    <td style={{fontSize:"12px"}}>{fmtDate(row.created_at)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
 }
 
-// ---- LOGIN ----
+function DeveloperAssessment({ token, tenantId, tenantName, onExpired }) {
+  const [form,setForm]=useState({orgname:tenantName||"",industry:"",employees:"",hasmfa:false,mfacoverage:0,patchdays:"",trainingpercent:"",hasirp:false,vulnerabilities:""});
+  const [result,setResult]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState("");
+  const [scanSource,setScanSource]=useState("nvd");
+  const [keyword,setKeyword]=useState("");
+  const [pulling,setPulling]=useState(false);
+  const [pullInfo,setPullInfo]=useState(null);
+  const [vulnBreakdown,setVulnBreakdown]=useState(null);
+  const [backendOk,setBackendOk]=useState(null);
+  const [autoRunning,setAutoRunning]=useState(false);
+  const [autoResult,setAutoResult]=useState(null);
+
+  useEffect(()=>{realServer.health(token,tenantId).then(d=>setBackendOk(d.status==="ok")).catch(()=>setBackendOk(false));},[token,tenantId]);
+
+  async function runAutoAssess(){
+    setAutoRunning(true);setError("");setAutoResult(null);
+    try{
+      const d=await realServer.autoAssess(token,tenantId,form.orgname||tenantName,form.employees||100);
+      setAutoResult(d);
+      // Auto-fill form fields from pulled data
+      const af=d.auto_filled_fields||{};
+      setForm(prev=>({
+        ...prev,
+        hasmfa: af.has_mfa||false,
+        mfacoverage: af.mfa_coverage||0,
+        patchdays: af.patch_days||30,
+        trainingpercent: af.training_percent||50,
+        hasirp: af.has_irp||false,
+        vulnerabilities: String(af.vulnerabilities||0),
+      }));
+    }catch(err){if(err.message==="AUTH_EXPIRED"){onExpired();return;}setError(err.message||"Auto assess failed.");}
+    finally{setAutoRunning(false);}
+  }
+
+  async function pullVulns(){
+    setPulling(true);setError("");setPullInfo(null);setVulnBreakdown(null);
+    try{
+      const d=await realServer.pullVulns(token,tenantId,scanSource,keyword);
+      setVulnBreakdown({critical:d.critical,high:d.high,medium:d.medium,low:d.low||0});
+      setForm(prev=>({...prev,vulnerabilities:String(d.total)}));
+      setPullInfo(d);
+    }catch(err){setError(`Scanner: ${err.message}`);}
+    finally{setPulling(false);}
+  }
+
+  function handleChange(e){const{name,value,type,checked}=e.target;setForm({...form,[name]:type==="checkbox"?checked:value});}
+
+  async function handleSubmit(e){
+    e.preventDefault();setLoading(true);setError("");setResult(null);
+    try{const data=await realServer.assess(token,tenantId,form);setResult(data);}
+    catch(err){if(err.message==="AUTH_EXPIRED"){onExpired();return;}setError(err.message||"Assessment failed.");}
+    finally{setLoading(false);}
+  }
+
+  return (
+    <div className="fade-in">
+      {/* Auto Assess Panel */}
+      <div style={{background:"linear-gradient(135deg,#1e1b4b 0%,#312e81 40%,#4338ca 100%)",borderRadius:"var(--radius-lg)",padding:"20px 24px",marginBottom:"20px",color:"#fff"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"12px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+            <div style={{width:"40px",height:"40px",background:"rgba(255,255,255,.15)",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px"}}>⚡</div>
+            <div>
+              <div style={{fontWeight:"800",fontSize:"15px",letterSpacing:"-0.3px"}}>Auto Pull from 9 Providers</div>
+              <div style={{fontSize:"11px",color:"rgba(255,255,255,.65)",marginTop:"2px"}}>Azure AD · AWS IAM · Google Workspace · Intune · Jamf · WSUS · AWS · Azure · GCP</div>
+            </div>
+          </div>
+          <button className="btn" onClick={runAutoAssess} disabled={autoRunning||backendOk===false}
+            style={{background:"rgba(255,255,255,.15)",color:"#fff",border:"1.5px solid rgba(255,255,255,.3)",fontWeight:"700",fontSize:"13px"}}>
+            {autoRunning?<><RefreshCw size={13} className="spin"/> Pulling data...</>:<><Zap size={13}/> Auto Assess</>}
+          </button>
+        </div>
+        {autoResult&&(
+          <div style={{marginTop:"16px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px"}}>
+            {[
+              {l:"Identity",icon:"👤",v:`${autoResult.identity_summary?.providers_scanned||0} providers`,sub:`${autoResult.identity_summary?.total_findings||0} findings`},
+              {l:"Patch",icon:"🔧",v:`${autoResult.patch_summary?.unique_cves||0} CVEs`,sub:`${autoResult.patch_summary?.critical||0} critical`},
+              {l:"Assets",icon:"☁️",v:`${autoResult.asset_summary?.total_assets||0} assets`,sub:`${autoResult.asset_summary?.clouds_scanned||0} clouds scanned`},
+            ].map(s=>(
+              <div key={s.l} style={{background:"rgba(255,255,255,.1)",borderRadius:"var(--radius)",padding:"12px",textAlign:"center"}}>
+                <div style={{fontSize:"18px",marginBottom:"4px"}}>{s.icon}</div>
+                <div style={{fontWeight:"700",fontSize:"14px"}}>{s.v}</div>
+                <div style={{fontSize:"10px",color:"rgba(255,255,255,.6)",marginTop:"2px"}}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {autoResult&&(
+          <div style={{marginTop:"12px",fontSize:"12px",color:"rgba(255,255,255,.7)",display:"flex",alignItems:"center",gap:"6px"}}>
+            <Check size={13} color="#86efac"/>
+            {autoResult.risk_summary||"Form fields auto-filled from live data. Review and submit below."}
+          </div>
+        )}
+      </div>
+
+      {/* Scanner Panel */}
+      <div className="scanner-banner" style={{marginBottom:"20px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px",flexWrap:"wrap",gap:"10px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            <div style={{width:"32px",height:"32px",background:"var(--accent)",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <Zap size={15} color="#fff"/>
+            </div>
+            <div>
+              <div style={{fontWeight:"700",fontSize:"14px",color:"var(--text)"}}>Live Vulnerability Scanner</div>
+              <div style={{fontSize:"11px",color:"var(--text3)"}}>Workspace: <strong style={{color:"var(--accent)"}}>{tenantName}</strong></div>
+            </div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            {backendOk===null&&<span style={{fontSize:"12px",color:"var(--text3)"}}>Checking connection...</span>}
+            {backendOk===false&&<span className="badge" style={{background:"var(--redbg)",color:"var(--red)",border:"1px solid rgba(239,68,68,.2)"}}><span className="badge-dot" style={{background:"var(--red)"}}/>Backend Offline</span>}
+            {backendOk===true&&<span className="badge" style={{background:"var(--greenbg)",color:"var(--green)",border:"1px solid rgba(34,197,94,.2)"}}><span className="badge-dot" style={{background:"var(--green)"}}/>Connected</span>}
+          </div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr auto",gap:"12px",alignItems:"flex-end"}}>
+          <div className="form-field" style={{margin:0}}>
+            <label style={{fontSize:"11px",fontWeight:"600",color:"var(--text2)",marginBottom:"6px",display:"block"}}>Data Source</label>
+            <select value={scanSource} onChange={e=>{setScanSource(e.target.value);setPullInfo(null);setVulnBreakdown(null);}}>
+              <option value="nvd">NIST NVD (Free)</option>
+              <option value="vulners">Vulners API</option>
+              <option value="openvas">OpenVAS / GVM</option>
+            </select>
+          </div>
+          {scanSource==="nvd"?(
+            <div className="form-field" style={{margin:0}}>
+              <label style={{fontSize:"11px",fontWeight:"600",color:"var(--text2)",marginBottom:"6px",display:"block"}}>Keyword Filter</label>
+              <input type="text" value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder="e.g. apache, log4j, openssl"/>
+            </div>
+          ):<div/>}
+          <button className="btn btn-primary" onClick={pullVulns} disabled={pulling||backendOk===false}>
+            <Database size={13} className={pulling?"spin":""}/>{pulling?"Scanning...":"Pull Data"}
+          </button>
+        </div>
+        {pullInfo&&(
+          <div style={{marginTop:"16px"}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"10px",marginBottom:"12px"}}>
+              {[{l:"Critical",v:pullInfo.critical,c:"var(--red)",bg:"var(--redbg)"},{l:"High",v:pullInfo.high,c:"var(--orange)",bg:"var(--orangebg)"},{l:"Medium",v:pullInfo.medium,c:"var(--yellow)",bg:"var(--yellowbg)"},{l:"Low",v:pullInfo.low||0,c:"var(--green)",bg:"var(--greenbg)"}].map(s=>(
+                <div key={s.l} style={{background:s.bg,border:`1px solid ${s.c}30`,borderRadius:"var(--radius)",padding:"10px 14px",textAlign:"center"}}>
+                  <div style={{fontSize:"20px",fontWeight:"800",color:s.c,letterSpacing:"-0.5px"}}>{s.v}</div>
+                  <div style={{fontSize:"10px",color:s.c,fontWeight:"600",textTransform:"uppercase",letterSpacing:"0.5px"}}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{fontSize:"12px",color:"var(--text3)"}}>
+              <Check size={12} style={{verticalAlign:"middle",marginRight:"4px",color:"var(--green)"}}/> 
+              {pullInfo.total} vulnerabilities from <strong>{pullInfo.source}</strong> — auto-filled below
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Assessment Form */}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <div className="card-title">Security Posture Assessment</div>
+            <div className="card-sub">Evaluate your organisation's current risk exposure</div>
+          </div>
+        </div>
+        <div className="card-body">
+          <form onSubmit={handleSubmit}>
+            <div className="form-section">
+              <div className="form-section-title">Organisation Details</div>
+              <div className="form-grid">
+                {[
+                  {l:"Company Name",n:"orgname",t:"text",p:"e.g. Acme Corp"},
+                  {l:"Industry",n:"industry",t:"text",p:"e.g. Healthcare, Finance"},
+                  {l:"Number of Employees",n:"employees",t:"number",p:"e.g. 250"},
+                  {l:"Days Between Patches",n:"patchdays",t:"number",p:"e.g. 30"},
+                  {l:"Security Training Coverage %",n:"trainingpercent",t:"number",p:"e.g. 75"},
+                ].map(f=>(
+                  <div className="form-field" key={f.n} style={{margin:0}}>
+                    <label>{f.l}</label>
+                    <input name={f.n} type={f.t} value={form[f.n]} onChange={handleChange} required placeholder={f.p} maxLength={200}/>
+                  </div>
+                ))}
+                <div className="form-field" style={{margin:0}}>
+                  <label>Open Vulnerabilities {vulnBreakdown&&<span style={{color:"var(--green)",fontWeight:"700"}}>(auto-filled)</span>}</label>
+                  <input name="vulnerabilities" type="number" value={form.vulnerabilities} onChange={handleChange} required placeholder="e.g. 12"
+                    style={{borderColor:vulnBreakdown?"rgba(34,197,94,.4)":"",background:vulnBreakdown?"var(--greenbg)":""}}/>
+                </div>
+              </div>
+            </div>
+
+            <div className="form-section">
+              <div className="form-section-title">Security Controls</div>
+              <div className="checkbox-row">
+                <div className="checkbox-item"><input name="hasmfa" type="checkbox" id="mfa" checked={form.hasmfa} onChange={handleChange}/><span>Multi-Factor Authentication (MFA)</span></div>
+                <div className="checkbox-item"><input name="hasirp" type="checkbox" id="irp" checked={form.hasirp} onChange={handleChange}/><span>Incident Response Plan</span></div>
+              </div>
+              {form.hasmfa&&(
+                <div className="form-field" style={{maxWidth:"280px"}}>
+                  <label>MFA Coverage %</label>
+                  <input name="mfacoverage" type="number" value={form.mfacoverage} onChange={handleChange} placeholder="e.g. 85" min="0" max="100"/>
+                </div>
+              )}
+            </div>
+
+            {error&&<div className="notice notice-err"><AlertCircle size={15}/>{error}</div>}
+            <button className="btn btn-primary btn-lg" type="submit" disabled={loading} style={{width:"100%",justifyContent:"center"}}>
+              <Terminal size={15}/>{loading?"Running AI Analysis...":"Run Risk Assessment"}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {result&&(
+        <div className="card fade-in" style={{marginTop:"20px"}}>
+          <div className="card-header">
+            <div>
+              <div className="card-title">Assessment Results — {result.org_name}</div>
+              <div className="card-sub">Completed · {fmtDate(new Date().toISOString())}</div>
+            </div>
+            <span className="badge" style={{background:getRiskBg(result.risk_level),color:getRiskColor(result.risk_level),border:`1px solid ${getRiskBorder(result.risk_level)}`,fontSize:"12px",padding:"4px 12px"}}>
+              <span className="badge-dot" style={{background:getRiskColor(result.risk_level)}}/>
+              {result.risk_level} Risk
+            </span>
+          </div>
+          <div className="card-body">
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"16px",marginBottom:"24px"}}>
+              {[
+                {l:"Risk Score",v:Number(result.risk_score).toFixed(0),sub:"out of 100",c:getRiskColor(result.risk_level)},
+                {l:"Risk Level",v:result.risk_level,sub:"classification",c:getRiskColor(result.risk_level)},
+                {l:"FAIR Exposure",v:`$${(result.financial_exposure||0).toLocaleString()}`,sub:"estimated loss",c:"var(--orange)"},
+              ].map(s=>(
+                <div key={s.l} style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:"var(--radius-lg)",padding:"20px",textAlign:"center"}}>
+                  <div style={{fontSize:"28px",fontWeight:"800",color:s.c,letterSpacing:"-1px",marginBottom:"4px"}}>{s.v}</div>
+                  <div style={{fontSize:"13px",fontWeight:"600",color:"var(--text)",marginBottom:"2px"}}>{s.l}</div>
+                  <div style={{fontSize:"11px",color:"var(--text3)"}}>{s.sub}</div>
+                </div>
+              ))}
+            </div>
+            {result.recommendations?.length>0&&(
+              <>
+                <div style={{fontWeight:"700",fontSize:"13px",color:"var(--text)",marginBottom:"12px",display:"flex",alignItems:"center",gap:"8px"}}>
+                  <AlertTriangle size={14} color="var(--accent)"/> Recommendations
+                </div>
+                {result.recommendations.map((rec,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"12px 14px",background:"var(--surface2)",border:"1px solid var(--border)",borderLeft:"3px solid var(--accent)",borderRadius:"var(--radius)",marginBottom:"8px",fontSize:"13px",color:"var(--text2)",lineHeight:"1.5"}}>
+                    <ChevronRight size={14} style={{color:"var(--accent)",flexShrink:0,marginTop:"2px"}}/>{rec}
+                  </div>
+                ))}
+                <div style={{marginTop:"10px",fontSize:"12px",color:"var(--text3)",display:"flex",alignItems:"center",gap:"6px"}}>
+                  <Check size={12} color="var(--green)"/> Remediation tasks have been saved to your workspace
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ControlChecklist({ implemented, onToggle, role }) {
+  const canEdit = ROLES[role]?.canEdit;
+  const [filter,setFilter]=useState("ALL");
+  const [search,setSearch]=useState("");
+  const [expandedFn,setExpandedFn]=useState({});
+  const controls=ALL_FRAMEWORK_CONTROLS;
+  const filtered=controls.filter(c=>{
+    if(filter!=="ALL"&&c.framework!==filter)return false;
+    if(search){const q=search.toLowerCase();return c.control.toLowerCase().includes(q)||c.id.toLowerCase().includes(q)||c.isoref.toLowerCase().includes(q)||c.nistref.toLowerCase().includes(q);}
+    return true;
+  });
+  const totalW=filtered.reduce((s,c)=>s+c.riskreduction,0);
+  const implW=filtered.filter(c=>implemented.includes(c.id)).reduce((s,c)=>s+c.riskreduction,0);
+  const pct=totalW>0?Math.round((implW/totalW)*100):0;
+  const implCount=filtered.filter(c=>implemented.includes(c.id)).length;
+  const functions=["Govern","Identify","Protect","Detect","Respond","Recover"];
+  const fnColors={Govern:"#8B5CF6",Identify:"#3B82F6",Protect:"#22C55E",Detect:"#F59E0B",Respond:"#EF4444",Recover:"#06B6D4"};
+  function toggleFn(fn){setExpandedFn(prev=>({...prev,[fn]:!prev[fn]}));}
+  const isExpanded=fn=>expandedFn[fn]!==false;
+
+  return (
+    <div className="fade-in">
+      {/* Header card */}
+      <div className="card" style={{marginBottom:"16px"}}>
+        <div className="card-body">
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"18px",flexWrap:"wrap",gap:"12px"}}>
+            <div>
+              <div style={{fontWeight:"700",fontSize:"15px",color:"var(--text)",marginBottom:"3px"}}>ISO 27001:2022 & NIST CSF v2.0</div>
+              <div style={{fontSize:"12px",color:"var(--text3)"}}>199 controls across 2 frameworks</div>
+            </div>
+            <div style={{display:"flex",gap:"20px"}}>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:"28px",fontWeight:"800",color:pct>=75?"var(--green)":pct>=50?"var(--yellow)":"var(--red)",letterSpacing:"-1px"}}>{pct}%</div>
+                <div style={{fontSize:"11px",color:"var(--text3)",fontWeight:"500"}}>Compliance</div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:"20px",fontWeight:"700",color:"var(--accent)"}}>{implCount}<span style={{fontSize:"14px",color:"var(--text3)",fontWeight:"500"}}>/{filtered.length}</span></div>
+                <div style={{fontSize:"11px",color:"var(--text3)",fontWeight:"500"}}>Implemented</div>
+              </div>
+            </div>
+          </div>
+          <div className="progress-wrap" style={{height:"8px",marginBottom:"18px"}}>
+            <div className="progress-fill" style={{width:`${pct}%`,height:"8px",background:pct>=75?"var(--green)":pct>=50?"var(--yellow)":"var(--red)"}}/>
+          </div>
+          {!canEdit&&<div className="notice notice-info" style={{marginBottom:"0"}}><Eye size={14}/><span>Read-only view — only Developers can modify the control checklist</span></div>}
+        </div>
+
+        {/* Filters */}
+        <div style={{padding:"0 22px 16px",display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
+          {["ALL","ISO27001","NIST_CSF"].map(f=>(
+            <button key={f} onClick={()=>setFilter(f)} className={`btn btn-sm ${filter===f?"btn-primary":"btn-secondary"}`}>
+              {f==="ALL"?`All (${controls.length})`:f==="ISO27001"?`ISO 27001 (${controls.filter(c=>c.framework==="ISO27001").length})`:`NIST CSF (${controls.filter(c=>c.framework==="NIST_CSF").length})`}
+            </button>
+          ))}
+          <div style={{flex:1,minWidth:"200px",display:"flex",alignItems:"center",gap:"8px",background:"var(--surface2)",border:"1.5px solid var(--border)",borderRadius:"var(--radius)",padding:"7px 12px"}}>
+            <Search size={13} style={{color:"var(--text3)",flexShrink:0}}/>
+            <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search controls, IDs..." style={{background:"none",border:"none",outline:"none",fontSize:"12px",color:"var(--text)",width:"100%"}}/>
+          </div>
+          <span style={{fontSize:"11px",color:"var(--text3)",fontWeight:"500"}}>{filtered.length} shown</span>
+        </div>
+      </div>
+
+      {/* Grouped controls */}
+      {functions.map(fn=>{
+        const group=filtered.filter(c=>c.function===fn);
+        if(!group.length)return null;
+        const fnImpl=group.filter(c=>implemented.includes(c.id)).length;
+        const expanded=isExpanded(fn);
+        const color=fnColors[fn]||"var(--accent)";
+        return (
+          <div key={fn} className="fn-group">
+            <div className="fn-header" onClick={()=>toggleFn(fn)}>
+              <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                <div style={{width:"8px",height:"8px",borderRadius:"50%",background:color}}/>
+                <span style={{fontWeight:"700",fontSize:"13px",color:"var(--text)"}}>{fn}</span>
+                <span className="badge" style={{background:`${color}15`,color,border:"none",fontSize:"11px"}}>{group.length}</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                  <div className="progress-wrap" style={{height:"4px",width:"60px"}}>
+                    <div className="progress-fill" style={{width:`${group.length?fnImpl/group.length*100:0}%`,height:"4px",background:color}}/>
+                  </div>
+                  <span style={{fontSize:"11px",color:"var(--text3)",fontWeight:"600",minWidth:"40px",textAlign:"right"}}>{fnImpl}/{group.length}</span>
+                </div>
+                <ChevronDown size={14} style={{color:"var(--text3)",transform:expanded?"rotate(180deg)":"",transition:"transform .15s"}}/>
+              </div>
+            </div>
+            {expanded&&group.map(ctrl=>{
+              const done=implemented.includes(ctrl.id);
+              const fwColor=ctrl.framework==="ISO27001"?"var(--green)":"var(--accent)";
+              return (
+                <div key={ctrl.id} className={`ctrl-item${done?" done":""}`} onClick={canEdit?()=>onToggle(ctrl.id):undefined} style={{cursor:canEdit?"pointer":"default",marginLeft:"18px"}}>
+                  <div style={{flexShrink:0,marginTop:"1px",color:done?"var(--green)":"var(--border2)"}}>{done?<CheckSquare size={15}/>:<Square size={15}/>}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:"13px",color:done?"var(--text)":"var(--text2)",fontWeight:done?"500":"400",marginBottom:"5px"}}>{ctrl.control}</div>
+                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
+                      <span className="tag" style={{background:`${fwColor.replace("var(","").replace(")","")}15`||"var(--accentbg)",color:fwColor,fontSize:"10px"}}>{ctrl.framework.replace("_"," ")}</span>
+                      <span className="mono" style={{fontSize:"10px",color:"var(--text3)"}}>ISO {ctrl.isoref}</span>
+                      <span className="mono" style={{fontSize:"10px",color:"var(--text3)"}}>NIST {ctrl.nistref}</span>
+                    </div>
+                  </div>
+                  <div style={{flexShrink:0,fontSize:"11px",fontWeight:"600",color:done?"var(--green)":"var(--text3)"}}>−{ctrl.riskreduction}pts</div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RemediationBoard({ token, tenantId, role, onExpired }) {
+  const [tasks,setTasks]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState("");
+  const [showAdd,setShowAdd]=useState(false);
+  const [newTask,setNewTask]=useState({title:"",assignee:"",due:"",priority:"MEDIUM"});
+  const canEdit=role==="ciso"||role==="developer";
+  const [aiSteps,setAiSteps]=useState({});
+  const [loadingSteps,setLoadingSteps]=useState({});
+
+  async function fetchAiSteps(task){
+    if(aiSteps[task.id])return;
+    setLoadingSteps(prev=>({...prev,[task.id]:true}));
+    try{
+      const finding={severity:task.priority||"HIGH",control:task.title,finding:task.title,recommendation:task.description||task.title,nist_ref:"PR.AA-03",iso_ref:"A.8.5"};
+      const d=await realServer.getRemediationAdvice(token,tenantId,[finding],"Demo Corp","Technology",100);
+      setAiSteps(prev=>({...prev,[task.id]:d.advice?.[0]?.detailed_steps||"No steps available"}));
+    }catch(e){setAiSteps(prev=>({...prev,[task.id]:"Failed to load AI steps"}));}
+    finally{setLoadingSteps(prev=>({...prev,[task.id]:false}));}
+  }
+
+  const load=useCallback(async()=>{
+    try{const data=await realServer.getTasks(token,tenantId);setTasks(data);setLoading(false);}
+    catch(e){if(e.message==="AUTH_EXPIRED"){onExpired();return;}setError(e.message);setLoading(false);}
+  },[token,tenantId,onExpired]);
+
+  useEffect(()=>{load();},[load]);
+
+  async function toggleStatus(id,cur){
+    const next=cur==="done"?"open":"done";
+    try{const u=await realServer.updateTask(token,tenantId,id,{status:next});setTasks(prev=>prev.map(t=>t.id===id?u:t));}
+    catch(e){if(e.message==="AUTH_EXPIRED")onExpired();}
+  }
+  async function deleteTask(id){
+    try{await realServer.deleteTask(token,tenantId,id);setTasks(prev=>prev.filter(t=>t.id!==id));}
+    catch(e){if(e.message==="AUTH_EXPIRED")onExpired();}
+  }
+  async function addTask(){
+    if(!newTask.title.trim())return;
+    try{const t=await realServer.addTask(token,tenantId,newTask);setTasks(prev=>[...prev,t]);setNewTask({title:"",assignee:"",due:"",priority:"MEDIUM"});setShowAdd(false);}
+    catch(e){if(e.message==="AUTH_EXPIRED")onExpired();}
+  }
+  async function startTask(id){
+    try{const u=await realServer.updateTask(token,tenantId,id,{status:"in-progress"});setTasks(prev=>prev.map(t=>t.id===id?u:t));}
+    catch(e){if(e.message==="AUTH_EXPIRED")onExpired();}
+  }
+
+  const byStatus=s=>tasks.filter(t=>t.status===s);
+  const statuses=[
+    {key:"open",label:"To Do",color:"var(--text3)",icon:"○"},
+    {key:"in-progress",label:"In Progress",color:"var(--orange)",icon:"◐"},
+    {key:"done",label:"Done",color:"var(--green)",icon:"●"},
+  ];
+
+  return (
+    <div className="fade-in">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
+        <div style={{display:"flex",gap:"16px"}}>
+          {statuses.map(s=>(
+            <div key={s.key} style={{display:"flex",alignItems:"center",gap:"8px",background:"#fff",border:"1px solid var(--border)",borderRadius:"var(--radius)",padding:"10px 16px",boxShadow:"var(--shadow)"}}>
+              <span style={{fontSize:"16px",color:s.color}}>{s.icon}</span>
+              <div>
+                <div style={{fontSize:"18px",fontWeight:"800",color:"var(--text)",lineHeight:"1"}}>{byStatus(s.key).length}</div>
+                <div style={{fontSize:"11px",color:"var(--text3)",fontWeight:"500"}}>{s.label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {canEdit&&<button className="btn btn-primary" onClick={()=>setShowAdd(!showAdd)}><Plus size={14}/> Add Task</button>}
+      </div>
+
+      {showAdd&&(
+        <div className="card" style={{marginBottom:"16px"}}>
+          <div className="card-header"><span className="card-title">New Remediation Task</span></div>
+          <div className="card-body">
+            <div className="form-grid" style={{marginBottom:"16px"}}>
+              <div className="form-field" style={{margin:0,gridColumn:"1/-1"}}>
+                <label>Task Title</label>
+                <input type="text" value={newTask.title} onChange={e=>setNewTask({...newTask,title:e.target.value})} placeholder="e.g. Enable MFA on all user accounts"/>
+              </div>
+              <div className="form-field" style={{margin:0}}>
+                <label>Assignee Email</label>
+                <input type="email" value={newTask.assignee} onChange={e=>setNewTask({...newTask,assignee:e.target.value})} placeholder="engineer@company.com"/>
+              </div>
+              <div className="form-field" style={{margin:0}}>
+                <label>Due Date</label>
+                <input type="date" value={newTask.due} onChange={e=>setNewTask({...newTask,due:e.target.value})}/>
+              </div>
+              <div className="form-field" style={{margin:0}}>
+                <label>Priority</label>
+                <select value={newTask.priority} onChange={e=>setNewTask({...newTask,priority:e.target.value})}>
+                  <option value="CRITICAL">Critical</option>
+                  <option value="HIGH">High</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="LOW">Low</option>
+                </select>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:"10px"}}>
+              <button className="btn btn-primary" onClick={addTask}><Check size={13}/> Create Task</button>
+              <button className="btn btn-ghost" onClick={()=>setShowAdd(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading&&<div className="empty-state"><RefreshCw size={28} className="spin" style={{opacity:.3,display:"block",margin:"0 auto 12px"}}/><span>Loading tasks...</span></div>}
+      {error&&<div className="notice notice-err"><AlertCircle size={15}/>{error}</div>}
+
+      {!loading&&!error&&tasks.length===0&&<div className="empty-state"><CheckCircle size={32}/><p>No tasks yet</p><span>Remediation tasks from assessments appear here</span></div>}
+
+      {!loading&&!error&&statuses.map(s=>{
+        const group=byStatus(s.key);
+        if(!group.length)return null;
+        return (
+          <div key={s.key} style={{marginBottom:"24px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
+              <span style={{width:"8px",height:"8px",borderRadius:"50%",background:s.color,display:"inline-block"}}/>
+              <span style={{fontSize:"12px",fontWeight:"700",color:"var(--text2)",textTransform:"uppercase",letterSpacing:"1px"}}>{s.label}</span>
+              <span style={{fontSize:"11px",color:"var(--text3)"}}>({group.length})</span>
+            </div>
+            {group.map(task=>(
+              <div key={task.id} className="task-item">
+                <div style={{display:"flex",alignItems:"flex-start",gap:"12px"}}>
+                  <div onClick={()=>canEdit&&toggleStatus(task.id,task.status)} style={{cursor:canEdit?"pointer":"default",marginTop:"1px",flexShrink:0}}>
+                    {task.status==="done"
+                      ?<CheckCircle size={17} color="var(--green)"/>
+                      :task.status==="in-progress"
+                      ?<div style={{width:17,height:17,borderRadius:"50%",border:"2px solid var(--orange)",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:7,height:7,borderRadius:"50%",background:"var(--orange)"}}/></div>
+                      :<div style={{width:17,height:17,borderRadius:"50%",border:"2px solid var(--border2)"}}/>
+                    }
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:"13.5px",color:task.status==="done"?"var(--text3)":"var(--text)",fontWeight:"500",marginBottom:"6px",textDecoration:task.status==="done"?"line-through":"none"}}>{task.title}</div>
+                    <div style={{display:"flex",gap:"10px",flexWrap:"wrap",alignItems:"center"}}>
+                      {task.assignee&&<span style={{fontSize:"11px",color:"var(--text3)"}}>👤 {task.assignee}</span>}
+                      {task.due&&<span style={{fontSize:"11px",color:new Date(task.due)<new Date()&&task.status!=="done"?"var(--red)":"var(--text3)"}}>📅 {task.due}</span>}
+                      <span className="badge" style={{background:getRiskBg(task.priority),color:getRiskColor(task.priority),border:`1px solid ${getRiskBorder(task.priority)}`}}>{task.priority}</span>
+                      {task.source==="assessment"&&<span style={{fontSize:"10px",color:"var(--accent)",fontWeight:"600"}}>From assessment</span>}
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:"6px",flexShrink:0}}>
+                    <button className="btn btn-sm" style={{background:"var(--accentbg)",color:"var(--accent)",border:"1px solid rgba(99,102,241,.2)"}} onClick={()=>fetchAiSteps(task)}>
+                      {loadingSteps[task.id]?<RefreshCw size={12} className="spin"/>:<Zap size={12}/>} AI Steps
+                    </button>
+                    {canEdit&&<>{task.status==="open"&&<button className="btn btn-sm btn-secondary" onClick={()=>startTask(task.id)}>Start</button>}
+                    {task.status==="in-progress"&&<button className="btn btn-sm" style={{background:"var(--greenbg)",color:"var(--green)",border:"1px solid rgba(34,197,94,.2)"}} onClick={()=>toggleStatus(task.id,task.status)}>Complete</button>}
+                    <button className="btn btn-sm btn-icon btn-danger" onClick={()=>deleteTask(task.id)}><Trash2 size={13}/></button></>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TeamManagement({ token, tenantId, tenantName, onExpired }) {
+  const [users,setUsers]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState("");
+  const [success,setSuccess]=useState("");
+  const [inviteEmail,setInviteEmail]=useState("");
+  const [inviteRole,setInviteRole]=useState("developer");
+  const [inviteResult,setInviteResult]=useState(null);
+  const roleColors={ciso:"var(--red)",developer:"var(--accent)",auditor:"var(--green)"};
+  const roleBgs={ciso:"var(--redbg)",developer:"var(--accentbg)",auditor:"var(--greenbg)"};
+
+  const load=useCallback(async()=>{
+    try{const d=await realServer.getUsers(token,tenantId);setUsers(d);setLoading(false);}
+    catch(e){if(e.message==="AUTH_EXPIRED"){onExpired();return;}setError(e.message);setLoading(false);}
+  },[token,tenantId,onExpired]);
+
+  useEffect(()=>{load();},[load]);
+
+  async function sendInvite(){
+    if(!inviteEmail.trim())return;
+    try{
+      const r=await realServer.inviteUser(token,tenantId,tenantName,inviteEmail,inviteRole);
+      setInviteResult(r); setInviteEmail(""); setSuccess(r.message);
+      setTimeout(()=>setSuccess(""),8000); load();
+    }catch(e){if(e.message==="AUTH_EXPIRED"){onExpired();return;}setError(e.message);setTimeout(()=>setError(""),5000);}
+  }
+  async function removeUser(email){
+    if(!window.confirm(`Remove ${email} from this workspace?`))return;
+    try{await realServer.removeUser(token,tenantId,email);setUsers(prev=>prev.filter(u=>u.email!==email));setSuccess(`${email} removed.`);setTimeout(()=>setSuccess(""),4000);}
+    catch(e){if(e.message==="AUTH_EXPIRED"){onExpired();return;}setError(e.message);}
+  }
+  async function changeRole(email,newRole){
+    try{await realServer.changeRole(token,tenantId,email,newRole);setUsers(prev=>prev.map(u=>u.email===email?{...u,role:newRole}:u));}
+    catch(e){if(e.message==="AUTH_EXPIRED"){onExpired();return;}setError(e.message);}
+  }
+
+  return (
+    <div className="fade-in">
+      {error&&<div className="notice notice-err"><AlertCircle size={15}/>{error}</div>}
+      {success&&<div className="notice notice-ok"><Check size={15}/>{success}</div>}
+
+      <div className="card" style={{marginBottom:"20px"}}>
+        <div className="card-header"><span className="card-title">Invite Team Member</span></div>
+        <div className="card-body">
+          <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:"12px",alignItems:"flex-end"}}>
+            <div className="form-field" style={{margin:0}}>
+              <label>Email Address</label>
+              <input type="email" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="colleague@company.com"/>
+            </div>
+            <div className="form-field" style={{margin:0}}>
+              <label>Role</label>
+              <select value={inviteRole} onChange={e=>setInviteRole(e.target.value)}>
+                <option value="developer">Developer</option>
+                <option value="auditor">Auditor</option>
+                <option value="ciso">CISO</option>
+              </select>
+            </div>
+            <button className="btn btn-primary" onClick={sendInvite}><Send size={13}/> Invite</button>
+          </div>
+          {inviteResult&&<div className="notice notice-ok" style={{marginTop:"12px",marginBottom:"0"}}><Check size={15}/>{inviteResult.message}</div>}
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">Team Members</span>
+          <span className="badge" style={{background:"var(--accentbg)",color:"var(--accent)",border:"1px solid rgba(99,102,241,.2)"}}>{users.length} members</span>
+        </div>
+        <div style={{padding:"0 22px"}}>
+          {loading&&<div className="empty-state"><RefreshCw size={24} className="spin" style={{opacity:.3,display:"block",margin:"0 auto 10px"}}/><span>Loading team...</span></div>}
+          {users.map(u=>(
+            <div key={u.email} className="user-item">
+              <div style={{width:"38px",height:"38px",borderRadius:"50%",background:roleBgs[u.role]||"var(--accentbg)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"700",fontSize:"14px",color:roleColors[u.role]||"var(--accent)",flexShrink:0}}>
+                {(u.name||u.email)[0].toUpperCase()}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:"14px",fontWeight:"600",color:"var(--text)",marginBottom:"2px"}}>{u.name}</div>
+                <div style={{fontSize:"12px",color:"var(--text3)"}}>{u.email}</div>
+              </div>
+              <select value={u.role} onChange={e=>changeRole(u.email,e.target.value)} style={{background:roleBgs[u.role]||"var(--accentbg)",border:"1.5px solid",borderColor:roleColors[u.role]||"var(--accent)",borderRadius:"var(--radius)",padding:"5px 10px",color:roleColors[u.role]||"var(--accent)",fontSize:"12px",fontWeight:"700",cursor:"pointer",outline:"none"}}>
+                <option value="ciso">CISO</option>
+                <option value="developer">Developer</option>
+                <option value="auditor">Auditor</option>
+              </select>
+              <button className="btn btn-sm btn-danger btn-icon" onClick={()=>removeUser(u.email)}><Trash2 size={13}/></button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CISOOverview({ implemented, token, tenantId, tenantName, onExpired, userName }) {
+  const controls=ALL_FRAMEWORK_CONTROLS;
+  const iso=controls.filter(c=>c.framework==="ISO27001");
+  const nist=controls.filter(c=>c.framework==="NIST_CSF");
+  const nPct=nist.length?Math.round(nist.filter(c=>implemented.includes(c.id)).length/nist.length*100):0;
+  const iPct=iso.length?Math.round(iso.filter(c=>implemented.includes(c.id)).length/iso.length*100):0;
+  const overallRisk=Math.max(0,100-Math.round((nPct+iPct)/2));
+  const riskLevel=overallRisk>=75?"CRITICAL":overallRisk>=50?"HIGH":overallRisk>=25?"MEDIUM":"LOW";
+  const [generating,setGenerating]=useState(false);
+  const [reportError,setReportError]=useState("");
+  const [lastAssessment,setLastAssessment]=useState({});
+  const [openTasks,setOpenTasks]=useState(0);
+  const [execSummary,setExecSummary]=useState("");
+  const [genSummary,setGenSummary]=useState(false);
+  const [p2Status,setP2Status]=useState(null);
+
+  async function generateExecSummary(){
+    setGenSummary(true);
+    try{
+      const d=await realServer.getExecutiveSummary(token,tenantId,{
+        org_name:tenantName,risk_score:overallRisk,risk_level:riskLevel,
+        industry:"Technology",top_findings:[],
+        implemented_controls:implemented.length,total_controls:controls.length
+      });
+      setExecSummary(d.executive_summary||"");
+    }catch(e){console.error(e);}
+    finally{setGenSummary(false);}
+  }
+
+  async function loadP2Status(){
+    try{const d=await realServer.getP2Status(token,tenantId);setP2Status(d);}
+    catch(e){}
+  }
+
+  useEffect(()=>{
+    realServer.getAuditTrail(token,tenantId).then(data=>{if(data?.length>0)setLastAssessment(data[data.length-1]);}).catch(()=>{});
+    realServer.getTasks(token,tenantId).then(tasks=>{setOpenTasks(tasks.filter(t=>t.status!=="done").length);}).catch(()=>{});
+  },[token,tenantId]);
+
+  async function generateReport(){
+    setGenerating(true); setReportError("");
+    try{
+      const [historyData,tasksData]=await Promise.all([realServer.getAuditTrail(token,tenantId),realServer.getTasks(token,tenantId)]);
+      const last=historyData.length>0?historyData[historyData.length-1]:{};
+      const payload={org_name:last.org_name||tenantName||"My Organisation",tenant_name:tenantName,risk_score:overallRisk,nist_pct:nPct,iso_pct:iPct,implemented_controls:implemented.length,total_controls:controls.length,financial_exposure:last.financial_exposure||0,assessment_history:historyData,tasks:tasksData,generated_by:userName||"CISO"};
+      const blob=await realServer.generateBoardReport(token,tenantId,payload);
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");a.href=url;a.download=`AURA_Board_Report_${tenantName||"tenant"}_${new Date().toISOString().slice(0,10)}.pdf`;a.click();URL.revokeObjectURL(url);
+    }catch(e){if(e.message==="AUTH_EXPIRED"){onExpired();return;}setReportError(e.message);setTimeout(()=>setReportError(""),6000);}
+    finally{setGenerating(false);}
+  }
+
+  const kpiData=[
+    {label:"Overall Risk Score",val:overallRisk,sub:riskLevel+" Level",color:getRiskColor(riskLevel),icon:<Shield size={16}/>},
+    {label:"Controls Implemented",val:implemented.length,sub:`of ${controls.length} total`,color:"var(--accent)",icon:<CheckSquare size={16}/>},
+    {label:"ISO 27001 Score",val:`${iPct}%`,sub:"compliance level",color:"var(--green)",icon:<FileCheck size={16}/>},
+    {label:"Open Remediations",val:openTasks,sub:"pending action",color:"var(--orange)",icon:<AlertTriangle size={16}/>},
+  ];
+
+  return (
+    <div className="fade-in">
+      {reportError&&<div className="notice notice-err"><AlertCircle size={15}/>{reportError}</div>}
+
+      {/* KPI row */}
+      <div className="stat-grid">
+        {kpiData.map(k=>(
+          <div key={k.label} className="stat-card">
+            <div className="stat-card-icon" style={{background:`${k.color}15`}}><span style={{color:k.color}}>{k.icon}</span></div>
+            <div className="stat-card-val" style={{color:k.color}}>{k.val}</div>
+            <div className="stat-card-lbl">{k.label}</div>
+            <div style={{fontSize:"11px",color:"var(--text3)",marginTop:"4px"}}>{k.sub}</div>
+            <div className="stat-card-line" style={{background:k.color,opacity:.15}}/>
+          </div>
+        ))}
+      </div>
+
+      {/* Main row */}
+      <div style={{display:"grid",gridTemplateColumns:"260px 1fr",gap:"16px",marginBottom:"16px"}}>
+        <div className="card">
+          <div className="card-header"><span className="card-title">Risk Posture</span></div>
+          <div className="card-body" style={{display:"flex",flexDirection:"column",alignItems:"center",paddingTop:"24px"}}>
+            <RiskGauge score={overallRisk}/>
+            <div style={{marginTop:"16px",width:"100%"}}>
+              {[{l:"NIST CSF",v:nPct,c:"var(--accent)"},{l:"ISO 27001",v:iPct,c:"var(--green)"}].map(f=>(
+                <div key={f.l} style={{marginBottom:"10px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:"12px",fontWeight:"600",color:"var(--text2)",marginBottom:"5px"}}>
+                    <span>{f.l}</span><span style={{color:f.c}}>{f.v}%</span>
+                  </div>
+                  <div className="progress-wrap" style={{height:"6px"}}>
+                    <div className="progress-fill" style={{width:`${f.v}%`,height:"6px",background:f.c}}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <div><div className="card-title">Risk Trends</div><div className="card-sub">Last 8 assessments</div></div>
+          </div>
+          <div className="card-body">
+            <RiskTrendChart token={token} tenantId={tenantId} onExpired={onExpired}/>
+          </div>
+        </div>
+      </div>
+
+      {/* P2 Features Status */}
+      <div className="card" style={{marginBottom:"16px"}}>
+        <div className="card-header">
+          <div><div className="card-title">Platform Intelligence Status</div><div className="card-sub">Priority 2 — AI + Alerts + Scheduler</div></div>
+          <button className="btn btn-secondary btn-sm" onClick={loadP2Status}><RefreshCw size={12}/> Check Status</button>
+        </div>
+        {p2Status?(
+          <div className="card-body">
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px"}}>
+              {Object.entries(p2Status.features||{}).map(([key,f])=>{
+                const live=f.status==="LIVE"||f.status==="ACTIVE";
+                const color=live?"var(--green)":"var(--orange)";
+                return(
+                  <div key={key} style={{background:live?"var(--greenbg)":"var(--orangebg)",border:`1px solid ${color}30`,borderRadius:"var(--radius)",padding:"14px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"6px"}}>
+                      <span style={{fontSize:"12px",fontWeight:"700",color:"var(--text)"}}>{key.replace(/_/g," ").replace(/\w/g,l=>l.toUpperCase())}</span>
+                      <span style={{fontSize:"10px",fontWeight:"700",color,background:`${color}20`,padding:"2px 7px",borderRadius:"10px"}}>{f.status}</span>
+                    </div>
+                    <div style={{fontSize:"11px",color:"var(--text3)",lineHeight:"1.5"}}>{f.description}</div>
+                    {!live&&<div style={{fontSize:"10px",color,marginTop:"6px",fontWeight:"600"}}>Enable: {f.enable_with?.split(" ")[0]}...</div>}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{marginTop:"12px",fontSize:"12px",color:"var(--text3)",textAlign:"center",fontWeight:"600"}}>{p2Status.summary}</div>
+          </div>
+        ):(
+          <div className="card-body" style={{textAlign:"center",color:"var(--text3)",fontSize:"13px"}}>
+            Click "Check Status" to see which AI features are active
+          </div>
+        )}
+      </div>
+
+      {/* AI Executive Summary */}
+      <div className="card" style={{marginBottom:"16px"}}>
+        <div className="card-header">
+          <div><div className="card-title">AI Executive Summary</div><div className="card-sub">Board-ready security briefing generated by AI</div></div>
+          <button className="btn btn-primary btn-sm" onClick={generateExecSummary} disabled={genSummary}>
+            <Zap size={13}/>{genSummary?"Generating...":"Generate Summary"}
+          </button>
+        </div>
+        {execSummary?(
+          <div className="card-body">
+            <pre style={{fontSize:"13px",color:"var(--text2)",lineHeight:"1.8",whiteSpace:"pre-wrap",fontFamily:"inherit",margin:0}}>{execSummary}</pre>
+          </div>
+        ):(
+          <div className="card-body" style={{textAlign:"center",color:"var(--text3)",fontSize:"13px",padding:"32px"}}>
+            Click "Generate Summary" to create a board-ready AI security briefing
+          </div>
+        )}
+      </div>
+
+      {/* Actions row */}
+      <div className="card">
+        <div className="card-header">
+          <div><div className="card-title">Board Report</div><div className="card-sub">Executive-ready PDF with full risk analysis</div></div>
+          <button className="btn btn-primary" onClick={generateReport} disabled={generating}>
+            <FileBarChart size={14}/>{generating?"Generating...":"Generate Report"}
+          </button>
+        </div>
+        <div className="card-body">
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"14px"}}>
+            {[
+              {l:"Latest Assessment",v:lastAssessment.org_name||"—",sub:lastAssessment.created_at?fmtDate(lastAssessment.created_at):"Not run yet"},
+              {l:"Financial Exposure",v:lastAssessment.financial_exposure?`$${Number(lastAssessment.financial_exposure).toLocaleString()}`:"—",sub:"FAIR model estimate"},
+              {l:"Report Status",v:"Ready",sub:`${controls.length} controls tracked`},
+            ].map(i=>(
+              <div key={i.l} style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:"var(--radius)",padding:"14px"}}>
+                <div style={{fontSize:"11px",fontWeight:"600",color:"var(--text3)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:"6px"}}>{i.l}</div>
+                <div style={{fontSize:"16px",fontWeight:"700",color:"var(--text)",marginBottom:"2px"}}>{i.v}</div>
+                <div style={{fontSize:"11px",color:"var(--text3)"}}>{i.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── LOGIN ────────────────────────────────────────────────────────────── */
 function Login({ onLogin }) {
-  const [isRegister, setIsRegister] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [mode,setMode]=useState("login");
+  const [tenantMode,setTenantMode]=useState("create");
+  const [form,setForm]=useState({email:"",password:"",name:"",role:"developer",tenantname:"",tenantid:""});
+  const [error,setError]=useState("");
+  const [success,setSuccess]=useState("");
+  const [loading,setLoading]=useState(false);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    const url = isRegister ? `${API}/register` : `${API}/login`;
-    const body = isRegister
-      ? { name: form.name, email: form.email, password: form.password }
-      : { email: form.email, password: form.password };
-
-    try {
-      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      const data = await res.json();
-      if (!res.ok) { setError(data.detail || "Something went wrong"); }
-      else { localStorage.setItem("token", data.access_token); localStorage.setItem("name", data.name); onLogin(data.name); }
-    } catch { setError("Cannot connect to server"); }
-    setLoading(false);
+  async function handleSubmit(e){
+    e.preventDefault(); setLoading(true); setError(""); setSuccess("");
+    try{
+      if(mode==="login"){
+        const {token,name,role,org,tenantId,tenantName}=await realServer.login(form.email,form.password);
+        onLogin(token,name,role,org,tenantId,tenantName);
+      }else{
+        await realServer.register({email:form.email,password:form.password,name:form.name,role:form.role,tenant_name:tenantMode==="create"?form.tenantname:undefined,tenant_id:tenantMode==="join"?form.tenantid:undefined,create_tenant:tenantMode==="create",join_existing_tenant:tenantMode==="join"});
+        setSuccess("Account created successfully. Sign in now.");
+        setMode("login"); setForm(prev=>({...prev,password:"",name:""}));
+      }
+    }catch(err){setError(err.message||"Something went wrong.");}
+    finally{setLoading(false);}
   }
 
   return (
     <>
-      <style>{styles}</style>
-      <div className="auth-bg">
-        <div className="auth-card">
-          <div className="logo">AU<span>R</span>A</div>
-          <div className="tagline">AI-POWERED UNIFIED RISK & AUDIT</div>
-          <div className="auth-title">{isRegister ? "Create account" : "Welcome back"}</div>
-          <form onSubmit={handleSubmit}>
-            {isRegister && (
-              <div className="field">
-                <label>Full Name</label>
-                <div className="input-wrap"><User className="input-icon" />
-                  <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required placeholder="Amit Bishnoi" />
+      <style>{G}</style>
+      <div className="auth-root">
+        {/* Left: Hero */}
+        <div className="auth-hero">
+          <div className="auth-hero-grid"/>
+          <div className="auth-hero-content">
+            <div className="auth-hero-logo">
+              <div className="auth-hero-logo-mark"><Shield size={20} color="#fff"/></div>
+              <span className="auth-hero-logo-text">AURA</span>
+            </div>
+            <h1>Unified Risk &<br/><span>Compliance Platform</span></h1>
+            <p>Enterprise-grade security posture management with real-time compliance mapping across ISO 27001, NIST CSF, and SOC 2.</p>
+            <div className="auth-hero-badges">
+              {["ISO 27001:2022","NIST CSF v2.0","SOC 2 Type II","FAIR Risk Model"].map(b=>(
+                <span key={b} className="auth-hero-badge"><Check size={11}/>{b}</span>
+              ))}
+            </div>
+            <div className="auth-hero-stat">
+              {[{v:"199+",l:"Controls"},{v:"3",l:"Frameworks"},{v:"100%",l:"Multi-tenant"}].map(s=>(
+                <div key={s.l} className="auth-hero-stat-item">
+                  <div className="auth-hero-stat-val">{s.v}</div>
+                  <div className="auth-hero-stat-lbl">{s.l}</div>
                 </div>
-              </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Form */}
+        <div className="auth-form-side">
+          <div className="auth-form-header">
+            <h2>{mode==="login"?"Welcome back":"Create your account"}</h2>
+            <p>{mode==="login"?"Sign in to your AURA workspace":"Get started with AURA Platform"}</p>
+          </div>
+
+          {success&&<div className="ok-msg"><Check size={14}/>{success}</div>}
+          {error&&<div className="err-msg"><AlertCircle size={14}/>{error}</div>}
+
+          <form onSubmit={handleSubmit}>
+            {mode==="register"&&(
+              <>
+                <div className="tenant-toggle">
+                  <div className={`tenant-opt${tenantMode==="create"?" active":""}`} onClick={()=>setTenantMode("create")}>Create workspace</div>
+                  <div className={`tenant-opt${tenantMode==="join"?" active":""}`} onClick={()=>setTenantMode("join")}>Join existing</div>
+                </div>
+                <div className="field">
+                  <label className="field-label">Full Name</label>
+                  <div className="field-input-wrap"><User className="field-icon"/><input type="text" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required placeholder="Your full name"/></div>
+                </div>
+                <div className="field">
+                  <label className="field-label">Role</label>
+                  <select value={form.role} onChange={e=>setForm({...form,role:e.target.value})} style={{width:"100%",background:"#fff",border:"1.5px solid var(--border2)",borderRadius:"var(--radius)",padding:"11px 14px",color:"var(--text)",fontSize:"14px",outline:"none"}}>
+                    <option value="developer">Security Engineer / Developer</option>
+                    <option value="auditor">Compliance Auditor</option>
+                    <option value="ciso">CISO / Security Leader</option>
+                  </select>
+                </div>
+                {tenantMode==="create"&&(
+                  <div className="field">
+                    <label className="field-label">Workspace Name</label>
+                    <div className="field-input-wrap"><Building2 className="field-icon"/><input type="text" value={form.tenantname} onChange={e=>setForm({...form,tenantname:e.target.value})} required placeholder="e.g. Acme Security Ltd"/></div>
+                  </div>
+                )}
+                {tenantMode==="join"&&(
+                  <div className="field">
+                    <label className="field-label">Workspace ID</label>
+                    <div className="field-input-wrap"><Building2 className="field-icon"/><input type="text" value={form.tenantid} onChange={e=>setForm({...form,tenantid:e.target.value})} required placeholder="Workspace ID from admin"/></div>
+                  </div>
+                )}
+              </>
             )}
             <div className="field">
-              <label>Email Address</label>
-              <div className="input-wrap"><Mail className="input-icon" />
-                <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required placeholder="amit@company.com" />
-              </div>
+              <label className="field-label">Email Address</label>
+              <div className="field-input-wrap"><Mail className="field-icon"/><input type="email" autoComplete="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required placeholder="you@company.com"/></div>
             </div>
             <div className="field">
-              <label>Password</label>
-              <div className="input-wrap"><Lock className="input-icon" />
-                <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required placeholder="••••••••" />
-              </div>
+              <label className="field-label">Password</label>
+              <div className="field-input-wrap"><Lock className="field-icon"/><input type="password" autoComplete={mode==="login"?"current-password":"new-password"} value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required placeholder="••••••••"/></div>
             </div>
-            {error && <div className="error-msg">{error}</div>}
-            <button className="btn-primary" type="submit" disabled={loading}>
-              {loading ? "Please wait..." : isRegister ? "Create Account" : "Sign In"}
-              {!loading && <ChevronRight size={16} />}
+            <button className="auth-btn" type="submit" disabled={loading}>
+              {loading?(mode==="login"?"Signing in...":"Creating account..."):(mode==="login"?"Sign In":"Create Account")}
+              {!loading&&<ChevronRight size={16}/>}
             </button>
           </form>
           <div className="auth-switch">
-            {isRegister ? "Already have an account? " : "Don't have an account? "}
-            <span onClick={() => { setIsRegister(!isRegister); setError(""); }}>{isRegister ? "Sign in" : "Register"}</span>
+            {mode==="login"?<>Don't have an account? <span onClick={()=>{setMode("register");setError("");}}>Sign up free</span></>:<>Already have an account? <span onClick={()=>{setMode("login");setError("");}}>Sign in</span></>}
           </div>
         </div>
       </div>
@@ -1200,398 +1865,126 @@ function Login({ onLogin }) {
   );
 }
 
-// ---- DASHBOARD ----
-function Dashboard({ userName, onLogout }) {
-  const [form, setForm] = useState({
-    org_name: "", industry: "", employees: "", has_mfa: false,
-    mfa_coverage: 0, patch_days: "", training_percent: "",
-    has_irp: false, vulnerabilities: "",
-  });
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const reportRef = useRef(null);
+/* ─── DASHBOARD SHELL ──────────────────────────────────────────────────── */
+function Dashboard({ token, userName, role, tenantId, tenantName, onLogout }) {
+  const roleCfg=ROLES[role]||ROLES.developer;
+  const [implemented,setImplemented]=useState([]);
+  const [sessionExpired,setSessionExpired]=useState(false);
+  const visibleNav=NAV_ITEMS.filter(t=>t.roles.includes(role));
+  const [activeTab,setActiveTab]=useState(visibleNav[0]?.id||"overview");
 
-  const [activeTab, setActiveTab] = useState("overview");
-  const [controls, setControls] = useState([]);
-  const [implemented, setImplemented] = useState([]);
-  const [checklistScore, setChecklistScore] = useState(null);
+  useEffect(()=>{
+    const iv=setInterval(async()=>{const c=await realServer.validateToken(token,tenantId);if(!c)setSessionExpired(true);},60000);
+    return()=>clearInterval(iv);
+  },[token,tenantId]);
 
-  const token = localStorage.getItem("token");
+  function handleExpired(){setSessionExpired(true);setTimeout(onLogout,2500);}
+  function toggleControl(id){if(!roleCfg.canEdit)return;setImplemented(prev=>prev.includes(id)?prev.filter(i=>i!==id):[...prev,id]);}
 
-  // Load controls on mount
-  useEffect(() => { loadControls(); }, []);
-
-  async function downloadPDF() {
-    const element = reportRef.current;
-    const canvas = await html2canvas(element, { backgroundColor: "#080B14", scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`AURA_Report_${result?.org_name || "assessment"}.pdf`);
-  }
-
-  async function loadControls() {
-    try {
-      const res = await fetch(`${API}/controls`, { headers: { "Authorization": `Bearer ${token}` } });
-      const data = await res.json();
-      if (Array.isArray(data)) setControls(data);
-    } catch { console.error("Could not load controls"); }
-  }
-
-  async function toggleControl(id) {
-    const newImplemented = implemented.includes(id)
-      ? implemented.filter(i => i !== id)
-      : [...implemented, id];
-    setImplemented(newImplemented);
-
-    try {
-      const res = await fetch(`${API}/controls/score`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ implemented_ids: newImplemented })
-      });
-      const data = await res.json();
-      setChecklistScore(data);
-    } catch { console.error("Could not score controls"); }
-  }
-
-  function handleChange(e) {
-    const { name, value, type, checked } = e.target;
-    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`${API}/assess`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({
-          ...form,
-          employees: parseInt(form.employees),
-          mfa_coverage: parseInt(form.mfa_coverage),
-          patch_days: parseInt(form.patch_days),
-          training_percent: parseInt(form.training_percent),
-          vulnerabilities: parseInt(form.vulnerabilities),
-        }),
-      });
-      if (res.status === 401) { onLogout(); return; }
-      const data = await res.json();
-      setResult(data);
-      setActiveTab("overview"); // Jump to overview after assessment
-    } catch { setError("Cannot connect to server"); }
-    setLoading(false);
-  }
-
-  const fields = [
-    { label: "Company Name", name: "org_name", type: "text", placeholder: "e.g. TechCorp Ltd" },
-    { label: "Industry", name: "industry", type: "text", placeholder: "e.g. Healthcare" },
-    { label: "Number of Employees", name: "employees", type: "number", placeholder: "e.g. 150" },
-    { label: "Days Between Patches", name: "patch_days", type: "number", placeholder: "e.g. 30" },
-    { label: "Staff Training %", name: "training_percent", type: "number", placeholder: "e.g. 75" },
-    { label: "Open Vulnerabilities", name: "vulnerabilities", type: "number", placeholder: "e.g. 12" },
-  ];
-
-  const TABS = [
-    { id: "overview", label: "Overview", icon: <Activity size={13} /> },
-    { id: "assessment", label: "Risk Assessment", icon: <Shield size={13} /> },
-    { id: "checklist", label: "Control Checklist", icon: <CheckSquare size={13} /> },
-    { id: "threats", label: "Threat Map", icon: <Globe size={13} /> },
-    { id: "compliance", label: "Compliance", icon: <ClipboardList size={13} /> },
-    { id: "audit", label: "Audit Trail", icon: <Clock size={13} /> },
-  ];
-
-  const overviewScore = checklistScore?.risk_score ?? (result ? result.risk_score : 0);
-  const overviewLevel = checklistScore?.risk_level ?? (result ? result.risk_level : "LOW");
+  const currentNav=visibleNav.find(n=>n.id===activeTab);
+  const avatarColor=role==="ciso"?"#EF4444":role==="developer"?"#6366F1":"#22C55E";
 
   return (
     <>
-      <style>{styles}</style>
-      <div className="dashboard">
-        <div className="topbar">
-          <div className="topbar-logo">AU<span>R</span>A</div>
-          <div className="topbar-right">
-            <div className="welcome-badge"><Shield size={13} />{userName}</div>
-            <button className="logout-btn" onClick={onLogout}><LogOut size={13} /> Logout</button>
+      <style>{G}</style>
+      <div className="shell">
+        {sessionExpired&&<div className="session-toast"><AlertOctagon size={15}/> Session expired — redirecting...</div>}
+
+        {/* SIDEBAR */}
+        <div className="sidebar">
+          <div className="sidebar-logo">
+            <div className="sidebar-logo-mark"><Shield size={16} color="#fff"/></div>
+            <div className="sidebar-logo-text">AU<span>R</span>A</div>
+          </div>
+
+          <div className="nav-section-label">Navigation</div>
+          {visibleNav.map(item=>{
+            const Icon=item.icon;
+            return (
+              <button key={item.id} className={`nav-item${activeTab===item.id?" active":""}`} onClick={()=>setActiveTab(item.id)}>
+                <Icon size={16}/>{item.label}
+              </button>
+            );
+          })}
+
+          <div style={{marginTop:"auto"}}/>
+          <div style={{padding:"8px 16px 12px",borderTop:"1px solid var(--border)",marginTop:"16px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"8px",padding:"8px",borderRadius:"var(--radius)",background:"var(--surface2)",marginBottom:"8px"}}>
+              <div style={{width:"30px",height:"30px",borderRadius:"50%",background:`${avatarColor}15`,border:`2px solid ${avatarColor}30`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"700",fontSize:"12px",color:avatarColor,flexShrink:0}}>
+                {userName[0]?.toUpperCase()}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:"12px",fontWeight:"600",color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{userName}</div>
+                <div style={{fontSize:"11px",color:"var(--text3)"}}>{roleCfg.label}</div>
+              </div>
+              <button className="btn btn-ghost btn-icon btn-sm" onClick={onLogout} title="Logout"><LogOut size={13}/></button>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:"6px",padding:"6px 8px",borderRadius:"var(--radius)",background:"var(--accentbg)",border:"1px solid rgba(99,102,241,.15)"}}>
+              <Building2 size={11} color="var(--accent)"/>
+              <span style={{fontSize:"11px",fontWeight:"600",color:"var(--accent)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{tenantName||"Workspace"}</span>
+            </div>
           </div>
         </div>
 
-        <div className="main-content">
-          <div className="page-header">
-            <div className="page-title">AURA Dashboard</div>
-            <div style={{ display: "flex", gap: "8px", marginTop: "16px", flexWrap: "wrap" }}>
-              {TABS.map(tab => (
-                <button
-                  key={tab.id}
-                  className="tab-btn"
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    if (tab.id === "checklist") loadControls();
-                  }}
-                  style={{
-                    background: activeTab === tab.id ? "#DC322F" : "transparent",
-                    color: activeTab === tab.id ? "white" : "rgba(255,255,255,0.5)",
-                    border: `1px solid ${activeTab === tab.id ? "#DC322F" : "rgba(255,255,255,0.15)"}`,
-                  }}
-                >
-                  {tab.icon}{tab.label}
-                </button>
-              ))}
+        {/* MAIN */}
+        <div className="main-area">
+          {/* Top bar */}
+          <div className="topbar">
+            <div className="topbar-left">
+              <div style={{fontSize:"15px",fontWeight:"700",color:"var(--text)"}}>
+                {currentNav?.label||"Dashboard"}
+              </div>
+              <div className="topbar-search">
+                <Search size={13}/>
+                <input placeholder="Search anything..."/>
+              </div>
+            </div>
+            <div className="topbar-right">
+              <div className="org-chip"><Building2 size={12}/>{tenantName}</div>
+              <span className="badge" style={{background:roleCfg.bg,color:roleCfg.color,border:`1px solid ${roleCfg.border}`,padding:"5px 12px",fontSize:"11px"}}>
+                {roleCfg.icon}&nbsp;{roleCfg.label}
+              </span>
+              <button className="topbar-btn"><Bell size={15}/></button>
             </div>
           </div>
 
-          {/* ---- OVERVIEW TAB ---- */}
-          {activeTab === "overview" && (
-            <div className="fade-in">
-              <div className="overview-grid">
-                {/* Gauge */}
-                <div className="gauge-card">
-                  <div style={{ fontSize: "11px", fontWeight: "600", letterSpacing: "1.5px", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: "16px" }}>Live Risk Score</div>
-                  <RiskGauge score={typeof overviewScore === "number" ? overviewScore : 0} />
-                  {result && (
-                    <div style={{ marginTop: "16px", textAlign: "center" }}>
-                      <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)" }}>{result.org_name}</div>
-                      <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", marginTop: "2px" }}>{result.industry}</div>
-                    </div>
-                  )}
-                  {!result && (
-                    <div style={{ marginTop: "16px", textAlign: "center", fontSize: "12px", color: "rgba(255,255,255,0.25)" }}>
-                      Run an assessment to see your score
-                    </div>
-                  )}
-                </div>
-
-                {/* Stats */}
-                <div className="stats-col">
-                  <div className="stat-card">
-                    <div className="stat-icon" style={{ background: "rgba(220,50,47,0.15)" }}><Shield size={18} color="#DC322F" /></div>
-                    <div>
-                      <div className="stat-val">{result ? result.risk_level : "—"}</div>
-                      <div className="stat-lbl">Risk Level</div>
-                    </div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-icon" style={{ background: "rgba(99,102,241,0.15)" }}><Zap size={18} color="#6366F1" /></div>
-                    <div>
-                      <div className="stat-val">{result ? `$${(result.financial_exposure / 1000).toFixed(0)}K` : "—"}</div>
-                      <div className="stat-lbl">Financial Exposure</div>
-                    </div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-icon" style={{ background: "rgba(16,185,129,0.15)" }}><CheckSquare size={18} color="#10B981" /></div>
-                    <div>
-                      <div className="stat-val">{checklistScore ? `${checklistScore.controls_implemented}/${checklistScore.controls_total}` : `0/${controls.length}`}</div>
-                      <div className="stat-lbl">Controls Implemented</div>
-                    </div>
-                  </div>
-                </div>
+          {/* Page */}
+          <div className="page-body">
+            <div className="page-crumb">
+              <Building2 size={10}/> {tenantName} <ChevronRight size={10}/> {currentNav?.label}
+            </div>
+            <div className="page-header">
+              <div className="page-title">
+                {activeTab==="overview"?"Security Overview":
+                 activeTab==="trends"?"Risk Trends":
+                 activeTab==="assessment"?"Risk Assessment":
+                 activeTab==="checklist"?"Security Controls":
+                 activeTab==="compliance"?"Compliance Mapping":
+                 activeTab==="audit"?"Audit Trail":
+                 activeTab==="remediation"?"Remediation Board":
+                 "Team Management"}
               </div>
-
-              {/* Mini compliance overview */}
-              <div className="form-card">
-                <div className="form-section-title">Framework Compliance Overview</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "16px" }}>
-                  {[
-                    { name: "NIST CSF", pct: controls.length ? Math.round((controls.filter(c => c.framework === "NIST" && implemented.includes(c.id)).length / Math.max(controls.filter(c => c.framework === "NIST").length, 1)) * 100) : 0, color: "#6366F1" },
-                    { name: "ISO 27001", pct: controls.length ? Math.round((controls.filter(c => c.framework === "ISO" && implemented.includes(c.id)).length / Math.max(controls.filter(c => c.framework === "ISO").length, 1)) * 100) : 0, color: "#10B981" },
-                    { name: "PCI DSS", pct: 0, color: "#F59E0B" },
-                    { name: "SOC 2", pct: 0, color: "#EC4899" },
-                  ].map(fw => (
-                    <div key={fw.name}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>{fw.name}</span>
-                        <span style={{ fontSize: "12px", color: fw.color, fontWeight: "600" }}>{fw.pct}%</span>
-                      </div>
-                      <div className="progress-bar-wrap" style={{ marginBottom: 0 }}>
-                        <div className="progress-bar-fill" style={{ width: `${fw.pct}%`, background: fw.color }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Quick actions */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                <button onClick={() => setActiveTab("assessment")} style={{ background: "rgba(220,50,47,0.08)", border: "1px solid rgba(220,50,47,0.2)", borderRadius: "12px", padding: "18px 20px", cursor: "pointer", textAlign: "left", color: "#fff" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}><Shield size={16} color="#DC322F" /><span style={{ fontFamily: "Syne, sans-serif", fontWeight: "700", fontSize: "14px" }}>New Assessment</span></div>
-                  <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>Run AI-powered risk analysis on an organisation</div>
-                </button>
-                <button onClick={() => setActiveTab("checklist")} style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: "12px", padding: "18px 20px", cursor: "pointer", textAlign: "left", color: "#fff" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}><CheckSquare size={16} color="#6366F1" /><span style={{ fontFamily: "Syne, sans-serif", fontWeight: "700", fontSize: "14px" }}>Control Checklist</span></div>
-                  <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>Review NIST & ISO 27001 security controls</div>
-                </button>
+              <div className="page-sub">
+                {activeTab==="overview"&&"Executive summary of your organisation's security posture"}
+                {activeTab==="trends"&&"Track risk score changes across all your assessments"}
+                {activeTab==="assessment"&&"Run an AI-powered security posture assessment"}
+                {activeTab==="checklist"&&"ISO 27001:2022 and NIST CSF v2.0 — 199 controls"}
+                {activeTab==="compliance"&&"Automated compliance mapping across SOC 2, ISO 27001, and NIST CSF"}
+                {activeTab==="audit"&&"Full history of all risk assessments in this workspace"}
+                {activeTab==="remediation"&&"Track and manage security remediation tasks"}
+                {activeTab==="users"&&`Managing ${tenantName} workspace members`}
               </div>
             </div>
-          )}
 
-          {/* ---- ASSESSMENT TAB ---- */}
-          {activeTab === "assessment" && (
-            <div className="fade-in">
-              <div className="form-card">
-                <div className="form-section-title">Organisation Details</div>
-                <form onSubmit={handleSubmit}>
-                  <div className="form-grid">
-                    {fields.map(f => (
-                      <div className="form-field" key={f.name}>
-                        <label>{f.label}</label>
-                        <input name={f.name} type={f.type} value={form[f.name]} onChange={handleChange} required placeholder={f.placeholder} />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="form-section-title" style={{ marginTop: "8px" }}>Security Controls</div>
-                  <div className="checkbox-row">
-                    <div className="checkbox-item">
-                      <input name="has_mfa" type="checkbox" id="mfa" checked={form.has_mfa} onChange={handleChange} />
-                      <label htmlFor="mfa">MFA Enabled</label>
-                    </div>
-                    <div className="checkbox-item">
-                      <input name="has_irp" type="checkbox" id="irp" checked={form.has_irp} onChange={handleChange} />
-                      <label htmlFor="irp">Incident Response Plan</label>
-                    </div>
-                  </div>
-                  {form.has_mfa && (
-                    <div className="form-field" style={{ maxWidth: "300px", marginBottom: "20px" }}>
-                      <label>MFA Coverage %</label>
-                      <input name="mfa_coverage" type="number" value={form.mfa_coverage} onChange={handleChange} placeholder="e.g. 85" />
-                    </div>
-                  )}
-                  {error && <div className="error-msg">{error}</div>}
-                  <button className="submit-btn" type="submit" disabled={loading}>
-                    <Zap size={16} />
-                    {loading ? "Analysing..." : "Run Risk Assessment"}
-                  </button>
-                </form>
-              </div>
-
-              {result && (
-                <div className="form-card" ref={reportRef}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                    <div className="form-section-title" style={{ marginBottom: 0 }}>Assessment Results — {result.org_name}</div>
-                    <button onClick={downloadPDF} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", background: "#DC322F", color: "white", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "bold", cursor: "pointer" }}>
-                      <Download size={14} /> Download PDF
-                    </button>
-                  </div>
-                  <div className="results-grid">
-                    <div className="result-card" style={{ "--accent": getRiskColor(result.risk_level) }}>
-                      <div className="result-value">{parseFloat(result.risk_score.toFixed(1))}</div>
-                      <div className="result-label">Risk Score</div>
-                    </div>
-                    <div className="result-card" style={{ "--accent": getRiskColor(result.risk_level) }}>
-                      <div className="result-value medium">{result.risk_level}</div>
-                      <div className="result-label">Risk Level</div>
-                    </div>
-                    <div className="result-card" style={{ "--accent": "#6366F1" }}>
-                      <div className="result-value medium" style={{ fontSize: "22px" }}>${result.financial_exposure.toLocaleString()}</div>
-                      <div className="result-label">Financial Exposure</div>
-                    </div>
-                  </div>
-                  <div className="results-section-title">
-                    <AlertTriangle size={15} color="#DC322F" />
-                    Recommendations
-                  </div>
-                  {result.recommendations.map((rec, i) => (
-                    <div className="rec-item" key={i}>
-                      <ChevronRight className="rec-icon" size={14} />{rec}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ---- CHECKLIST TAB ---- */}
-          {activeTab === "checklist" && (
-            <div className="fade-in">
-              <div className="form-card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-                  <div className="form-section-title" style={{ marginBottom: 0 }}>NIST CSF / ISO 27001 Control Checklist</div>
-                  {checklistScore && (
-                    <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-                      <div style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: "28px", fontWeight: "800", color: getRiskColor(checklistScore.risk_level), fontFamily: "Syne, sans-serif" }}>{checklistScore.risk_score}</div>
-                        <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", letterSpacing: "1px" }}>RISK SCORE</div>
-                      </div>
-                      <div style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: "16px", fontWeight: "700", color: getRiskColor(checklistScore.risk_level) }}>{checklistScore.risk_level}</div>
-                        <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", letterSpacing: "1px" }}>LEVEL</div>
-                      </div>
-                      <div style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: "16px", fontWeight: "700", color: "#10B981" }}>{checklistScore.controls_implemented}/{checklistScore.controls_total}</div>
-                        <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", letterSpacing: "1px" }}>CONTROLS</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {controls.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "40px", color: "rgba(255,255,255,0.3)" }}>Loading controls...</div>
-                )}
-
-                {["Protect", "Identify", "Detect", "Respond", "Recover"].map(fn => {
-                  const group = controls.filter(c => c.function === fn);
-                  if (group.length === 0) return null;
-                  return (
-                    <div key={fn} style={{ marginBottom: "24px" }}>
-                      <div style={{ fontSize: "11px", fontWeight: "600", letterSpacing: "2px", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: "12px", paddingBottom: "8px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>{fn}</div>
-                      {group.map(control => (
-                        <div
-                          key={control.id}
-                          onClick={() => toggleControl(control.id)}
-                          style={{
-                            display: "flex", alignItems: "flex-start", gap: "14px",
-                            padding: "14px 16px", marginBottom: "8px",
-                            background: implemented.includes(control.id) ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.02)",
-                            border: "1px solid",
-                            borderColor: implemented.includes(control.id) ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.06)",
-                            borderRadius: "10px", cursor: "pointer", transition: "all 0.2s"
-                          }}
-                        >
-                          <div style={{ flexShrink: 0, marginTop: "2px", color: implemented.includes(control.id) ? "#10B981" : "rgba(255,255,255,0.2)" }}>
-                            {implemented.includes(control.id) ? <CheckSquare size={18} /> : <Square size={18} />}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: "13px", color: implemented.includes(control.id) ? "#E8ECF4" : "rgba(255,255,255,0.6)", marginBottom: "4px" }}>{control.control}</div>
-                            <div style={{ display: "flex", gap: "12px" }}>
-                              <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)" }}>NIST: {control.nist_ref}</span>
-                              <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)" }}>ISO: {control.iso_ref}</span>
-                            </div>
-                          </div>
-                          <div style={{ flexShrink: 0, fontSize: "11px", color: "#10B981", fontWeight: "600" }}>-{control.risk_reduction} pts</div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ---- THREATS TAB ---- */}
-          {activeTab === "threats" && (
-            <div className="fade-in form-card" style={{ padding: 0, overflow: "hidden" }}>
-              <ThreatMap />
-            </div>
-          )}
-
-          {/* ---- COMPLIANCE TAB ---- */}
-          {activeTab === "compliance" && (
-            <div className="fade-in">
-              <ComplianceTab controls={controls} implemented={implemented} checklistScore={checklistScore} />
-            </div>
-          )}
-
-          {/* ---- AUDIT TRAIL TAB ---- */}
-          {activeTab === "audit" && (
-            <div className="fade-in">
-              <AuditTrail token={token} />
-            </div>
-          )}
-
+            {activeTab==="overview"    &&role==="ciso"&&<CISOOverview implemented={implemented} token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired} userName={userName}/>}
+            {activeTab==="trends"      &&role==="ciso"&&<div className="card"><div className="card-body"><RiskTrendChart token={token} tenantId={tenantId} onExpired={handleExpired}/></div></div>}
+            {activeTab==="assessment"                  &&<DeveloperAssessment token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
+            {activeTab==="checklist"                   &&<ControlChecklist implemented={implemented} onToggle={toggleControl} role={role}/>}
+            {activeTab==="compliance"                  &&<ComplianceTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
+            {activeTab==="audit"                       &&<AuditTrail token={token} tenantId={tenantId} role={role} onExpired={handleExpired}/>}
+            {activeTab==="remediation"                 &&<RemediationBoard token={token} tenantId={tenantId} role={role} onExpired={handleExpired}/>}
+            {activeTab==="users"       &&role==="ciso" &&<TeamManagement token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
+          </div>
         </div>
       </div>
     </>
@@ -1599,16 +1992,12 @@ function Dashboard({ userName, onLogout }) {
 }
 
 export default function App() {
-  const [userName, setUserName] = useState(localStorage.getItem("name") || "");
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
-
-  function handleLogin(name) { setUserName(name); setIsLoggedIn(true); }
-  function handleLogout() {
-    localStorage.removeItem("token"); localStorage.removeItem("name");
-    setIsLoggedIn(false); setUserName("");
+  const [session,setSession]=useState(null);
+  function handleLogin(token,name,role,org,tenantId,tenantName){
+    setSession({token,userName:name,role,org,tenantId,tenantName});
   }
-
-  return isLoggedIn
-    ? <Dashboard userName={userName} onLogout={handleLogout} />
-    : <Login onLogin={handleLogin} />;
+  return session
+    ?<Dashboard token={session.token} userName={session.userName} role={session.role} tenantId={session.tenantId} tenantName={session.tenantName} onLogout={()=>setSession(null)}/>
+    :<Login onLogin={handleLogin}/>;
 }
+

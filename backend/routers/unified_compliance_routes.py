@@ -3,13 +3,15 @@ from sqlalchemy.orm import Session
 from database import get_db
 from dependencies import get_current_user
 from models import Assessment
-from compliance_frameworks import score_all_frameworks
+from compliance_frameworks import score_all_frameworks, build_assessment_dict
 
 router = APIRouter(prefix="/api/compliance", tags=["Compliance"])
 
 
 def get_all_8(assessment):
-    results = list(score_all_frameworks(assessment))
+    # Convert SQLAlchemy object to dict first
+    assessment_dict = build_assessment_dict(assessment)
+    results = list(score_all_frameworks(assessment_dict))
     try:
         from extra_frameworks import score_extra_framework, EXTRA_FRAMEWORK_META
         for key in EXTRA_FRAMEWORK_META.keys():

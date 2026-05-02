@@ -12,7 +12,8 @@ from routers.task_routes        import router as task_router
 from routers.user_routes        import router as user_router
 from routers.scanner_routes     import router as scanner_router
 from routers.report_routes      import router as report_router
-from routers.compliance_routes  import router as compliance_router
+from routers.unified_compliance_routes import router as compliance_router
+from routers.integrations_routes import router as integrations_router
 from routers.auto_assessment_routes import router as auto_router
 from services.scheduler_service import start_scheduler, stop_scheduler
 from routers.priority2_routes import router as p2_router
@@ -57,9 +58,16 @@ app.include_router(user_router)
 app.include_router(scanner_router)
 app.include_router(report_router)
 app.include_router(compliance_router)
+app.include_router(integrations_router)
 app.include_router(auto_router)
 from routers.advanced_routes import router as advanced_router
 app.include_router(advanced_router)
+# from routers.extra_compliance_routes import extra_router  # Merged into unified_compliance_routes
+# app.include_router(extra_router)  # Merged into unified_compliance_routes
+from routers.evidence_routes import router as evidence_router
+app.include_router(evidence_router)
+from routers.trust_center_routes import router as trust_router
+app.include_router(trust_router)
 app.include_router(p2_router)
 
 @app.get("/")

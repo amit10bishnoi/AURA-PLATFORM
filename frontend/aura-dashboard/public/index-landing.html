@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AURA — Unified Risk & Compliance Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080F;--bg2:#0C0F1A;--surface:#111525;--surface2:#181D30;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --text:#EEF0F8;--text2:#8892B0;--text3:#4A5278;
+  --accent:#5B6EF5;--accent2:#7B8FFF;--accent3:#A8B4FF;
+  --green:#00D68F;--orange:#FF7849;--pink:#FF4D8F;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+.cursor{position:fixed;width:12px;height:12px;background:var(--accent2);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;}
+.cursor-trail{position:fixed;width:32px;height:32px;border:1px solid rgba(91,110,245,.3);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .15s ease;mix-blend-mode:screen;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:68px;background:rgba(6,8,15,.8);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);transition:all .3s;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.nav-logo-mark{width:36px;height:36px;background:linear-gradient(135deg,#5B6EF5,#7B8FFF);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#fff;box-shadow:0 0 20px rgba(91,110,245,.4);}
+.nav-logo-text{font-family:'Syne',sans-serif;font-weight:700;font-size:20px;color:#fff;letter-spacing:-0.5px;}
+.nav-links{display:flex;align-items:center;gap:32px;}
+.nav-links a{font-size:14px;color:var(--text2);text-decoration:none;transition:color .2s;}
+.nav-links a:hover{color:var(--text);}
+.nav-cta{display:flex;align-items:center;gap:12px;}
+.btn-ghost{padding:8px 20px;border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-size:14px;font-weight:500;text-decoration:none;transition:all .2s;cursor:pointer;background:transparent;font-family:'DM Sans',sans-serif;}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent2);}
+.btn-primary{padding:9px 22px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;transition:all .2s;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;}
+.btn-primary:hover{background:#4A5DE0;box-shadow:0 0 24px rgba(91,110,245,.4);}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;position:relative;overflow:hidden;}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(91,110,245,.15) 0%,transparent 70%),radial-gradient(ellipse 40% 40% at 80% 60%,rgba(0,214,143,.06) 0%,transparent 60%),radial-gradient(ellipse 40% 40% at 20% 60%,rgba(255,77,143,.06) 0%,transparent 60%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(91,110,245,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(91,110,245,.04) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 40%,transparent 100%);}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(91,110,245,.1);border:1px solid rgba(91,110,245,.25);border-radius:100px;padding:6px 16px;font-size:12px;font-weight:500;color:var(--accent3);margin-bottom:28px;animation:fadeUp .6s ease both;}
+.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(48px,7vw,88px);font-weight:800;letter-spacing:-3px;line-height:1.0;color:#fff;margin-bottom:24px;animation:fadeUp .7s .1s ease both;}
+.hero h1 .accent{background:linear-gradient(135deg,#5B6EF5 0%,#A8B4FF 50%,#00D68F 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-sub{font-size:clamp(16px,2vw,20px);color:var(--text2);max-width:580px;line-height:1.7;margin-bottom:44px;font-weight:300;animation:fadeUp .7s .2s ease both;}
+.hero-cta{display:flex;align-items:center;gap:16px;margin-bottom:64px;animation:fadeUp .7s .3s ease both;}
+.btn-hero{padding:14px 32px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;display:flex;align-items:center;gap:8px;transition:all .2s;box-shadow:0 0 40px rgba(91,110,245,.3);}
+.btn-hero:hover{background:#4A5DE0;box-shadow:0 0 60px rgba(91,110,245,.5);transform:translateY(-2px);}
+.btn-hero-outline{padding:13px 28px;background:transparent;border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;display:flex;align-items:center;gap:8px;transition:all .2s;}
+.btn-hero-outline:hover{border-color:var(--accent);color:var(--accent2);}
+.trust-badges{display:flex;align-items:center;gap:24px;flex-wrap:wrap;justify-content:center;animation:fadeUp .7s .4s ease both;}
+.trust-badge{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--text3);}
+.dashboard-preview{margin-top:80px;position:relative;animation:fadeUp .8s .5s ease both;max-width:1100px;width:100%;}
+.dashboard-glow{position:absolute;inset:-40px;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(91,110,245,.2) 0%,transparent 70%);pointer-events:none;}
+.dashboard-frame{background:var(--surface);border:1px solid var(--border2);border-radius:16px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.05);}
+.dashboard-topbar{background:var(--surface2);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:8px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#FF5F57;}.dot-y{background:#FEBC2E;}.dot-g{background:#28C840;}
+.dashboard-url{flex:1;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+.dashboard-body{display:grid;grid-template-columns:200px 1fr;height:420px;}
+.db-sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 12px;}
+.db-sidebar-logo{display:flex;align-items:center;gap:8px;margin-bottom:28px;padding:0 4px;}
+.db-logo-mark{width:26px;height:26px;background:linear-gradient(135deg,#5B6EF5,#7B8FFF);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:11px;color:#fff;}
+.db-logo-text{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#fff;}
+.db-nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;color:var(--text3);margin-bottom:2px;cursor:default;}
+.db-nav-item.active{background:rgba(91,110,245,.12);color:var(--accent2);}
+.db-nav-dot{width:14px;height:14px;border-radius:4px;background:var(--surface2);flex-shrink:0;}
+.db-nav-dot.accent{background:linear-gradient(135deg,#5B6EF5,#7B8FFF);}
+.db-main{padding:20px;background:var(--bg2);overflow:hidden;}
+.db-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.db-stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.db-stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:3px;}
+.db-stat-lbl{font-size:10px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;}
+.db-chart{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;height:220px;overflow:hidden;}
+.db-chart-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px;}
+.section-label{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--accent2);margin-bottom:16px;}
+.section-title{font-family:'Syne',sans-serif;font-size:clamp(32px,5vw,56px);font-weight:800;letter-spacing:-2px;color:#fff;margin-bottom:16px;line-height:1.1;}
+.section-sub{font-size:17px;color:var(--text2);max-width:520px;margin:0 auto 48px;line-height:1.7;font-weight:300;}
+.video-section{padding:100px 24px;text-align:center;position:relative;}
+.video-wrapper{max-width:900px;margin:0 auto;position:relative;}
+.video-glow{position:absolute;inset:-30px;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(91,110,245,.15) 0%,transparent 70%);}
+.video-container{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border2);box-shadow:0 40px 120px rgba(0,0,0,.7);background:var(--surface);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.video-thumbnail{position:absolute;inset:0;background:linear-gradient(135deg,#0C0F1A 0%,#111525 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:all .3s;}
+.play-btn{width:80px;height:80px;background:linear-gradient(135deg,#5B6EF5,#7B8FFF);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(91,110,245,.4);transition:all .3s;}
+.video-thumbnail:hover .play-btn{transform:scale(1.1);box-shadow:0 0 60px rgba(91,110,245,.6);}
+.play-btn svg{width:32px;height:32px;color:#fff;margin-left:4px;}
+.video-label{font-size:14px;color:var(--text2);}
+.mini-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:left;}
+.mini-card-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.mini-card-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;}
+.mini-progress{background:rgba(255,255,255,.08);border-radius:20px;height:6px;margin-top:8px;overflow:hidden;}
+.mini-progress-fill{height:100%;border-radius:20px;transition:width 1.5s cubic-bezier(.4,0,.2,1);}
+.features-section{padding:100px 48px;max-width:1200px;margin:0 auto;}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-top:60px;}
+.feature-card{background:var(--bg);padding:36px 32px;transition:background .2s;position:relative;overflow:hidden;}
+.feature-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 80% at 0% 0%,rgba(91,110,245,.06) 0%,transparent 70%);opacity:0;transition:opacity .3s;}
+.feature-card:hover{background:var(--surface);}
+.feature-card:hover::before{opacity:1;}
+.feature-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:20px;}
+.feature-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:10px;letter-spacing:-0.5px;}
+.feature-desc{font-size:14px;color:var(--text2);line-height:1.7;font-weight:300;}
+.feature-tag{display:inline-flex;margin-top:16px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(91,110,245,.1);color:var(--accent2);border:1px solid rgba(91,110,245,.2);font-family:'JetBrains Mono',monospace;}
+.frameworks-section{padding:100px 48px;text-align:center;background:linear-gradient(180deg,transparent 0%,rgba(91,110,245,.04) 50%,transparent 100%);}
+.frameworks-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:800px;margin:48px auto 0;}
+.fw-chip{padding:10px 20px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);background:var(--surface);transition:all .2s;cursor:default;display:flex;align-items:center;gap:8px;}
+.fw-chip:hover{border-color:var(--accent);color:var(--accent2);background:rgba(91,110,245,.08);}
+.fw-dot{width:6px;height:6px;border-radius:50%;}
+.integrations-section{padding:100px 24px;text-align:center;overflow:hidden;}
+.integrations-scroll{display:flex;gap:16px;animation:scroll 30s linear infinite;width:max-content;margin-top:48px;}
+.integrations-scroll2{display:flex;gap:16px;animation:scroll 25s linear infinite reverse;width:max-content;margin-top:12px;}
+@keyframes scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.int-chip{display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:10px;white-space:nowrap;flex-shrink:0;font-size:13px;font-weight:500;color:var(--text2);}
+.int-icon{font-size:18px;}
+.stats-wrap{padding:0 48px;max-width:1200px;margin:0 auto;}
+.stats-section{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:16px;}
+.stat-block{background:var(--bg);padding:40px 32px;text-align:center;}
+.stat-block-val{font-family:'Syne',sans-serif;font-size:52px;font-weight:800;letter-spacing:-2px;background:linear-gradient(135deg,#fff,var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:8px;}
+.stat-block-lbl{font-size:14px;color:var(--text3);}
+.pricing-section{padding:100px 48px;text-align:center;}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:60px auto 0;}
+.pricing-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px 28px;text-align:left;position:relative;transition:all .2s;}
+.pricing-card:hover{border-color:var(--border2);transform:translateY(-4px);}
+.pricing-card.popular{border-color:var(--accent);background:rgba(91,110,245,.06);}
+.popular-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent);border-radius:20px;padding:4px 16px;font-size:11px;font-weight:700;color:#fff;letter-spacing:0.5px;}
+.pricing-tier{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:16px;}
+.pricing-price{font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:#fff;letter-spacing:-2px;margin-bottom:4px;}
+.pricing-price span{font-size:18px;font-weight:400;color:var(--text3);letter-spacing:0;}
+.pricing-desc{font-size:13px;color:var(--text2);margin-bottom:28px;line-height:1.6;}
+.pricing-divider{height:1px;background:var(--border);margin-bottom:24px;}
+.pricing-feature{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);margin-bottom:12px;}
+.pricing-check{color:var(--green);font-size:16px;flex-shrink:0;}
+.pricing-btn{width:100%;padding:12px;margin-top:28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.pricing-btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text);}
+.pricing-btn-outline:hover{border-color:var(--accent);color:var(--accent2);}
+.pricing-btn-solid{background:var(--accent);border:none;color:#fff;}
+.pricing-btn-solid:hover{background:#4A5DE0;box-shadow:0 0 24px rgba(91,110,245,.4);}
+.cta-section{padding:100px 48px;text-align:center;position:relative;overflow:hidden;}
+.cta-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(91,110,245,.1) 0%,transparent 70%);}
+.cta-title{font-family:'Syne',sans-serif;font-size:clamp(36px,5vw,64px);font-weight:800;letter-spacing:-2px;color:#fff;margin-bottom:20px;}
+.cta-sub{font-size:18px;color:var(--text2);margin-bottom:40px;font-weight:300;}
+.cta-buttons{display:flex;gap:16px;justify-content:center;align-items:center;}
+footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;}
+.footer-brand p{font-size:13px;color:var(--text3);margin-top:12px;line-height:1.7;max-width:260px;}
+.footer-col h4{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:16px;}
+.footer-col a{display:block;font-size:13px;color:var(--text2);text-decoration:none;margin-bottom:10px;transition:color .15s;}
+.footer-col a:hover{color:var(--text);}
+.footer-bottom{border-top:1px solid var(--border);padding:24px 48px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text3);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+<nav id="navbar">
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-mark">A</div>
+    <span class="nav-logo-text">AURA</span>
+  </a>
+  <div class="nav-links">
+    <a href="#features">Platform</a>
+    <a href="#frameworks">Compliance</a>
+    <a href="#integrations">Integrations</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#demo">Demo</a>
+  </div>
+  <div class="nav-cta">
+    <a href="http://localhost:3000" class="btn-ghost">Sign in</a>
+    <a href="http://localhost:3000" class="btn-primary">Get started free <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+  </div>
+</nav>
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-badge"><span>India&rsquo;s First AI-Powered GRC Platform</span></div>
+  <h1>Security compliance,<br/><span class="accent">automated for India</span></h1>
+  <p class="hero-sub">The only AI-powered GRC platform built for Indian regulations &mdash; RBI, DPDP Act 2023, ISO 27001, and 5 more frameworks. 10&times; cheaper than global competitors.</p>
+  <div class="hero-cta">
+    <a href="http://localhost:3000" class="btn-hero">Start free trial <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+    <a href="#demo" class="btn-hero-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Watch demo</a>
+  </div>
+  <div class="trust-badges">
+    <div class="trust-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00D68F" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>SOC 2 &middot; ISO 27001 &middot; NIST CSF</div>
+    <div class="trust-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00D68F" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>RBI &middot; DPDP Act 2023</div>
+    <div class="trust-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00D68F" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>30 integrations &middot; ML risk scoring</div>
+    <div class="trust-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00D68F" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Made in India &#127470;&#127475;</div>
+  </div>
+  <div class="dashboard-preview">
+    <div class="dashboard-glow"></div>
+    <div class="dashboard-frame">
+      <div class="dashboard-topbar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <div class="dashboard-url">localhost:3000 &mdash; AURA Platform</div>
+      </div>
+      <div class="dashboard-body">
+        <div class="db-sidebar">
+          <div class="db-sidebar-logo"><div class="db-logo-mark">A</div><div class="db-logo-text">AURA</div></div>
+          <div class="db-nav-item active"><div class="db-nav-dot accent"></div>Overview</div>
+          <div class="db-nav-item"><div class="db-nav-dot"></div>Risk Trends</div>
+          <div class="db-nav-item"><div class="db-nav-dot"></div>Compliance</div>
+          <div class="db-nav-item"><div class="db-nav-dot"></div>Controls</div>
+          <div class="db-nav-item"><div class="db-nav-dot"></div>Integrations</div>
+          <div class="db-nav-item"><div class="db-nav-dot"></div>Audit Trail</div>
+          <div class="db-nav-item"><div class="db-nav-dot"></div>Remediation</div>
+          <div class="db-nav-item"><div class="db-nav-dot"></div>Trust Center</div>
+        </div>
+        <div class="db-main">
+          <div class="db-stats">
+            <div class="db-stat"><div class="db-stat-val" style="color:#F87171">42</div><div class="db-stat-lbl">Risk Score</div></div>
+            <div class="db-stat"><div class="db-stat-val" style="color:#5B6EF5">184</div><div class="db-stat-lbl">Controls</div></div>
+            <div class="db-stat"><div class="db-stat-val" style="color:#00D68F">73%</div><div class="db-stat-lbl">ISO Score</div></div>
+            <div class="db-stat"><div class="db-stat-val" style="color:#FF7849">8</div><div class="db-stat-lbl">Open Issues</div></div>
+          </div>
+          <div class="db-chart">
+            <div class="db-chart-title">Risk Score Over Time &mdash; Last 8 Assessments</div>
+            <svg width="100%" viewBox="0 0 560 150">
+              <line x1="0" y1="37" x2="560" y2="37" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+              <line x1="0" y1="75" x2="560" y2="75" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+              <line x1="0" y1="112" x2="560" y2="112" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+              <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5B6EF5" stop-opacity="0.4"/><stop offset="100%" stop-color="#5B6EF5" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0,110 L70,95 L140,100 L210,80 L280,70 L350,55 L420,60 L490,42 L560,42 L560,150 L0,150 Z" fill="url(#g1)" opacity="0.4"/>
+              <path d="M0,110 L70,95 L140,100 L210,80 L280,70 L350,55 L420,60 L490,42 L560,42" fill="none" stroke="#5B6EF5" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="0" cy="110" r="4" fill="#F87171" stroke="#0C0F1A" stroke-width="2"/>
+              <circle cx="140" cy="100" r="4" fill="#FB923C" stroke="#0C0F1A" stroke-width="2"/>
+              <circle cx="280" cy="70" r="4" fill="#FBBF24" stroke="#0C0F1A" stroke-width="2"/>
+              <circle cx="420" cy="60" r="4" fill="#34D399" stroke="#0C0F1A" stroke-width="2"/>
+              <circle cx="560" cy="42" r="4" fill="#34D399" stroke="#0C0F1A" stroke-width="2"/>
+              <rect x="8" y="122" width="60" height="18" rx="4" fill="rgba(248,113,113,.15)"/>
+              <text x="38" y="135" font-size="9" fill="#F87171" text-anchor="middle" font-family="JetBrains Mono">SOC2 23%</text>
+              <rect x="76" y="122" width="70" height="18" rx="4" fill="rgba(0,214,143,.15)"/>
+              <text x="111" y="135" font-size="9" fill="#00D68F" text-anchor="middle" font-family="JetBrains Mono">ISO 73%</text>
+              <rect x="154" y="122" width="70" height="18" rx="4" fill="rgba(91,110,245,.15)"/>
+              <text x="189" y="135" font-size="9" fill="#7B8FFF" text-anchor="middle" font-family="JetBrains Mono">NIST 68%</text>
+              <rect x="232" y="122" width="68" height="18" rx="4" fill="rgba(245,158,11,.15)"/>
+              <text x="266" y="135" font-size="9" fill="#F59E0B" text-anchor="middle" font-family="JetBrains Mono">HIPAA 79%</text>
+              <rect x="308" y="122" width="60" height="18" rx="4" fill="rgba(236,72,153,.15)"/>
+              <text x="338" y="135" font-size="9" fill="#EC4899" text-anchor="middle" font-family="JetBrains Mono">GDPR 92%</text>
+              <rect x="376" y="122" width="55" height="18" rx="4" fill="rgba(139,92,246,.15)"/>
+              <text x="403" y="135" font-size="9" fill="#8B5CF6" text-anchor="middle" font-family="JetBrains Mono">RBI 93%</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="stats-wrap reveal">
+  <div class="stats-section">
+    <div class="stat-block"><div class="stat-block-val" data-target="184">0</div><div class="stat-block-lbl">Security Controls</div></div>
+    <div class="stat-block"><div class="stat-block-val" data-target="30">0</div><div class="stat-block-lbl">Integrations</div></div>
+    <div class="stat-block"><div class="stat-block-val">87%</div><div class="stat-block-lbl">ML Model Accuracy</div></div>
+    <div class="stat-block"><div class="stat-block-val" data-target="8">0</div><div class="stat-block-lbl">Compliance Frameworks</div></div>
+  </div>
+</div>
+<section class="video-section reveal" id="demo">
+  <div class="section-label">See It In Action</div>
+  <h2 class="section-title">Watch AURA automate<br/>your compliance</h2>
+  <p class="section-sub">From zero to fully compliant in minutes. See how AURA pulls live data, runs ML risk scoring, and maps your posture across 8 frameworks automatically.</p>
+  <div class="video-wrapper">
+    <div class="video-glow"></div>
+    <div class="video-container" id="videoContainer" onclick="playVideo()">
+      <div class="video-thumbnail">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;padding:32px;margin-bottom:20px;">
+          <div class="mini-card"><div class="mini-card-label">Risk Score</div><div class="mini-card-val" style="color:#F87171">42<span style="font-size:16px;color:#4A5278">/100</span></div><div class="mini-progress"><div class="mini-progress-fill" style="width:42%;background:#F87171;"></div></div></div>
+          <div class="mini-card"><div class="mini-card-label">ISO 27001</div><div class="mini-card-val" style="color:#00D68F">73<span style="font-size:16px;color:#4A5278">%</span></div><div class="mini-progress"><div class="mini-progress-fill" style="width:73%;background:#00D68F;"></div></div></div>
+          <div class="mini-card"><div class="mini-card-label">RBI Cybersecurity</div><div class="mini-card-val" style="color:#8B5CF6">93<span style="font-size:16px;color:#4A5278">%</span></div><div class="mini-progress"><div class="mini-progress-fill" style="width:93%;background:#8B5CF6;"></div></div></div>
+          <div class="mini-card"><div class="mini-card-label">DPDP Act 2023</div><div class="mini-card-val" style="color:#FF7849">40<span style="font-size:16px;color:#4A5278">%</span></div><div class="mini-progress"><div class="mini-progress-fill" style="width:40%;background:#FF7849;"></div></div></div>
+        </div>
+        <div class="play-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+        <div class="video-label">Watch 3-minute platform demo</div>
+      </div>
+      <iframe id="videoEmbed" style="width:100%;height:100%;border:none;display:none;" data-src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;max-width:900px;margin:60px auto 0;text-align:left;">
+    <div><div style="width:36px;height:36px;border-radius:10px;background:rgba(91,110,245,.15);border:1px solid rgba(91,110,245,.3);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#7B8FFF;margin-bottom:16px;">1</div><div style="font-weight:600;font-size:14px;color:#fff;margin-bottom:8px;">Connect Tools</div><div style="font-size:13px;color:var(--text2);line-height:1.6;">Connect 30 security tools in one click &mdash; Okta, AWS, CrowdStrike &amp; more</div></div>
+    <div><div style="width:36px;height:36px;border-radius:10px;background:rgba(0,214,143,.1);border:1px solid rgba(0,214,143,.2);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#00D68F;margin-bottom:16px;">2</div><div style="font-weight:600;font-size:14px;color:#fff;margin-bottom:8px;">ML Risk Scoring</div><div style="font-size:13px;color:var(--text2);line-height:1.6;">AI analyses 19 security features and produces a 0&ndash;100 risk score in seconds</div></div>
+    <div><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,120,73,.1);border:1px solid rgba(255,120,73,.2);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#FF7849;margin-bottom:16px;">3</div><div style="font-weight:600;font-size:14px;color:#fff;margin-bottom:8px;">Auto Mapping</div><div style="font-size:13px;color:var(--text2);line-height:1.6;">184 controls auto-mapped across 8 frameworks &mdash; ISO, RBI, DPDP, SOC 2 &amp; more</div></div>
+    <div><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,77,143,.1);border:1px solid rgba(255,77,143,.2);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#FF4D8F;margin-bottom:16px;">4</div><div style="font-weight:600;font-size:14px;color:#fff;margin-bottom:8px;">Audit Ready</div><div style="font-size:13px;color:var(--text2);line-height:1.6;">Auto-generated evidence, board PDF reports, and public Trust Center</div></div>
+  </div>
+</section>
+<section class="features-section reveal" id="features">
+  <div class="section-label" style="text-align:center;">Platform Features</div>
+  <h2 class="section-title" style="text-align:center;">Everything you need for<br/>enterprise compliance</h2>
+  <div class="features-grid">
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(91,110,245,.1);">&#129302;</div><div class="feature-title">ML Risk Scoring</div><div class="feature-desc">Random Forest model trained on 19 security posture features. 87% accuracy. 0-100 risk score in under 10 seconds.</div><div class="feature-tag">Proprietary &middot; India-first</div></div>
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(0,214,143,.1);">&#128506;&#65039;</div><div class="feature-title">8 Compliance Frameworks</div><div class="feature-desc">ISO 27001, NIST CSF, SOC 2, HIPAA, GDPR, PCI DSS, RBI Cybersecurity, and DPDP Act 2023 &mdash; all automatically mapped.</div><div class="feature-tag">184 controls total</div></div>
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(255,120,73,.1);">&#128176;</div><div class="feature-title">FAIR Model in &#8377;</div><div class="feature-desc">Translate your cyber risk score into board-level financial exposure in Indian Rupees. First GRC platform to offer FAIR in INR.</div><div class="feature-tag">India-exclusive</div></div>
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(255,77,143,.1);">&#9889;</div><div class="feature-title">30 Integrations</div><div class="feature-desc">Pull live security data from Okta, AWS, CrowdStrike, GitHub, Tenable, Splunk, Datadog, Wiz, SentinelOne and 21 more.</div><div class="feature-tag">Auto-pull &middot; Real-time</div></div>
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(139,92,246,.1);">&#128274;</div><div class="feature-title">Trust Center</div><div class="feature-desc">Public compliance posture page to share with customers &mdash; proving your security without sharing sensitive audit reports.</div><div class="feature-tag">Like Vanta &middot; Built-in</div></div>
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(251,191,36,.1);">&#128203;</div><div class="feature-title">AI Evidence Collection</div><div class="feature-desc">Automated, timestamped evidence artifacts from live data &mdash; replacing manual screenshot collection for auditors.</div><div class="feature-tag">Auditor-ready</div></div>
+  </div>
+</section>
+<section class="frameworks-section reveal" id="frameworks">
+  <div class="section-label">Compliance Coverage</div>
+  <h2 class="section-title">8 frameworks.<br/>184 controls. Zero manual work.</h2>
+  <p class="section-sub">Every major compliance framework your enterprise needs &mdash; including India-specific RBI and DPDP Act 2023 that global tools ignore.</p>
+  <div class="frameworks-grid">
+    <div class="fw-chip"><div class="fw-dot" style="background:#EF4444"></div>SOC 2 Type II <span style="color:var(--text3);font-size:11px;">48 controls</span></div>
+    <div class="fw-chip"><div class="fw-dot" style="background:#22C55E"></div>ISO 27001:2022 <span style="color:var(--text3);font-size:11px;">34 controls</span></div>
+    <div class="fw-chip"><div class="fw-dot" style="background:#6366F1"></div>NIST CSF v2.0 <span style="color:var(--text3);font-size:11px;">34 controls</span></div>
+    <div class="fw-chip"><div class="fw-dot" style="background:#F59E0B"></div>HIPAA <span style="color:var(--text3);font-size:11px;">17 controls</span></div>
+    <div class="fw-chip"><div class="fw-dot" style="background:#EC4899"></div>GDPR <span style="color:var(--text3);font-size:11px;">15 controls</span></div>
+    <div class="fw-chip"><div class="fw-dot" style="background:#14B8A6"></div>PCI DSS v4.0 <span style="color:var(--text3);font-size:11px;">12 controls</span></div>
+    <div class="fw-chip"><div class="fw-dot" style="background:#8B5CF6"></div>RBI Cybersecurity &#127470;&#127475; <span style="color:var(--text3);font-size:11px;">12 controls</span></div>
+    <div class="fw-chip"><div class="fw-dot" style="background:#F97316"></div>DPDP Act 2023 &#127470;&#127475; <span style="color:var(--text3);font-size:11px;">12 controls</span></div>
+  </div>
+</section>
+<section class="integrations-section reveal" id="integrations">
+  <div class="section-label">Integrations</div>
+  <h2 class="section-title">Connects to your<br/>entire security stack</h2>
+  <p class="section-sub">30 security tool integrations &mdash; pull live data from your existing tools automatically.</p>
+  <div style="overflow:hidden;margin:0 -24px;mask-image:linear-gradient(90deg,transparent,black 10%,black 90%,transparent);">
+    <div class="integrations-scroll">
+      <div class="int-chip"><span class="int-icon">&#128272;</span>Okta</div><div class="int-chip"><span class="int-icon">&#128203;</span>Jira</div><div class="int-chip"><span class="int-icon">&#128172;</span>Slack</div><div class="int-chip"><span class="int-icon">&#128202;</span>Datadog</div><div class="int-chip"><span class="int-icon">&#129413;</span>CrowdStrike</div><div class="int-chip"><span class="int-icon">&#128025;</span>GitHub</div><div class="int-chip"><span class="int-icon">&#10052;&#65039;</span>Snowflake</div><div class="int-chip"><span class="int-icon">&#128269;</span>Splunk</div><div class="int-chip"><span class="int-icon">&#9881;&#65039;</span>ServiceNow</div><div class="int-chip"><span class="int-icon">&#128737;&#65039;</span>Tenable</div><div class="int-chip"><span class="int-icon">&#128680;</span>PagerDuty</div><div class="int-chip"><span class="int-icon">&#128302;</span>Qualys</div><div class="int-chip"><span class="int-icon">&#129302;</span>SentinelOne</div><div class="int-chip"><span class="int-icon">&#127759;</span>Cloudflare</div><div class="int-chip"><span class="int-icon">&#128273;</span>HashiCorp Vault</div>
+      <div class="int-chip"><span class="int-icon">&#128272;</span>Okta</div><div class="int-chip"><span class="int-icon">&#128203;</span>Jira</div><div class="int-chip"><span class="int-icon">&#128172;</span>Slack</div><div class="int-chip"><span class="int-icon">&#128202;</span>Datadog</div><div class="int-chip"><span class="int-icon">&#129413;</span>CrowdStrike</div><div class="int-chip"><span class="int-icon">&#128025;</span>GitHub</div><div class="int-chip"><span class="int-icon">&#10052;&#65039;</span>Snowflake</div><div class="int-chip"><span class="int-icon">&#128269;</span>Splunk</div><div class="int-chip"><span class="int-icon">&#9881;&#65039;</span>ServiceNow</div><div class="int-chip"><span class="int-icon">&#128737;&#65039;</span>Tenable</div><div class="int-chip"><span class="int-icon">&#128680;</span>PagerDuty</div><div class="int-chip"><span class="int-icon">&#128302;</span>Qualys</div><div class="int-chip"><span class="int-icon">&#129302;</span>SentinelOne</div><div class="int-chip"><span class="int-icon">&#127759;</span>Cloudflare</div><div class="int-chip"><span class="int-icon">&#128273;</span>HashiCorp Vault</div>
+    </div>
+    <div class="integrations-scroll2">
+      <div class="int-chip"><span class="int-icon">&#128270;</span>Elastic Security</div><div class="int-chip"><span class="int-icon">&#127785;</span>Wiz</div><div class="int-chip"><span class="int-icon">&#128221;</span>SonarQube</div><div class="int-chip"><span class="int-icon">&#127919;</span>Rapid7</div><div class="int-chip"><span class="int-icon">&#11035;</span>Carbon Black</div><div class="int-chip"><span class="int-icon">&#128225;</span>Trend Micro</div><div class="int-chip"><span class="int-icon">&#129528;</span>Veracode</div><div class="int-chip"><span class="int-icon">&#128302;</span>Nessus Pro</div><div class="int-chip"><span class="int-icon">&#128101;</span>Duo Security</div><div class="int-chip"><span class="int-icon">&#128027;</span>Snyk</div><div class="int-chip"><span class="int-icon">&#127968;</span>BeyondTrust</div><div class="int-chip"><span class="int-icon">&#129504;</span>Darktrace</div><div class="int-chip"><span class="int-icon">&#129354;</span>MS Defender</div><div class="int-chip"><span class="int-icon">&#127956;</span>Lacework</div><div class="int-chip"><span class="int-icon">&#128310;</span>Prisma Cloud</div>
+      <div class="int-chip"><span class="int-icon">&#128270;</span>Elastic Security</div><div class="int-chip"><span class="int-icon">&#127785;</span>Wiz</div><div class="int-chip"><span class="int-icon">&#128221;</span>SonarQube</div><div class="int-chip"><span class="int-icon">&#127919;</span>Rapid7</div><div class="int-chip"><span class="int-icon">&#11035;</span>Carbon Black</div><div class="int-chip"><span class="int-icon">&#128225;</span>Trend Micro</div><div class="int-chip"><span class="int-icon">&#129528;</span>Veracode</div><div class="int-chip"><span class="int-icon">&#128302;</span>Nessus Pro</div><div class="int-chip"><span class="int-icon">&#128101;</span>Duo Security</div><div class="int-chip"><span class="int-icon">&#128027;</span>Snyk</div><div class="int-chip"><span class="int-icon">&#127968;</span>BeyondTrust</div><div class="int-chip"><span class="int-icon">&#129504;</span>Darktrace</div><div class="int-chip"><span class="int-icon">&#129354;</span>MS Defender</div><div class="int-chip"><span class="int-icon">&#127956;</span>Lacework</div><div class="int-chip"><span class="int-icon">&#128310;</span>Prisma Cloud</div>
+    </div>
+  </div>
+</section>
+<section class="pricing-section reveal" id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2 class="section-title">10&times; cheaper than<br/>global competitors</h2>
+  <p class="section-sub">Vanta charges &#8377;12L/year. AURA starts at &#8377;5,000/month. Same features, India-first frameworks, ML risk scoring included.</p>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="pricing-tier">Starter</div>
+      <div class="pricing-price">&#8377;5,000<span>/mo</span></div>
+      <div class="pricing-desc">For MSMEs and startups beginning their compliance journey</div>
+      <div class="pricing-divider"></div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>3 compliance frameworks</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>ML risk scoring</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>10 integrations</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>Up to 5 users</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>Trust Center</div>
+      <div class="pricing-feature" style="color:var(--text3)">&#10007; AI remediation advice</div>
+      <button class="pricing-btn pricing-btn-outline" onclick="window.location='http://localhost:3000'">Get started free</button>
+    </div>
+    <div class="pricing-card popular">
+      <div class="popular-badge">MOST POPULAR</div>
+      <div class="pricing-tier">Professional</div>
+      <div class="pricing-price">&#8377;15,000<span>/mo</span></div>
+      <div class="pricing-desc">For growing companies needing full compliance automation</div>
+      <div class="pricing-divider"></div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>All 8 frameworks (184 controls)</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>ML risk scoring + FAIR in &#8377;</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>All 30 integrations</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>Up to 25 users</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>AI remediation + Executive summary</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>Board PDF reports + Evidence collection</div>
+      <button class="pricing-btn pricing-btn-solid" onclick="window.location='http://localhost:3000'">Start free trial</button>
+    </div>
+    <div class="pricing-card">
+      <div class="pricing-tier">Enterprise</div>
+      <div class="pricing-price">&#8377;25,000<span>/mo</span></div>
+      <div class="pricing-desc">For large enterprises and defence contractors</div>
+      <div class="pricing-divider"></div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>Everything in Professional</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>Unlimited users</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>AI Deception Grid (Q3 2026)</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>Supply Chain Risk DNA</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>Dedicated CISO support</div>
+      <div class="pricing-feature"><span class="pricing-check">&#10003;</span>On-premise deployment</div>
+      <button class="pricing-btn pricing-btn-outline">Contact sales</button>
+    </div>
+  </div>
+  <p style="margin-top:28px;font-size:13px;color:var(--text3);">vs Vanta at &#8377;12L&ndash;&#8377;80L/year &middot; Drata at &#8377;6L&ndash;&#8377;80L/year &middot; No India frameworks &middot; No ML scoring</p>
+</section>
+<section class="cta-section reveal">
+  <div class="cta-bg"></div>
+  <div class="section-label">Get Started Today</div>
+  <h2 class="cta-title">India&rsquo;s compliance.<br/>Automated.</h2>
+  <p class="cta-sub">Join the first wave of Indian enterprises using AI to automate security compliance. Free trial, no credit card required.</p>
+  <div class="cta-buttons">
+    <a href="http://localhost:3000" class="btn-hero">Start free trial <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+    <a href="#demo" class="btn-hero-outline">Watch demo</a>
+  </div>
+  <p style="margin-top:20px;font-size:12px;color:var(--text3);">Built at Rashtriya Raksha University, Gujarat</p>
+</section>
+<footer>
+  <div class="footer-brand">
+    <a href="#" class="nav-logo"><div class="nav-logo-mark">A</div><span class="nav-logo-text">AURA</span></a>
+    <p>India&rsquo;s first AI-powered GRC platform. Built for Indian regulations &mdash; RBI, DPDP Act 2023, and more.</p>
+  </div>
+  <div class="footer-col"><h4>Platform</h4><a href="#features">Features</a><a href="#frameworks">Frameworks</a><a href="#integrations">Integrations</a><a href="#pricing">Pricing</a></div>
+  <div class="footer-col"><h4>Compliance</h4><a href="#">ISO 27001:2022</a><a href="#">NIST CSF v2.0</a><a href="#">RBI Cybersecurity</a><a href="#">DPDP Act 2023</a></div>
+  <div class="footer-col"><h4>Company</h4><a href="#">About</a><a href="http://localhost:3000">Launch App</a><a href="#">Contact</a></div>
+</footer>
+<div class="footer-bottom">
+  <span>&copy; 2026 AURA Platform. Built in India &#127470;&#127475;</span>
+  <span>Amit Singh Bishnoi &middot; Rashtriya Raksha University, Gujarat</span>
+</div>
+<script>
+const cursor=document.getElementById('cursor');
+const trail=document.getElementById('cursorTrail');
+let mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx+'px';cursor.style.top=my+'px';});
+setInterval(()=>{tx+=(mx-tx)*.15;ty+=(my-ty)*.15;trail.style.left=tx+'px';trail.style.top=ty+'px';},16);
+const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+const countEls=document.querySelectorAll('[data-target]');
+const countObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const el=e.target,target=parseInt(el.dataset.target);
+      let start=0;
+      const step=ts=>{if(!start)start=ts;const p=Math.min((ts-start)/1500,1);el.textContent=Math.round((1-(1-p)**3)*target);if(p<1)requestAnimationFrame(step);};
+      requestAnimationFrame(step);countObs.unobserve(el);
+    }
+  });
+},{threshold:0.5});
+countEls.forEach(el=>countObs.observe(el));
+function playVideo(){const c=document.getElementById('videoContainer'),e=document.getElementById('videoEmbed');e.src=e.dataset.src;e.style.display='block';c.querySelector('.video-thumbnail').style.display='none';}
+window.addEventListener('scroll',()=>{document.getElementById('navbar').style.background=window.scrollY>50?'rgba(6,8,15,.95)':'rgba(6,8,15,.8)';});
+window.addEventListener('load',()=>{document.querySelectorAll('.mini-progress-fill').forEach(el=>{const w=el.style.width;el.style.width='0%';setTimeout(()=>{el.style.width=w;},500);});});
+</script>
+</body>
+</html>

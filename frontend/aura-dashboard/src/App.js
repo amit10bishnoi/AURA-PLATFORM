@@ -199,7 +199,6 @@ const NAV_ITEMS = [
   {id:"compliance",  label:"Compliance",      icon:ClipboardList,   roles:["ciso","auditor","developer"]},
   {id:"audit",       label:"Audit Trail",     icon:Clock,           roles:["ciso","auditor"]},
   {id:"remediation", label:"Remediation",     icon:CheckCircle,     roles:["ciso","developer"]},
-  {id:"users",       label:"Team",            icon:Users,           roles:["ciso"]},
   {id:"trustcenter",   label:"Trust Center",    icon:Globe,           roles:["ciso","auditor"]},
   {id:"integrations",  label:"Integrations",    icon:Zap,             roles:["ciso","developer"]},
   {id:"audit-logs",  label:"Audit Logs",       icon:Clock,           roles:["ciso","auditor","developer"]},
@@ -413,23 +412,23 @@ const G = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --bg:#0F1117;--surface:#1A1D27;--surface2:#222536;--surface3:#2A2E40;
-  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
-  --text:#F0F2F8;--text2:#9EA3B8;--text3:#6B7190;
-  --accent:#6366F1;--accent2:#818CF8;--accentbg:rgba(99,102,241,.15);
+  --bg:#080808;--surface:#0e0e0e;--surface2:#111111;--surface3:#161616;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.1);
+  --text:#eeeeee;--text2:#888888;--text3:#444444;
+  --accent:#6366f1;--accent2:#a5b4fc;--accentbg:rgba(99,102,241,.08);
   --red:#F87171;--redbg:rgba(248,113,113,.12);
   --orange:#FB923C;--orangebg:rgba(251,146,60,.12);
   --yellow:#FBBF24;--yellowbg:rgba(251,191,36,.12);
   --green:#34D399;--greenbg:rgba(52,211,153,.12);
   --blue:#60A5FA;--bluebg:rgba(96,165,250,.12);
-  --nav-w:252px;--topbar-h:58px;--radius:8px;--radius-lg:12px;
-  --shadow:0 1px 3px rgba(0,0,0,.4);
+  --nav-w:220px;--topbar-h:52px;--radius:8px;--radius-lg:12px;
+  --shadow:0 1px 2px rgba(0,0,0,.8);
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
 button,input,select,textarea{font-family:inherit;}
 .auth-root{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;background:var(--bg);}
 @media(max-width:900px){.auth-root{grid-template-columns:1fr;}}
-.auth-hero{background:linear-gradient(160deg,#0F1117 0%,#1A1D27 40%,#1e2035 100%);display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:64px 56px;position:relative;overflow:hidden;border-right:1px solid var(--border);}
+.auth-hero{background:linear-gradient(160deg,#060606 0%,#0a0a0a 40%,#0d0d14 100%);display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:64px 56px;position:relative;overflow:hidden;border-right:1px solid var(--border);}
 .auth-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 60% 20%,rgba(99,102,241,.18) 0%,transparent 60%),radial-gradient(circle at 20% 80%,rgba(52,211,153,.08) 0%,transparent 50%);}
 .auth-hero-grid{position:absolute;inset:0;opacity:.04;background-image:linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px);background-size:48px 48px;}
 .auth-hero-content{position:relative;z-index:1;}
@@ -465,34 +464,34 @@ button,input,select,textarea{font-family:inherit;}
 .tenant-opt{padding:10px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text2);cursor:pointer;text-align:center;font-size:13px;font-weight:500;transition:all .15s;}
 .tenant-opt.active{border-color:var(--accent);color:var(--accent2);background:var(--accentbg);}
 .shell{display:grid;grid-template-columns:var(--nav-w) 1fr;min-height:100vh;}
-.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;width:var(--nav-w);height:100vh;z-index:50;overflow-y:auto;}
-.sidebar-logo{padding:22px 20px 0;display:flex;align-items:center;gap:10px;margin-bottom:32px;}
-.sidebar-logo-mark{width:32px;height:32px;background:linear-gradient(135deg,#6366F1,#818CF8);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sidebar{background:#0a0a0a;border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;position:fixed;top:0;left:0;width:var(--nav-w);height:100vh;z-index:50;overflow-y:auto;}
+.sidebar-logo{padding:16px 14px 0;display:flex;align-items:center;gap:8px;margin-bottom:20px;}
+.sidebar-logo-mark{width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:7px;box-shadow:0 0 14px rgba(99,102,241,.35);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .sidebar-logo-text{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.3px;}
-.nav-section-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;padding:0 16px;margin-bottom:4px;margin-top:8px;}
-.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;margin:1px 8px;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:400;color:var(--text2);transition:all .12s;border:none;background:none;width:calc(100% - 16px);text-align:left;}
-.nav-item:hover{background:var(--surface2);color:var(--text);}
-.nav-item.active{background:var(--accentbg);color:var(--accent2);font-weight:500;border:1px solid rgba(99,102,241,.2);}
+.nav-section-label{font-size:9.5px;font-weight:600;color:var(--text3);letter-spacing:0.8px;text-transform:uppercase;padding:0 12px;margin-bottom:2px;margin-top:20px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:6px 10px;margin:1px 6px;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:400;color:var(--text2);transition:all .1s;border:1px solid transparent;background:none;width:calc(100% - 12px);text-align:left;}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--text);border-color:rgba(255,255,255,.06);}
+.nav-item.active{background:rgba(99,102,241,.08);color:#a5b4fc;font-weight:500;border:1px solid rgba(99,102,241,.15);border-left:2px solid #6366f1;}
 .nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.75;}
 .nav-item.active svg{opacity:1;}
 .main-area{margin-left:var(--nav-w);display:flex;flex-direction:column;min-height:100vh;width:calc(100vw - var(--nav-w));min-width:0;overflow-x:hidden;}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);height:var(--topbar-h);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:40;width:100%;}
-.topbar-search{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 13px;font-size:12px;color:var(--text3);width:220px;}
+.topbar{background:rgba(8,8,8,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06);height:var(--topbar-h);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:40;width:100%;}
+.topbar-search{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--text3);width:240px;transition:all .15s;}
 .topbar-search input{background:none;border:none;outline:none;font-size:12px;color:var(--text);width:100%;}
-.topbar-btn{width:34px;height:34px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);}
+.topbar-btn{width:30px;height:30px;border-radius:6px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:all .1s;}
 .org-chip{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:5px 11px;font-size:12px;font-weight:500;color:var(--text2);}
 .page-body{padding:28px;flex:1;min-width:0;overflow-x:hidden;box-sizing:border-box;}
 .page-header{margin-bottom:24px;}
 .page-title{font-size:20px;font-weight:600;color:var(--text);letter-spacing:-0.3px;margin-bottom:3px;}
 .page-sub{font-size:12px;color:var(--text3);}
 .page-crumb{font-size:11px;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);}
+.card{background:#0e0e0e;border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-lg);transition:border-color .15s;}.card:hover{border-color:rgba(255,255,255,.1);}
 .card-header{padding:16px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .card-title{font-size:13px;font-weight:600;color:var(--text);}
 .card-sub{font-size:11px;color:var(--text3);margin-top:2px;}
 .card-body{padding:20px;}
 .stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px;}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;position:relative;overflow:hidden;}
+.stat-card{background:#0e0e0e;border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-lg);padding:18px 20px;position:relative;overflow:hidden;transition:all .15s;}.stat-card:hover{border-color:rgba(255,255,255,.12);transform:translateY(-1px);}
 .stat-card-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
 .stat-card-val{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-1px;line-height:1;margin-bottom:4px;}
 .stat-card-lbl{font-size:11px;color:var(--text3);}
@@ -1134,7 +1133,7 @@ function TeamManagement({token,tenantId,tenantName,onExpired}) {
   const roleBgs={ciso:"var(--redbg)",developer:"var(--accentbg)",auditor:"var(--greenbg)"};
 
   const load=useCallback(async()=>{
-    try{const d=await realServer.getUsers(token,tenantId);setUsers(d);setLoading(false);}
+    try{const d=await realServer.getUsers(token,tenantId);setUsers(Array.isArray(d)?d:d?.users||d?.members||[]);setLoading(false);}
     catch(e){if(e.message==="AUTH_EXPIRED"){onExpired();return;}setError(e.message);setLoading(false);}
   },[token,tenantId,onExpired]);
 
@@ -2027,7 +2026,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="compliance"&&"Compliance Mapping"}
                 {activeTab==="audit"&&"Audit Trail"}
                 {activeTab==="remediation"&&"Remediation Board"}
-                {activeTab==="users"&&"Team Management"}
+                {activeTab==="team-mgmt"&&"Team Management"}
                 {activeTab==="trustcenter"&&"Trust Center"}
                 {activeTab==="integrations"&&"Integrations"}
                 {activeTab==="audit-logs"&&"Audit Logs"}
@@ -2052,7 +2051,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="compliance"&&"Automated compliance mapping across 8 frameworks"}
                 {activeTab==="audit"&&"Full history of all risk assessments"}
                 {activeTab==="remediation"&&"Track and manage security remediation tasks"}
-                {activeTab==="users"&&`Managing ${tenantName} workspace members`}
+                {activeTab==="team-mgmt"&&`Managing ${tenantName} workspace members`}
                 {activeTab==="trustcenter"&&"Share your compliance posture with customers and partners"}
                 {activeTab==="integrations"&&"Connect and pull security data from 10 tools"}
                 {activeTab==="audit-logs"&&"Full activity trail across your compliance platform"}
@@ -2074,7 +2073,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="compliance"                   &&<ComplianceTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
             {activeTab==="audit"                        &&<AuditTrail token={token} tenantId={tenantId} role={role} onExpired={handleExpired}/>}
             {activeTab==="remediation"                  &&<RemediationBoard token={token} tenantId={tenantId} role={role} onExpired={handleExpired}/>}
-            {activeTab==="users"        &&role==="ciso" &&<TeamManagement token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
+            {activeTab==="team-mgmt"&&role==="ciso"&&<TeamManagement token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
             {activeTab==="trustcenter"                  &&<TrustCenterTab token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
             {activeTab==="integrations"                 &&<IntegrationsTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
             {activeTab==="audit-logs"&&<AuditLogs token={token} tenantId={tenantId}/>}

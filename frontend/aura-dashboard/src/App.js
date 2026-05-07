@@ -1,5 +1,12 @@
 import TrustCenter from './TrustCenter';
 import PolicyManagement from "./PolicyManagement";
+import AutoEvidence from "./AutoEvidence";
+import AuditorPortal from "./AuditorPortal";
+import ContinuousMonitoring from "./ContinuousMonitoring";
+import VendorRisk from "./VendorRisk";
+import UserManagement from "./UserManagement";
+import Notifications from "./Notifications";
+import Reports from "./Reports";
 import AuditLogs from './AuditLogs';
 import EvidenceCollection from './EvidenceCollection';
 import { useState, useEffect, useCallback } from "react";
@@ -11,6 +18,7 @@ import {
   RefreshCw, FileBarChart, Building2, Bell, Search, ChevronDown,
   LayoutDashboard, Zap, Globe, AlertCircle, Check, Filter,
   FileText,
+  Activity,
 } from "lucide-react";
 
 const API = "http://localhost:8000";
@@ -197,6 +205,13 @@ const NAV_ITEMS = [
   {id:"audit-logs",  label:"Audit Logs",       icon:Clock,           roles:["ciso","auditor","developer"]},
   {id:"evidence",    label:"Evidence",          icon:FileCheck,       roles:["ciso","auditor"]},
   {id:"policies",   label:"Policies",        icon:FileText,        roles:["ciso","auditor"]},
+  {id:"vendors",       label:"Vendor Risk",   icon:Building2,    roles:["ciso","auditor"]},
+  {id:"team-mgmt",      label:"Team",          icon:Users,        roles:["ciso","admin"]},
+  {id:"notifications", label:"Notifications", icon:Bell,         roles:["ciso","auditor","developer","viewer"]},
+  {id:"reports",       label:"Reports",       icon:FileBarChart, roles:["ciso","auditor"]},
+  {id:"auto-evidence",  label:"Auto Evidence",    icon:Zap,          roles:["ciso","auditor"]},
+  {id:"auditor",        label:"Auditor Portal",   icon:Shield,       roles:["ciso","auditor"]},
+  {id:"monitoring",     label:"Monitoring",       icon:Activity,     roles:["ciso","developer"]},
 ];
 
 const ALL_FRAMEWORK_CONTROLS = [
@@ -2018,6 +2033,16 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="audit-logs"&&"Audit Logs"}
                 {activeTab==="evidence"&&"Evidence"}
                 {activeTab==="policies"&&"Policy Management"}
+                {activeTab==="vendors"&&"Vendor Risk"}
+                {activeTab==="team-mgmt"&&"Team"}
+                {activeTab==="notifications"&&"Notifications"}
+                {activeTab==="reports"&&"Reports"}
+            {activeTab==="auto-evidence"&&<AutoEvidence token={token} tenantId={tenantId}/>}
+            {activeTab==="auditor"&&<AuditorPortal token={token} tenantId={tenantId}/>}
+            {activeTab==="monitoring"&&<ContinuousMonitoring token={token} tenantId={tenantId}/>}
+                {activeTab==="auto-evidence"&&"Auto Evidence Collection"}
+                {activeTab==="auditor"&&"Auditor Portal"}
+                {activeTab==="monitoring"&&"Continuous Monitoring"}
               </div>
               <div className="page-sub">
                 {activeTab==="overview"&&"Executive summary of your organisation security posture"}
@@ -2033,6 +2058,13 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="audit-logs"&&"Full activity trail across your compliance platform"}
                 {activeTab==="evidence"&&"Upload and manage compliance evidence linked to controls"}
                 {activeTab==="policies"&&"Create, manage, and track approval of compliance policies"}
+                {activeTab==="vendors"&&"Assess and monitor third-party vendor risk"}
+                {activeTab==="team-mgmt"&&"Manage team members and role-based access"}
+                {activeTab==="notifications"&&"Alerts, warnings, and compliance notifications"}
+                {activeTab==="reports"&&"Generate and export board-ready compliance reports"}
+                {activeTab==="auto-evidence"&&"Automatically pull compliance evidence from connected integrations"}
+                {activeTab==="auditor"&&"Manage external audit engagements and auditor collaboration"}
+                {activeTab==="monitoring"&&"Real-time compliance checks across all connected integrations"}
               </div>
             </div>
             {activeTab==="overview"     &&role==="ciso"&&<CISOOverview implemented={implemented} token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired} userName={userName}/>}
@@ -2048,6 +2080,13 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="audit-logs"&&<AuditLogs token={token} tenantId={tenantId}/>}
             {activeTab==="evidence"&&<EvidenceCollection token={token} tenantId={tenantId}/>}
             {activeTab==="policies"&&<PolicyManagement token={token} tenantId={tenantId}/>}
+            {activeTab==="vendors"&&<VendorRisk token={token} tenantId={tenantId}/>}
+            {activeTab==="team-mgmt"&&<UserManagement token={token} tenantId={tenantId}/>}
+            {activeTab==="notifications"&&<Notifications token={token} tenantId={tenantId}/>}
+            {activeTab==="reports"&&<Reports token={token} tenantId={tenantId}/>}
+            {activeTab==="auto-evidence"&&<AutoEvidence token={token} tenantId={tenantId}/>}
+            {activeTab==="auditor"&&<AuditorPortal token={token} tenantId={tenantId}/>}
+            {activeTab==="monitoring"&&<ContinuousMonitoring token={token} tenantId={tenantId}/>}
           </div>
         </div>
       </div>

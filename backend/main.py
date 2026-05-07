@@ -87,3 +87,16 @@ app.include_router(evidence_routes.router)
 # ── Policy Management ──────────────────────────────────────────────────────────
 from routers import policy_routes
 app.include_router(policy_routes.router)
+
+# ── High Priority Features ─────────────────────────────────────────────────────
+from routers import vendor_routes, user_routes, notification_routes, report_routes
+app.include_router(vendor_routes.router)
+app.include_router(user_routes.router)
+app.include_router(notification_routes.router)
+app.include_router(report_routes.router)
+
+# ── Critical Gap Features ──────────────────────────────────────────────────────
+from routers import auto_evidence_routes, auditor_routes, monitoring_routes
+app.include_router(auto_evidence_routes.router)
+app.include_router(auditor_routes.router)
+app.include_router(monitoring_routes.router)

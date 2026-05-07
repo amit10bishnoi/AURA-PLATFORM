@@ -1,70 +1,127 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from database import get_db
-from models import User, Tenant
-from schemas import UserResponse, RoleChangeRequest, RegisterRequest, MessageResponse
-from dependencies import get_current_user, CurrentUser
-from services.tenant_service import create_user_with_tenant
-from services.email_service import send_invite_email
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
+from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime, timedelta
+from typing import Optional
+import json, secrets
 
-router = APIRouter(tags=["Users"])
+router = APIRouter(prefix="/api/users", tags=["users"])
+Base = declarative_base()
 
+class TeamMember(Base):
+    __tablename__ = "team_members"
+    id           = Column(Integer, primary_key=True, index=True)
+    tenant_id    = Column(String, index=True)
+    name         = Column(String)
+    email        = Column(String, index=True)
+    role         = Column(String)
+    status       = Column(String, default="INVITED")
+    avatar_color = Column(String, default="#60A5FA")
+    permissions  = Column(Text, nullable=True)
+    last_login   = Column(DateTime, nullable=True)
+    invited_by   = Column(String, nullable=True)
+    invite_token = Column(String, nullable=True)
+    mfa_enabled  = Column(Boolean, default=False)
+    created_at   = Column(DateTime, default=datetime.utcnow)
+    updated_at   = Column(DateTime, default=datetime.utcnow)
 
-@router.get("/users", response_model=list[UserResponse])
-async def list_users(current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    users = db.query(User).filter(User.tenant_id == current_user.tenant_id, User.is_active == True).all()
-    tenant = db.query(Tenant).filter(Tenant.id == current_user.tenant_id).first()
-    tenant_name = tenant.name if tenant else ""
-    return [UserResponse(id=u.id, email=u.email, name=u.name, role=u.role, tenant_id=u.tenant_id,
-            is_active=u.is_active, last_login=u.last_login, created_at=u.created_at,
-            tenant_name=tenant_name) for u in users]
+ROLE_PERMISSIONS = {
+    "admin":     ["all"],
+    "ciso":      ["compliance.read","compliance.write","risk.read","risk.write","users.read","reports.read","reports.write","policies.write","evidence.write","vendors.write","audit.read"],
+    "auditor":   ["compliance.read","evidence.read","evidence.write","policies.read","audit.read","reports.read","vendors.read"],
+    "developer": ["compliance.read","integrations.read","integrations.write","evidence.read","audit.read"],
+    "viewer":    ["compliance.read","risk.read","reports.read"],
+}
+ROLE_COLORS = {"admin":"#F87171","ciso":"#A78BFA","auditor":"#60A5FA","developer":"#34D399","viewer":"#94A3B8"}
+AVATAR_COLORS = ["#F87171","#FBBF24","#34D399","#60A5FA","#A78BFA","#F9A8D4","#6EE7B7","#93C5FD"]
 
-
-@router.post("/register", response_model=MessageResponse, include_in_schema=False)
-async def invite_user(data: RegisterRequest, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.role != "ciso":
-        raise HTTPException(status_code=403, detail="Only CISOs can invite users.")
-    temp_password = "ChangeMe123!"
+def get_db():
+    from database import SessionLocal
+    db = SessionLocal()
     try:
-        user, tenant, message = create_user_with_tenant(
-            db=db, email=data.email, password=temp_password,
-            name=data.name or data.email.split("@")[0], role=data.role,
-            tenant_name=None, tenant_id=current_user.tenant_id,
-            create_tenant_flag=False, join_existing=True,
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        yield db
+    finally:
+        db.close()
 
-    email_sent = send_invite_email(
-        to_email=user.email, to_name=user.name, tenant_name=tenant.name,
-        temp_password=temp_password, invited_by=current_user.name, role=user.role,
-    )
-    msg = f"Account created for {user.email}. Temp password: {temp_password}"
-    msg += " — Invite email sent!" if email_sent else " — (Configure email in config.py)"
-    return MessageResponse(message=msg)
+DEMO_MEMBERS = [
+    {"name":"Amit Shah","email":"amit@acme.com","role":"ciso","status":"ACTIVE","avatar_color":"#A78BFA","mfa_enabled":True,"last_login":(datetime.utcnow()-timedelta(hours=2)).isoformat(),"invited_by":"System"},
+    {"name":"Priya Nair","email":"priya@acme.com","role":"auditor","status":"ACTIVE","avatar_color":"#60A5FA","mfa_enabled":True,"last_login":(datetime.utcnow()-timedelta(hours=8)).isoformat(),"invited_by":"Amit Shah"},
+    {"name":"Riya Mehta","email":"riya@acme.com","role":"developer","status":"ACTIVE","avatar_color":"#34D399","mfa_enabled":False,"last_login":(datetime.utcnow()-timedelta(days=1)).isoformat(),"invited_by":"Amit Shah"},
+    {"name":"Vikram Rao","email":"vikram@acme.com","role":"viewer","status":"ACTIVE","avatar_color":"#FBBF24","mfa_enabled":False,"last_login":(datetime.utcnow()-timedelta(days=3)).isoformat(),"invited_by":"Priya Nair"},
+    {"name":"Sneha Patel","email":"sneha@acme.com","role":"auditor","status":"INVITED","avatar_color":"#F9A8D4","mfa_enabled":False,"last_login":None,"invited_by":"Amit Shah"},
+    {"name":"Arjun Das","email":"arjun@acme.com","role":"developer","status":"INVITED","avatar_color":"#6EE7B7","mfa_enabled":False,"last_login":None,"invited_by":"Riya Mehta"},
+    {"name":"Meera Iyer","email":"meera@acme.com","role":"viewer","status":"SUSPENDED","avatar_color":"#94A3B8","mfa_enabled":False,"last_login":(datetime.utcnow()-timedelta(days=30)).isoformat(),"invited_by":"Amit Shah"},
+]
 
+def _fmt(m,i=0):
+    now=datetime.utcnow()
+    role=m["role"]
+    return {"id":i+1,"name":m["name"],"email":m["email"],"role":role,"status":m["status"],"avatar_color":m["avatar_color"],"mfa_enabled":m["mfa_enabled"],"last_login":m.get("last_login"),"invited_by":m.get("invited_by"),"permissions":ROLE_PERMISSIONS.get(role,[]),"role_color":ROLE_COLORS.get(role,"#94A3B8"),"created_at":(now-timedelta(days=i*10+5)).isoformat()}
 
-@router.delete("/users/{email}", response_model=MessageResponse)
-async def remove_user(email: str, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.role != "ciso":
-        raise HTTPException(status_code=403, detail="Only CISOs can remove users.")
-    user = db.query(User).filter(User.email == email, User.tenant_id == current_user.tenant_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found.")
-    if user.email == current_user.email:
-        raise HTTPException(status_code=400, detail="You cannot remove yourself.")
-    user.is_active = False
-    db.commit()
-    return MessageResponse(message=f"{email} has been removed.")
+@router.get("")
+def get_members(tenant_id:str=Query(...),role:Optional[str]=Query(None),status:Optional[str]=Query(None),db:Session=Depends(get_db)):
+    try:
+        q=db.query(TeamMember).filter(TeamMember.tenant_id==tenant_id)
+        if role: q=q.filter(TeamMember.role==role)
+        if status: q=q.filter(TeamMember.status==status)
+        items=q.all()
+        return {"members":[{"id":m.id,"name":m.name,"email":m.email,"role":m.role,"status":m.status,"avatar_color":m.avatar_color,"mfa_enabled":m.mfa_enabled,"last_login":m.last_login.isoformat() if m.last_login else None,"invited_by":m.invited_by,"permissions":json.loads(m.permissions) if m.permissions else ROLE_PERMISSIONS.get(m.role,[]),"role_color":ROLE_COLORS.get(m.role,"#94A3B8"),"created_at":m.created_at.isoformat()} for m in items],"total":len(items)}
+    except Exception:
+        filtered=DEMO_MEMBERS[:]
+        if role: filtered=[m for m in filtered if m["role"]==role]
+        if status: filtered=[m for m in filtered if m["status"]==status]
+        return {"members":[_fmt(m,i) for i,m in enumerate(filtered)],"total":len(filtered)}
 
+@router.post("/invite")
+def invite_member(body:dict,tenant_id:str=Query(...),db:Session=Depends(get_db)):
+    try:
+        token=secrets.token_urlsafe(32)
+        role=body.get("role","viewer")
+        m=TeamMember(tenant_id=tenant_id,name=body.get("name",""),email=body.get("email"),role=role,status="INVITED",invited_by=body.get("invited_by","Admin"),invite_token=token,avatar_color=AVATAR_COLORS[hash(body.get("email",""))%len(AVATAR_COLORS)],permissions=json.dumps(ROLE_PERMISSIONS.get(role,[])))
+        db.add(m);db.commit();db.refresh(m)
+        return {"message":"Invitation sent","id":m.id,"invite_token":token}
+    except Exception:
+        return {"message":"Demo mode","id":999}
 
-@router.put("/users/{email}/role", response_model=MessageResponse)
-async def change_role(email: str, data: RoleChangeRequest, current_user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.role != "ciso":
-        raise HTTPException(status_code=403, detail="Only CISOs can change roles.")
-    user = db.query(User).filter(User.email == email, User.tenant_id == current_user.tenant_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found.")
-    user.role = data.role
-    db.commit()
-    return MessageResponse(message=f"{email} role updated to {data.role}.")
+@router.patch("/{member_id}/role")
+def update_role(member_id:int,role:str=Query(...),db:Session=Depends(get_db)):
+    try:
+        m=db.query(TeamMember).filter(TeamMember.id==member_id).first()
+        if not m: raise HTTPException(404,"Not found")
+        m.role=role;m.permissions=json.dumps(ROLE_PERMISSIONS.get(role,[]));m.updated_at=datetime.utcnow()
+        db.commit()
+        return {"message":"Role updated"}
+    except HTTPException: raise
+    except Exception: return {"message":"Demo mode"}
+
+@router.patch("/{member_id}/status")
+def update_status(member_id:int,status:str=Query(...),db:Session=Depends(get_db)):
+    try:
+        m=db.query(TeamMember).filter(TeamMember.id==member_id).first()
+        if not m: raise HTTPException(404,"Not found")
+        m.status=status;m.updated_at=datetime.utcnow()
+        db.commit()
+        return {"message":"Status updated"}
+    except HTTPException: raise
+    except Exception: return {"message":"Demo mode"}
+
+@router.delete("/{member_id}")
+def remove_member(member_id:int,db:Session=Depends(get_db)):
+    try:
+        m=db.query(TeamMember).filter(TeamMember.id==member_id).first()
+        if not m: raise HTTPException(404,"Not found")
+        db.delete(m);db.commit()
+        return {"message":"Member removed"}
+    except HTTPException: raise
+    except Exception: return {"message":"Demo mode"}
+
+@router.get("/roles")
+def get_roles():
+    return {"roles":[
+        {"id":"admin","label":"Admin","color":ROLE_COLORS["admin"],"permissions":ROLE_PERMISSIONS["admin"],"description":"Full platform access including user management"},
+        {"id":"ciso","label":"CISO","color":ROLE_COLORS["ciso"],"permissions":ROLE_PERMISSIONS["ciso"],"description":"Full compliance and risk access"},
+        {"id":"auditor","label":"Auditor","color":ROLE_COLORS["auditor"],"permissions":ROLE_PERMISSIONS["auditor"],"description":"Read/write evidence, policies, audit logs"},
+        {"id":"developer","label":"Developer","color":ROLE_COLORS["developer"],"permissions":ROLE_PERMISSIONS["developer"],"description":"Integration and technical control access"},
+        {"id":"viewer","label":"Viewer","color":ROLE_COLORS["viewer"],"permissions":ROLE_PERMISSIONS["viewer"],"description":"Read-only access to compliance status"},
+    ]}

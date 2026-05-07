@@ -79,3 +79,11 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+# ── New: Audit Logs & Evidence ─────────────────────────────────────────────────
+from routers import audit_logs_routes, evidence_routes
+app.include_router(audit_logs_routes.router)
+app.include_router(evidence_routes.router)
+
+# ── Policy Management ──────────────────────────────────────────────────────────
+from routers import policy_routes
+app.include_router(policy_routes.router)

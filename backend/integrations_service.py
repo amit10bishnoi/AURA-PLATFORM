@@ -348,6 +348,552 @@ def pull_tenable(org_name: str):
     }
 
 
+
+
+# ── PagerDuty ─────────────────────────────────────────────────────────────────
+def pull_pagerduty(org_name: str):
+    incidents = _rand(0, 20)
+    critical = _rand(0, 5)
+    mtta = _rand(2, 45)
+    mttr = _rand(15, 480)
+    return {
+        "provider": "PagerDuty",
+        "icon": "🚨",
+        "color": "#06AC38",
+        "status": "connected",
+        "summary": f"{incidents} open incidents · {critical} critical · MTTA {mtta}min · MTTR {mttr}min",
+        "findings": [
+            {"severity": "HIGH" if critical > 2 else "MEDIUM",
+             "title": f"{critical} critical incidents unresolved",
+             "description": "Critical severity PagerDuty incidents requiring immediate attention.",
+             "recommendation": "Assign on-call engineers and resolve critical incidents immediately."},
+            {"severity": "MEDIUM" if mttr > 120 else "LOW",
+             "title": f"Mean Time to Resolve: {mttr} minutes",
+             "description": "MTTR exceeds target SLA of 120 minutes for security incidents.",
+             "recommendation": "Review incident response runbooks and automate resolution steps."},
+        ],
+        "metrics": {"open_incidents": incidents, "critical_incidents": critical,
+                    "mtta_minutes": mtta, "mttr_minutes": mttr, "services": _rand(5, 50)},
+        "last_synced": _now(),
+    }
+
+
+# ── Qualys ────────────────────────────────────────────────────────────────────
+def pull_qualys(org_name: str):
+    critical = _rand(0, 30)
+    high = _rand(5, 80)
+    assets = _rand(50, 1000)
+    patchable = _rand(5, 40)
+    return {
+        "provider": "Qualys",
+        "icon": "🔬",
+        "color": "#ED1C24",
+        "status": "connected",
+        "summary": f"{critical} critical CVEs · {high} high · {assets} assets scanned · {patchable} patchable",
+        "findings": [
+            {"severity": "CRITICAL" if critical > 10 else "HIGH",
+             "title": f"{critical} critical vulnerabilities detected",
+             "description": f"Qualys VMDR identified CVSS 9.0+ vulnerabilities across {assets} assets.",
+             "recommendation": "Apply patches for critical CVEs within 24-hour SLA."},
+            {"severity": "HIGH" if patchable > 20 else "MEDIUM",
+             "title": f"{patchable} vulnerabilities have available patches",
+             "description": "Patches available but not yet applied to vulnerable assets.",
+             "recommendation": "Deploy available patches via patch management system immediately."},
+        ],
+        "metrics": {"critical_vulns": critical, "high_vulns": high,
+                    "total_assets": assets, "patchable": patchable, "scan_coverage_pct": _rand(80, 100)},
+        "last_synced": _now(),
+    }
+
+
+# ── SentinelOne ───────────────────────────────────────────────────────────────
+def pull_sentinelone(org_name: str):
+    threats = _rand(0, 20)
+    endpoints = _rand(50, 500)
+    mitigated = _rand(0, threats)
+    return {
+        "provider": "SentinelOne",
+        "icon": "🤖",
+        "color": "#6B00F5",
+        "status": "connected",
+        "summary": f"{threats} threats detected · {mitigated} auto-mitigated · {endpoints} endpoints",
+        "findings": [
+            {"severity": "HIGH" if (threats - mitigated) > 3 else "MEDIUM",
+             "title": f"{threats - mitigated} unmitigated threats",
+             "description": "Threats detected by SentinelOne Singularity not yet remediated.",
+             "recommendation": "Review unmitigated threats in Singularity console and remediate."},
+            {"severity": "LOW",
+             "title": f"{mitigated} threats auto-mitigated by AI",
+             "description": "SentinelOne autonomous AI successfully contained threats.",
+             "recommendation": "Review mitigation actions to validate no false positives."},
+        ],
+        "metrics": {"threats_detected": threats, "auto_mitigated": mitigated,
+                    "protected_endpoints": endpoints, "prevention_rate_pct": _rand(88, 99)},
+        "last_synced": _now(),
+    }
+
+
+# ── Microsoft Defender ────────────────────────────────────────────────────────
+def pull_microsoft_defender(org_name: str):
+    alerts = _rand(2, 40)
+    high_alerts = _rand(0, 10)
+    exposed_devices = _rand(0, 20)
+    return {
+        "provider": "Microsoft Defender",
+        "icon": "🛡",
+        "color": "#0078D4",
+        "status": "connected",
+        "summary": f"{alerts} alerts · {high_alerts} high · {exposed_devices} exposed devices",
+        "findings": [
+            {"severity": "HIGH" if high_alerts > 3 else "MEDIUM",
+             "title": f"{high_alerts} high severity Defender alerts",
+             "description": "Microsoft Defender for Endpoint raised high severity security alerts.",
+             "recommendation": "Investigate alerts in Defender Security Centre and remediate."},
+            {"severity": "HIGH" if exposed_devices > 10 else "MEDIUM",
+             "title": f"{exposed_devices} devices with exposure score > 7",
+             "description": "Devices with high exposure score increasing organisation attack surface.",
+             "recommendation": "Apply security recommendations to reduce device exposure score."},
+        ],
+        "metrics": {"total_alerts": alerts, "high_alerts": high_alerts,
+                    "exposed_devices": exposed_devices, "secure_score_pct": _rand(40, 85)},
+        "last_synced": _now(),
+    }
+
+
+# ── Cloudflare ────────────────────────────────────────────────────────────────
+def pull_cloudflare(org_name: str):
+    threats_blocked = _rand(100, 10000)
+    ddos_events = _rand(0, 5)
+    bot_score = _rand(0, 30)
+    return {
+        "provider": "Cloudflare",
+        "icon": "🌐",
+        "color": "#F48120",
+        "status": "connected",
+        "summary": f"{threats_blocked:,} threats blocked · {ddos_events} DDoS events · {bot_score}% bot traffic",
+        "findings": [
+            {"severity": "HIGH" if ddos_events > 2 else "LOW",
+             "title": f"{ddos_events} DDoS attack events detected",
+             "description": "Cloudflare detected and mitigated distributed denial-of-service attacks.",
+             "recommendation": "Review DDoS rules and consider enabling Under Attack mode."},
+            {"severity": "MEDIUM" if bot_score > 20 else "LOW",
+             "title": f"{bot_score}% of traffic identified as bot traffic",
+             "description": "Significant bot traffic detected on protected domains.",
+             "recommendation": "Enable Cloudflare Bot Management to filter malicious bots."},
+        ],
+        "metrics": {"threats_blocked": threats_blocked, "ddos_events": ddos_events,
+                    "bot_traffic_pct": bot_score, "bandwidth_saved_gb": _rand(10, 1000)},
+        "last_synced": _now(),
+    }
+
+
+# ── HashiCorp Vault ───────────────────────────────────────────────────────────
+def pull_hashicorp_vault(org_name: str):
+    secrets = _rand(50, 500)
+    expiring = _rand(0, 20)
+    leaked = _rand(0, 3)
+    return {
+        "provider": "HashiCorp Vault",
+        "icon": "🔑",
+        "color": "#000000",
+        "status": "connected",
+        "summary": f"{secrets} secrets managed · {expiring} expiring · {leaked} potentially leaked",
+        "findings": [
+            {"severity": "CRITICAL" if leaked > 0 else "LOW",
+             "title": f"{leaked} secrets potentially leaked",
+             "description": "Vault audit logs indicate secrets may have been exposed outside Vault.",
+             "recommendation": "Rotate leaked secrets immediately and audit access logs."},
+            {"severity": "MEDIUM" if expiring > 10 else "LOW",
+             "title": f"{expiring} secrets expiring within 7 days",
+             "description": "Secrets approaching expiry may cause service disruptions if not rotated.",
+             "recommendation": "Rotate expiring secrets before they expire to prevent outages."},
+        ],
+        "metrics": {"total_secrets": secrets, "expiring_secrets": expiring,
+                    "leaked_secrets": leaked, "policies": _rand(10, 100)},
+        "last_synced": _now(),
+    }
+
+
+# ── Elastic Security ──────────────────────────────────────────────────────────
+def pull_elastic_security(org_name: str):
+    alerts = _rand(5, 60)
+    critical = _rand(0, 10)
+    rules = _rand(50, 500)
+    return {
+        "provider": "Elastic Security",
+        "icon": "🔎",
+        "color": "#FEC514",
+        "status": "connected",
+        "summary": f"{alerts} SIEM alerts · {critical} critical · {rules} detection rules active",
+        "findings": [
+            {"severity": "HIGH" if critical > 3 else "MEDIUM",
+             "title": f"{critical} critical SIEM alerts triggered",
+             "description": "Elastic Security SIEM detection rules triggered critical alerts.",
+             "recommendation": "Investigate critical alerts in Elastic Kibana Security dashboard."},
+            {"severity": "LOW",
+             "title": f"{rules} detection rules active",
+             "description": "Elastic Security running detection rules across all log sources.",
+             "recommendation": "Review and tune detection rules to reduce false positive rate."},
+        ],
+        "metrics": {"total_alerts": alerts, "critical_alerts": critical,
+                    "detection_rules": rules, "logs_indexed_gb": _rand(10, 500)},
+        "last_synced": _now(),
+    }
+
+
+# ── Wiz ───────────────────────────────────────────────────────────────────────
+def pull_wiz(org_name: str):
+    critical_issues = _rand(0, 30)
+    toxic_combos = _rand(0, 10)
+    cloud_resources = _rand(100, 5000)
+    return {
+        "provider": "Wiz",
+        "icon": "🌩",
+        "color": "#2B6CB0",
+        "status": "connected",
+        "summary": f"{critical_issues} critical issues · {toxic_combos} toxic combinations · {cloud_resources:,} resources",
+        "findings": [
+            {"severity": "CRITICAL" if toxic_combos > 3 else "HIGH",
+             "title": f"{toxic_combos} toxic security combinations detected",
+             "description": "Wiz identified attack path combinations that could lead to critical breach.",
+             "recommendation": "Prioritise toxic combinations — these represent highest breach risk."},
+            {"severity": "HIGH" if critical_issues > 10 else "MEDIUM",
+             "title": f"{critical_issues} critical cloud security issues",
+             "description": "Critical misconfigurations and vulnerabilities across cloud infrastructure.",
+             "recommendation": "Remediate critical Wiz issues using built-in fix guidance."},
+        ],
+        "metrics": {"critical_issues": critical_issues, "toxic_combinations": toxic_combos,
+                    "cloud_resources": cloud_resources, "compliance_score_pct": _rand(50, 90)},
+        "last_synced": _now(),
+    }
+
+
+# ── SonarQube ─────────────────────────────────────────────────────────────────
+def pull_sonarqube(org_name: str):
+    bugs = _rand(0, 100)
+    vulnerabilities = _rand(0, 40)
+    code_smells = _rand(10, 500)
+    coverage = _rand(30, 90)
+    return {
+        "provider": "SonarQube",
+        "icon": "📝",
+        "color": "#4E9BCD",
+        "status": "connected",
+        "summary": f"{vulnerabilities} code vulnerabilities · {bugs} bugs · {coverage}% test coverage",
+        "findings": [
+            {"severity": "HIGH" if vulnerabilities > 10 else "MEDIUM",
+             "title": f"{vulnerabilities} security vulnerabilities in code",
+             "description": "SonarQube SAST detected security vulnerabilities in application source code.",
+             "recommendation": "Fix security vulnerabilities before deploying to production."},
+            {"severity": "MEDIUM" if coverage < 60 else "LOW",
+             "title": f"Test coverage at {coverage}%",
+             "description": "Low test coverage increases risk of undetected security bugs.",
+             "recommendation": "Increase test coverage to minimum 80% for security-critical code."},
+        ],
+        "metrics": {"vulnerabilities": vulnerabilities, "bugs": bugs,
+                    "code_smells": code_smells, "test_coverage_pct": coverage},
+        "last_synced": _now(),
+    }
+
+
+# ── Rapid7 InsightVM ──────────────────────────────────────────────────────────
+def pull_rapid7(org_name: str):
+    critical = _rand(0, 25)
+    exploitable = _rand(0, 15)
+    assets = _rand(50, 800)
+    return {
+        "provider": "Rapid7 InsightVM",
+        "icon": "🎯",
+        "color": "#E3170A",
+        "status": "connected",
+        "summary": f"{critical} critical vulns · {exploitable} exploitable · {assets} assets",
+        "findings": [
+            {"severity": "CRITICAL" if exploitable > 5 else "HIGH",
+             "title": f"{exploitable} vulnerabilities actively exploitable",
+             "description": "Rapid7 threat intelligence confirms these CVEs are actively exploited.",
+             "recommendation": "Prioritise exploitable vulnerabilities — patch within 24 hours."},
+            {"severity": "HIGH" if critical > 10 else "MEDIUM",
+             "title": f"{critical} critical severity vulnerabilities",
+             "description": "CVSS 9.0+ vulnerabilities detected across your asset inventory.",
+             "recommendation": "Schedule emergency patching cycle for critical vulnerabilities."},
+        ],
+        "metrics": {"critical_vulns": critical, "exploitable_vulns": exploitable,
+                    "total_assets": assets, "risk_score": _rand(400, 900)},
+        "last_synced": _now(),
+    }
+
+
+# ── Carbon Black ──────────────────────────────────────────────────────────────
+def pull_carbon_black(org_name: str):
+    alerts = _rand(0, 25)
+    policy_violations = _rand(0, 15)
+    endpoints = _rand(50, 500)
+    return {
+        "provider": "VMware Carbon Black",
+        "icon": "⚫",
+        "color": "#1A1A1A",
+        "status": "connected",
+        "summary": f"{alerts} alerts · {policy_violations} policy violations · {endpoints} endpoints protected",
+        "findings": [
+            {"severity": "HIGH" if alerts > 10 else "MEDIUM",
+             "title": f"{alerts} Carbon Black EDR alerts",
+             "description": "Carbon Black detected suspicious endpoint behaviour requiring investigation.",
+             "recommendation": "Review alerts in Carbon Black console and isolate affected endpoints."},
+            {"severity": "MEDIUM" if policy_violations > 5 else "LOW",
+             "title": f"{policy_violations} security policy violations",
+             "description": "Endpoints violating Carbon Black security policies detected.",
+             "recommendation": "Enforce policy and remediate violations on non-compliant endpoints."},
+        ],
+        "metrics": {"total_alerts": alerts, "policy_violations": policy_violations,
+                    "protected_endpoints": endpoints, "blocked_attacks": _rand(10, 200)},
+        "last_synced": _now(),
+    }
+
+
+# ── Trend Micro ───────────────────────────────────────────────────────────────
+def pull_trend_micro(org_name: str):
+    threats = _rand(0, 30)
+    ransomware_attempts = _rand(0, 5)
+    endpoints = _rand(50, 500)
+    return {
+        "provider": "Trend Micro",
+        "icon": "📡",
+        "color": "#D71920",
+        "status": "connected",
+        "summary": f"{threats} threats blocked · {ransomware_attempts} ransomware attempts · {endpoints} protected",
+        "findings": [
+            {"severity": "CRITICAL" if ransomware_attempts > 0 else "LOW",
+             "title": f"{ransomware_attempts} ransomware execution attempts blocked",
+             "description": "Trend Micro detected and blocked ransomware execution attempts.",
+             "recommendation": "Investigate ransomware source and strengthen email/web filtering."},
+            {"severity": "MEDIUM" if threats > 15 else "LOW",
+             "title": f"{threats} threats blocked this period",
+             "description": "Trend Micro blocked various malware, phishing and exploit attempts.",
+             "recommendation": "Review threat reports and update detection signatures."},
+        ],
+        "metrics": {"threats_blocked": threats, "ransomware_attempts": ransomware_attempts,
+                    "protected_endpoints": endpoints, "detection_rate_pct": _rand(94, 99)},
+        "last_synced": _now(),
+    }
+
+
+# ── Lacework ──────────────────────────────────────────────────────────────────
+def pull_lacework(org_name: str):
+    anomalies = _rand(0, 20)
+    critical = _rand(0, 8)
+    accounts = _rand(1, 10)
+    return {
+        "provider": "Lacework",
+        "icon": "🏔",
+        "color": "#00B4D8",
+        "status": "connected",
+        "summary": f"{anomalies} cloud anomalies · {critical} critical · {accounts} cloud accounts",
+        "findings": [
+            {"severity": "HIGH" if critical > 3 else "MEDIUM",
+             "title": f"{critical} critical cloud security anomalies",
+             "description": "Lacework ML detected critical unusual behaviour in cloud environment.",
+             "recommendation": "Investigate anomalies in Lacework console and remediate root cause."},
+            {"severity": "MEDIUM" if anomalies > 10 else "LOW",
+             "title": f"{anomalies} total anomalies detected",
+             "description": "Behavioural anomalies across cloud accounts flagged by Lacework ML.",
+             "recommendation": "Review and classify anomalies to identify true positives."},
+        ],
+        "metrics": {"anomalies": anomalies, "critical_anomalies": critical,
+                    "cloud_accounts": accounts, "resources_monitored": _rand(100, 5000)},
+        "last_synced": _now(),
+    }
+
+
+# ── Prisma Cloud ──────────────────────────────────────────────────────────────
+def pull_prisma_cloud(org_name: str):
+    alerts = _rand(5, 80)
+    critical = _rand(0, 15)
+    compliance_pct = _rand(50, 95)
+    return {
+        "provider": "Prisma Cloud",
+        "icon": "🔷",
+        "color": "#00C0E8",
+        "status": "connected",
+        "summary": f"{alerts} alerts · {critical} critical · {compliance_pct}% compliance",
+        "findings": [
+            {"severity": "HIGH" if critical > 5 else "MEDIUM",
+             "title": f"{critical} critical cloud security alerts",
+             "description": "Palo Alto Prisma Cloud detected critical misconfigurations and threats.",
+             "recommendation": "Remediate critical alerts using Prisma Cloud guided remediation."},
+            {"severity": "MEDIUM" if compliance_pct < 75 else "LOW",
+             "title": f"Cloud compliance at {compliance_pct}%",
+             "description": "Cloud infrastructure compliance below target across monitored frameworks.",
+             "recommendation": "Apply auto-remediation for compliant resource configurations."},
+        ],
+        "metrics": {"total_alerts": alerts, "critical_alerts": critical,
+                    "compliance_pct": compliance_pct, "resources": _rand(100, 10000)},
+        "last_synced": _now(),
+    }
+
+
+# ── Veracode ──────────────────────────────────────────────────────────────────
+def pull_veracode(org_name: str):
+    flaws = _rand(0, 50)
+    very_high = _rand(0, 10)
+    apps_scanned = _rand(1, 20)
+    return {
+        "provider": "Veracode",
+        "icon": "🧪",
+        "color": "#009BDE",
+        "status": "connected",
+        "summary": f"{flaws} security flaws · {very_high} very high severity · {apps_scanned} apps scanned",
+        "findings": [
+            {"severity": "HIGH" if very_high > 3 else "MEDIUM",
+             "title": f"{very_high} very high severity application flaws",
+             "description": "Veracode SAST/DAST identified critical security flaws in applications.",
+             "recommendation": "Fix very high severity flaws before next production deployment."},
+            {"severity": "MEDIUM" if flaws > 20 else "LOW",
+             "title": f"{flaws} total security flaws across {apps_scanned} applications",
+             "description": "Application security flaws detected across scanned codebases.",
+             "recommendation": "Create remediation tickets for all detected flaws by severity."},
+        ],
+        "metrics": {"total_flaws": flaws, "very_high_severity": very_high,
+                    "apps_scanned": apps_scanned, "policy_pass_rate_pct": _rand(40, 90)},
+        "last_synced": _now(),
+    }
+
+
+# ── Nessus / Tenable.sc ───────────────────────────────────────────────────────
+def pull_nessus(org_name: str):
+    critical = _rand(0, 20)
+    high = _rand(5, 60)
+    plugins = _rand(50000, 80000)
+    return {
+        "provider": "Nessus Pro",
+        "icon": "🔭",
+        "color": "#00B388",
+        "status": "connected",
+        "summary": f"{critical} critical · {high} high · {plugins:,} plugins active",
+        "findings": [
+            {"severity": "CRITICAL" if critical > 5 else "HIGH",
+             "title": f"{critical} critical vulnerabilities found",
+             "description": "Nessus scanner identified critical severity vulnerabilities in network.",
+             "recommendation": "Prioritise critical findings and patch within emergency SLA."},
+            {"severity": "HIGH" if high > 20 else "MEDIUM",
+             "title": f"{high} high severity vulnerabilities",
+             "description": "High severity CVEs detected requiring remediation within standard SLA.",
+             "recommendation": "Schedule patching for high severity findings within 7 days."},
+        ],
+        "metrics": {"critical_vulns": critical, "high_vulns": high,
+                    "active_plugins": plugins, "hosts_scanned": _rand(50, 500)},
+        "last_synced": _now(),
+    }
+
+
+# ── Duo Security ──────────────────────────────────────────────────────────────
+def pull_duo(org_name: str):
+    users = _rand(50, 500)
+    mfa_pct = _rand(70, 100)
+    failed_auths = _rand(0, 30)
+    bypass_codes = _rand(0, 10)
+    return {
+        "provider": "Duo Security",
+        "icon": "👥",
+        "color": "#6BBB47",
+        "status": "connected",
+        "summary": f"{mfa_pct}% MFA coverage · {failed_auths} failed auths · {bypass_codes} bypass codes",
+        "findings": [
+            {"severity": "MEDIUM" if mfa_pct < 90 else "LOW",
+             "title": f"MFA coverage at {mfa_pct}%",
+             "description": f"{round(users * (100-mfa_pct)/100)} users not enrolled in Duo MFA.",
+             "recommendation": "Enforce Duo MFA policy for all users — no exceptions."},
+            {"severity": "HIGH" if failed_auths > 15 else "MEDIUM",
+             "title": f"{failed_auths} failed authentication attempts",
+             "description": "Multiple failed Duo authentications — potential account takeover attempts.",
+             "recommendation": "Review failed auth sources and block suspicious IP addresses."},
+        ],
+        "metrics": {"total_users": users, "mfa_coverage_pct": mfa_pct,
+                    "failed_auths": failed_auths, "bypass_codes_active": bypass_codes},
+        "last_synced": _now(),
+    }
+
+
+# ── Snyk ──────────────────────────────────────────────────────────────────────
+def pull_snyk(org_name: str):
+    critical_vulns = _rand(0, 20)
+    total_vulns = _rand(10, 100)
+    projects = _rand(5, 50)
+    fixable = _rand(5, 60)
+    return {
+        "provider": "Snyk",
+        "icon": "🐛",
+        "color": "#4C4A73",
+        "status": "connected",
+        "summary": f"{critical_vulns} critical · {total_vulns} total vulns · {fixable}% fixable · {projects} projects",
+        "findings": [
+            {"severity": "HIGH" if critical_vulns > 5 else "MEDIUM",
+             "title": f"{critical_vulns} critical open source vulnerabilities",
+             "description": "Snyk detected critical CVEs in open source dependencies.",
+             "recommendation": "Run snyk fix to automatically upgrade vulnerable packages."},
+            {"severity": "MEDIUM",
+             "title": f"{fixable}% of vulnerabilities auto-fixable",
+             "description": "Snyk can automatically fix majority of detected vulnerabilities.",
+             "recommendation": "Run snyk fix or open Snyk PRs to fix vulnerabilities automatically."},
+        ],
+        "metrics": {"critical_vulns": critical_vulns, "total_vulns": total_vulns,
+                    "projects_monitored": projects, "auto_fixable_pct": fixable},
+        "last_synced": _now(),
+    }
+
+
+# ── BeyondTrust ───────────────────────────────────────────────────────────────
+def pull_beyondtrust(org_name: str):
+    privileged_accounts = _rand(10, 100)
+    password_age_old = _rand(0, 20)
+    sessions = _rand(0, 50)
+    return {
+        "provider": "BeyondTrust",
+        "icon": "🏰",
+        "color": "#E31837",
+        "status": "connected",
+        "summary": f"{privileged_accounts} privileged accounts · {password_age_old} aged passwords · {sessions} active sessions",
+        "findings": [
+            {"severity": "HIGH" if password_age_old > 10 else "MEDIUM",
+             "title": f"{password_age_old} privileged accounts with aged passwords",
+             "description": "Privileged account passwords not rotated within policy timeframe.",
+             "recommendation": "Rotate aged privileged account passwords using BeyondTrust PAM."},
+            {"severity": "MEDIUM" if sessions > 20 else "LOW",
+             "title": f"{sessions} active privileged sessions",
+             "description": "Concurrent privileged sessions — review for unneeded access.",
+             "recommendation": "Audit active privileged sessions and terminate unnecessary ones."},
+        ],
+        "metrics": {"privileged_accounts": privileged_accounts, "aged_passwords": password_age_old,
+                    "active_sessions": sessions, "policy_compliance_pct": _rand(60, 95)},
+        "last_synced": _now(),
+    }
+
+
+# ── Darktrace ─────────────────────────────────────────────────────────────────
+def pull_darktrace(org_name: str):
+    ai_alerts = _rand(0, 30)
+    critical = _rand(0, 8)
+    autonomous_actions = _rand(0, 20)
+    return {
+        "provider": "Darktrace",
+        "icon": "🧠",
+        "color": "#6236FF",
+        "status": "connected",
+        "summary": f"{ai_alerts} AI alerts · {critical} critical · {autonomous_actions} autonomous responses",
+        "findings": [
+            {"severity": "HIGH" if critical > 3 else "MEDIUM",
+             "title": f"{critical} critical AI-detected threats",
+             "description": "Darktrace AI identified critical unusual behaviour in network traffic.",
+             "recommendation": "Review critical model breaches in Darktrace Threat Visualiser."},
+            {"severity": "LOW",
+             "title": f"{autonomous_actions} threats autonomously contained by Antigena",
+             "description": "Darktrace Antigena autonomously responded to detected threats.",
+             "recommendation": "Review autonomous actions to confirm appropriate responses."},
+        ],
+        "metrics": {"ai_alerts": ai_alerts, "critical_alerts": critical,
+                    "autonomous_responses": autonomous_actions, "devices_monitored": _rand(100, 2000)},
+        "last_synced": _now(),
+    }
+
 INTEGRATION_HANDLERS = {
     "okta":        pull_okta,
     "jira":        pull_jira,
@@ -359,6 +905,27 @@ INTEGRATION_HANDLERS = {
     "splunk":      pull_splunk,
     "servicenow":  pull_servicenow,
     "tenable":     pull_tenable,
+    "pagerduty":         pull_pagerduty,
+    "qualys":            pull_qualys,
+    "sentinelone":       pull_sentinelone,
+    "microsoft_defender":pull_microsoft_defender,
+    "cloudflare":        pull_cloudflare,
+    "hashicorp_vault":   pull_hashicorp_vault,
+    "elastic_security":  pull_elastic_security,
+    "wiz":               pull_wiz,
+    "sonarqube":         pull_sonarqube,
+    "rapid7":            pull_rapid7,
+    "carbon_black":      pull_carbon_black,
+    "trend_micro":       pull_trend_micro,
+    "lacework":          pull_lacework,
+    "prisma_cloud":      pull_prisma_cloud,
+    "veracode":          pull_veracode,
+    "nessus":            pull_nessus,
+    "duo":               pull_duo,
+    "snyk":              pull_snyk,
+    "beyondtrust":       pull_beyondtrust,
+    "darktrace":         pull_darktrace,
+
 }
 
 

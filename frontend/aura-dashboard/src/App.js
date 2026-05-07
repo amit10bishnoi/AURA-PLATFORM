@@ -1,4 +1,7 @@
 import TrustCenter from './TrustCenter';
+import PolicyManagement from "./PolicyManagement";
+import AuditLogs from './AuditLogs';
+import EvidenceCollection from './EvidenceCollection';
 import { useState, useEffect, useCallback } from "react";
 import {
   Shield, AlertTriangle, LogOut, ChevronRight, Lock, Mail, User,
@@ -6,7 +9,8 @@ import {
   Eye, Code2, FileCheck, TrendingUp, ShieldAlert, Terminal,
   AlertOctagon, Users, Plus, Trash2, Send, CheckCircle,
   RefreshCw, FileBarChart, Building2, Bell, Search, ChevronDown,
-  LayoutDashboard, Zap, Globe, AlertCircle, Check, Filter
+  LayoutDashboard, Zap, Globe, AlertCircle, Check, Filter,
+  FileText,
 } from "lucide-react";
 
 const API = "http://localhost:8000";
@@ -181,6 +185,7 @@ const ROLES = {
 
 const NAV_ITEMS = [
   {id:"overview",    label:"Overview",        icon:LayoutDashboard, roles:["ciso"]},
+  {id:"trends",      label:"Risk Trends",     icon:TrendingUp,      roles:["ciso","auditor"]},
   {id:"assessment",  label:"Risk Assessment", icon:Shield,          roles:["developer"]},
   {id:"checklist",   label:"Controls",        icon:CheckSquare,     roles:["developer"]},
   {id:"compliance",  label:"Compliance",      icon:ClipboardList,   roles:["ciso","auditor","developer"]},
@@ -189,6 +194,9 @@ const NAV_ITEMS = [
   {id:"users",       label:"Team",            icon:Users,           roles:["ciso"]},
   {id:"trustcenter",   label:"Trust Center",    icon:Globe,           roles:["ciso","auditor"]},
   {id:"integrations",  label:"Integrations",    icon:Zap,             roles:["ciso","developer"]},
+  {id:"audit-logs",  label:"Audit Logs",       icon:Clock,           roles:["ciso","auditor","developer"]},
+  {id:"evidence",    label:"Evidence",          icon:FileCheck,       roles:["ciso","auditor"]},
+  {id:"policies",   label:"Policies",        icon:FileText,        roles:["ciso","auditor"]},
 ];
 
 const ALL_FRAMEWORK_CONTROLS = [
@@ -335,6 +343,55 @@ const ALL_FRAMEWORK_CONTROLS = [
   {id:"DPDP.S.14", framework:"DPDP", control:"Right to grievance redressal",                       riskreduction:3},
   {id:"DPDP.S.16", framework:"DPDP", control:"Significant data fiduciary obligations",             riskreduction:5},
   {id:"DPDP.S.19", framework:"DPDP", control:"Data Protection Board compliance",                   riskreduction:4},
+  // ── SOC 2 Type II ────────────────────────────────────────────────────────────
+  {id:"CC1.1", framework:"SOC2", control:"Commitment to integrity & ethical values",          riskreduction:10},
+  {id:"CC1.2", framework:"SOC2", control:"Board independence & oversight of controls",        riskreduction:10},
+  {id:"CC1.3", framework:"SOC2", control:"Organisational structure & authority",              riskreduction:8},
+  {id:"CC1.4", framework:"SOC2", control:"Competence — attract & retain capable staff",       riskreduction:8},
+  {id:"CC1.5", framework:"SOC2", control:"Accountability for control responsibilities",       riskreduction:8},
+  {id:"CC2.1", framework:"SOC2", control:"Quality information for internal control",          riskreduction:10},
+  {id:"CC2.2", framework:"SOC2", control:"Internal communication of control information",     riskreduction:8},
+  {id:"CC2.3", framework:"SOC2", control:"External communication on matters affecting controls",riskreduction:8},
+  {id:"CC3.1", framework:"SOC2", control:"Objectives specified to identify related risks",    riskreduction:12},
+  {id:"CC3.2", framework:"SOC2", control:"Risk identification & analysis",                    riskreduction:12},
+  {id:"CC3.3", framework:"SOC2", control:"Fraud risk assessment",                             riskreduction:10},
+  {id:"CC3.4", framework:"SOC2", control:"Assessment of significant change risks",            riskreduction:10},
+  {id:"CC4.1", framework:"SOC2", control:"Ongoing & separate control evaluations",            riskreduction:12},
+  {id:"CC4.2", framework:"SOC2", control:"Control deficiency communication",                  riskreduction:10},
+  {id:"CC5.1", framework:"SOC2", control:"Control activities that mitigate risks",            riskreduction:12},
+  {id:"CC5.2", framework:"SOC2", control:"General technology controls",                       riskreduction:12},
+  {id:"CC5.3", framework:"SOC2", control:"Policies & procedures for control activities",      riskreduction:10},
+  {id:"CC6.1", framework:"SOC2", control:"Logical access security software & infrastructure", riskreduction:15},
+  {id:"CC6.2", framework:"SOC2", control:"User registration & authorisation before access",   riskreduction:12},
+  {id:"CC6.3", framework:"SOC2", control:"Role-based access controls",                        riskreduction:12},
+  {id:"CC6.4", framework:"SOC2", control:"Physical access restriction to facilities",         riskreduction:10},
+  {id:"CC6.5", framework:"SOC2", control:"Access removal on termination",                     riskreduction:10},
+  {id:"CC6.6", framework:"SOC2", control:"Logical access restriction from external threats",  riskreduction:12},
+  {id:"CC6.7", framework:"SOC2", control:"Data transmission & movement restriction",          riskreduction:12},
+  {id:"CC6.8", framework:"SOC2", control:"Malware prevention & detection controls",           riskreduction:15},
+  {id:"CC7.1", framework:"SOC2", control:"Infrastructure & software configuration management",riskreduction:12},
+  {id:"CC7.2", framework:"SOC2", control:"Environmental & logical anomaly detection",         riskreduction:12},
+  {id:"CC7.3", framework:"SOC2", control:"Security event evaluation & incident detection",    riskreduction:12},
+  {id:"CC7.4", framework:"SOC2", control:"Security incident response plan",                   riskreduction:15},
+  {id:"CC7.5", framework:"SOC2", control:"Incident recovery & objective restoration",         riskreduction:12},
+  {id:"CC8.1", framework:"SOC2", control:"Change management for infrastructure & software",   riskreduction:12},
+  {id:"CC9.1", framework:"SOC2", control:"Vendor & business partner risk management",         riskreduction:10},
+  {id:"CC9.2", framework:"SOC2", control:"Business disruption risk mitigation",               riskreduction:10},
+  {id:"A1.1",  framework:"SOC2", control:"Capacity management for availability",              riskreduction:12},
+  {id:"A1.2",  framework:"SOC2", control:"Environmental threats to availability monitoring",  riskreduction:10},
+  {id:"A1.3",  framework:"SOC2", control:"Recovery plan to restore system availability",      riskreduction:12},
+  {id:"PI1.1", framework:"SOC2", control:"Input completeness, accuracy & authorisation",      riskreduction:10},
+  {id:"PI1.2", framework:"SOC2", control:"System processing integrity",                       riskreduction:10},
+  {id:"C1.1",  framework:"SOC2", control:"Identify & maintain confidential information",      riskreduction:12},
+  {id:"C1.2",  framework:"SOC2", control:"Dispose of confidential information securely",      riskreduction:10},
+  {id:"P1.1",  framework:"SOC2", control:"Privacy notice communicated at data collection",    riskreduction:10},
+  {id:"P2.1",  framework:"SOC2", control:"Individual choices & consent for personal data",    riskreduction:10},
+  {id:"P3.1",  framework:"SOC2", control:"Personal data collection limitation",               riskreduction:10},
+  {id:"P4.1",  framework:"SOC2", control:"Personal data use, retention & disposal",           riskreduction:10},
+  {id:"P5.1",  framework:"SOC2", control:"Individual access & correction of personal data",   riskreduction:8},
+  {id:"P6.1",  framework:"SOC2", control:"Personal data disclosure per commitments",          riskreduction:10},
+  {id:"P7.1",  framework:"SOC2", control:"Personal data quality & accuracy",                  riskreduction:8},
+  {id:"P8.1",  framework:"SOC2", control:"Privacy monitoring & enforcement",                  riskreduction:10},
 ];
 
 const G = `
@@ -1385,16 +1442,38 @@ function TrustCenterTab({token,tenantId,tenantName,onExpired}) {
 
 function IntegrationsTab({token, tenantId, onExpired}) {
   const PROVIDERS = [
-    {key:"okta",        name:"Okta",        icon:"🔐", color:"#00297A", desc:"Identity & Access Management"},
-    {key:"jira",        name:"Jira",        icon:"📋", color:"#0052CC", desc:"Security Ticket Tracking"},
-    {key:"slack",       name:"Slack",       icon:"💬", color:"#4A154B", desc:"DLP & Communication Security"},
-    {key:"datadog",     name:"Datadog",     icon:"📊", color:"#632CA6", desc:"SIEM & Monitoring"},
-    {key:"crowdstrike", name:"CrowdStrike", icon:"🦅", color:"#E3130D", desc:"Endpoint Detection & Response"},
-    {key:"github",      name:"GitHub",      icon:"🐙", color:"#24292E", desc:"Code & Secret Scanning"},
-    {key:"snowflake",   name:"Snowflake",   icon:"❄️", color:"#29B5E8", desc:"Data Security & Masking"},
-    {key:"splunk",      name:"Splunk",      icon:"🔍", color:"#65A637", desc:"SIEM & User Behaviour Analytics"},
-    {key:"servicenow",  name:"ServiceNow",  icon:"⚙️", color:"#81B5A1", desc:"IT Risk & Incident Management"},
-    {key:"tenable",     name:"Tenable",     icon:"🛡️", color:"#00B388", desc:"Vulnerability Management"},
+    // ── Original 10 ──────────────────────────────────────────────────────────
+    {key:"okta",             name:"Okta",              icon:"🔐", color:"#00297A", desc:"Identity & Access Management"},
+    {key:"jira",             name:"Jira",              icon:"📋", color:"#0052CC", desc:"Security Ticket Tracking"},
+    {key:"slack",            name:"Slack",             icon:"💬", color:"#4A154B", desc:"DLP & Communication Security"},
+    {key:"datadog",          name:"Datadog",           icon:"📊", color:"#632CA6", desc:"SIEM & Monitoring"},
+    {key:"crowdstrike",      name:"CrowdStrike",       icon:"🦅", color:"#E3130D", desc:"Endpoint Detection & Response"},
+    {key:"github",           name:"GitHub",            icon:"🐙", color:"#24292E", desc:"Code & Secret Scanning"},
+    {key:"snowflake",        name:"Snowflake",         icon:"❄️", color:"#29B5E8", desc:"Data Security & Masking"},
+    {key:"splunk",           name:"Splunk",            icon:"🔍", color:"#65A637", desc:"SIEM & User Behaviour Analytics"},
+    {key:"servicenow",       name:"ServiceNow",        icon:"⚙️", color:"#81B5A1", desc:"IT Risk & Incident Management"},
+    {key:"tenable",          name:"Tenable",           icon:"🛡️", color:"#00B388", desc:"Vulnerability Management"},
+    // ── New 20 ───────────────────────────────────────────────────────────────
+    {key:"pagerduty",        name:"PagerDuty",         icon:"🚨", color:"#06AC38", desc:"Incident Management & Alerting"},
+    {key:"qualys",           name:"Qualys VMDR",       icon:"🔬", color:"#ED1C24", desc:"Vulnerability Management"},
+    {key:"sentinelone",      name:"SentinelOne",       icon:"🤖", color:"#6B00F5", desc:"AI-Powered EDR"},
+    {key:"microsoft_defender",name:"MS Defender",      icon:"🛡", color:"#0078D4", desc:"Microsoft Endpoint Security"},
+    {key:"cloudflare",       name:"Cloudflare",        icon:"🌐", color:"#F48120", desc:"DDoS & Web Application Firewall"},
+    {key:"hashicorp_vault",  name:"HashiCorp Vault",   icon:"🔑", color:"#000000", desc:"Secrets Management"},
+    {key:"elastic_security", name:"Elastic Security",  icon:"🔎", color:"#FEC514", desc:"SIEM & Threat Detection"},
+    {key:"wiz",              name:"Wiz",               icon:"🌩", color:"#2B6CB0", desc:"Cloud Security Posture Management"},
+    {key:"sonarqube",        name:"SonarQube",         icon:"📝", color:"#4E9BCD", desc:"Code Security & Quality"},
+    {key:"rapid7",           name:"Rapid7 InsightVM",  icon:"🎯", color:"#E3170A", desc:"Vulnerability & Penetration Testing"},
+    {key:"carbon_black",     name:"Carbon Black",      icon:"⚫", color:"#1A1A1A", desc:"VMware Endpoint Security"},
+    {key:"trend_micro",      name:"Trend Micro",       icon:"📡", color:"#D71920", desc:"Threat Detection & Response"},
+    {key:"lacework",         name:"Lacework",          icon:"🏔", color:"#00B4D8", desc:"Cloud Security & Compliance"},
+    {key:"prisma_cloud",     name:"Prisma Cloud",      icon:"🔷", color:"#00C0E8", desc:"Palo Alto Cloud Security"},
+    {key:"veracode",         name:"Veracode",          icon:"🧪", color:"#009BDE", desc:"Application Security Testing"},
+    {key:"nessus",           name:"Nessus Pro",        icon:"🔭", color:"#00B388", desc:"Network Vulnerability Scanner"},
+    {key:"duo",              name:"Duo Security",      icon:"👥", color:"#6BBB47", desc:"Multi-Factor Authentication"},
+    {key:"snyk",             name:"Snyk",              icon:"🐛", color:"#4C4A73", desc:"Open Source Security"},
+    {key:"beyondtrust",      name:"BeyondTrust",       icon:"🏰", color:"#E31837", desc:"Privileged Access Management"},
+    {key:"darktrace",        name:"Darktrace",         icon:"🧠", color:"#6236FF", desc:"AI Cyber Defence"},
   ];
 
   const [results,setResults]=useState({});
@@ -1443,8 +1522,8 @@ function IntegrationsTab({token, tenantId, onExpired}) {
       <div style={{background:"linear-gradient(135deg,#1e1b4b 0%,#312e81 40%,#4338ca 100%)",borderRadius:"var(--radius-lg)",padding:"20px 24px",marginBottom:"20px",color:"#fff"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"12px"}}>
           <div>
-            <div style={{fontWeight:"800",fontSize:"16px",marginBottom:"4px"}}>⚡ 10 Security Tool Integrations</div>
-            <div style={{fontSize:"12px",color:"rgba(255,255,255,.65)"}}>Okta · Jira · Slack · Datadog · CrowdStrike · GitHub · Snowflake · Splunk · ServiceNow · Tenable</div>
+            <div style={{fontWeight:"800",fontSize:"16px",marginBottom:"4px"}}>⚡ 30 Security Tool Integrations</div>
+            <div style={{fontSize:"12px",color:"rgba(255,255,255,.65)"}}>Okta · Jira · Slack · Datadog · CrowdStrike · GitHub · Tenable · PagerDuty · Qualys · SentinelOne · MS Defender · Cloudflare · Vault · Elastic · Wiz · SonarQube · Rapid7 · Snyk · Duo · Darktrace + more</div>
           </div>
           <button onClick={pullAll} disabled={loadingAll}
             style={{background:"rgba(255,255,255,.15)",border:"1.5px solid rgba(255,255,255,.3)",borderRadius:"var(--radius)",color:"#fff",padding:"10px 20px",cursor:"pointer",fontSize:"13px",fontWeight:"700",display:"flex",alignItems:"center",gap:"8px"}}>
@@ -1541,6 +1620,241 @@ function IntegrationsTab({token, tenantId, onExpired}) {
           <span>Click "Connect & Pull" on any provider or "Pull All Integrations" to start</span>
         </div>
       )}
+    </div>
+  );
+}
+
+
+function RiskTrendsTab({token, tenantId, onExpired}) {
+  const [assessments,setAssessments]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState("");
+  const [timeRange,setTimeRange]=useState("all");
+
+  useEffect(()=>{
+    let cancelled=false;
+    realServer.getAuditTrail(token,tenantId)
+      .then(d=>{if(!cancelled){setAssessments(d);setLoading(false);}})
+      .catch(e=>{if(e.message==="AUTH_EXPIRED")onExpired();else{setError(e.message);setLoading(false);}});
+    return()=>{cancelled=true;};
+  },[token,tenantId,onExpired]);
+
+  // Filter by time range
+  const filtered = assessments.filter(a=>{
+    if(timeRange==="all") return true;
+    const days = timeRange==="30"?30:timeRange==="90"?90:180;
+    return (new Date() - new Date(a.created_at)) / (1000*60*60*24) <= days;
+  }).slice().reverse(); // oldest first for chart
+
+  // Chart dimensions
+  const W=800, H=300, PAD={top:30,right:30,bottom:50,left:60};
+  const chartW=W-PAD.left-PAD.right;
+  const chartH=H-PAD.top-PAD.bottom;
+
+  // Score range 0-100
+  const scores = filtered.map(a=>Number(a.risk_score)||0);
+  const maxScore = 100;
+  const minScore = 0;
+
+  // X positions
+  const xPos = (i) => filtered.length<=1 ? chartW/2 : (i/(filtered.length-1))*chartW;
+  // Y position (inverted — lower score = top = good)
+  const yPos = (score) => chartH - ((score-minScore)/(maxScore-minScore))*chartH;
+
+  // Line path
+  const linePath = filtered.map((a,i)=>`${i===0?"M":"L"}${PAD.left+xPos(i)},${PAD.top+yPos(Number(a.risk_score)||0)}`).join(" ");
+
+  // Area path
+  const areaPath = filtered.length>0 ? [
+    `M${PAD.left+xPos(0)},${PAD.top+chartH}`,
+    ...filtered.map((a,i)=>`L${PAD.left+xPos(i)},${PAD.top+yPos(Number(a.risk_score)||0)}`),
+    `L${PAD.left+xPos(filtered.length-1)},${PAD.top+chartH}`,
+    "Z"
+  ].join(" ") : "";
+
+  // Risk zone bands
+  const criticalY = PAD.top+yPos(75);
+  const highY     = PAD.top+yPos(50);
+  const mediumY   = PAD.top+yPos(25);
+
+  // Stats
+  const latest   = scores[scores.length-1] || 0;
+  const previous = scores[scores.length-2] || 0;
+  const avg      = scores.length>0 ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+  const peak     = scores.length>0 ? Math.max(...scores) : 0;
+  const lowest   = scores.length>0 ? Math.min(...scores) : 0;
+  const trend    = latest - previous;
+  const improved = trend < 0;
+
+  const riskColor = s => s>=75?"#F87171":s>=50?"#FB923C":s>=25?"#FBBF24":"#34D399";
+
+  if(loading) return <div className="empty-state"><RefreshCw size={28} className="spin" style={{opacity:.3,display:"block",margin:"0 auto 12px"}}/><span>Loading risk trends...</span></div>;
+
+  return (
+    <div className="fade-in">
+      {error&&<div className="notice notice-err"><AlertCircle size={15}/>{error}</div>}
+
+      {/* Stats row */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:"14px",marginBottom:"20px"}}>
+        {[
+          {label:"Current Risk",    val:latest.toFixed(0),  sub:"Latest assessment",    color:riskColor(latest)},
+          {label:"Trend",           val:trend===0?"—":`${improved?"-":"+"}${Math.abs(trend).toFixed(0)}`, sub:improved?"Improving ↓":"Worsening ↑", color:improved?"#34D399":"#F87171"},
+          {label:"Average Risk",    val:avg.toFixed(0),     sub:`Over ${scores.length} assessments`, color:"#6366F1"},
+          {label:"Peak Risk",       val:peak.toFixed(0),    sub:"Highest recorded",     color:"#F87171"},
+          {label:"Best Score",      val:lowest.toFixed(0),  sub:"Lowest recorded",      color:"#34D399"},
+        ].map(s=>(
+          <div key={s.label} className="stat-card">
+            <div className="stat-card-val" style={{color:s.color}}>{s.val}</div>
+            <div className="stat-card-lbl">{s.label}</div>
+            <div style={{fontSize:"11px",color:"var(--text3)",marginTop:"4px"}}>{s.sub}</div>
+            <div className="stat-card-line" style={{background:s.color,opacity:.2}}/>
+          </div>
+        ))}
+      </div>
+
+      {/* Chart card */}
+      <div className="card" style={{marginBottom:"20px"}}>
+        <div className="card-header">
+          <div>
+            <div className="card-title">Risk Score Over Time</div>
+            <div className="card-sub">Historical security posture trend — lower is better</div>
+          </div>
+          <div style={{display:"flex",gap:"8px"}}>
+            {[{v:"30",l:"30 Days"},{v:"90",l:"90 Days"},{v:"180",l:"6 Months"},{v:"all",l:"All Time"}].map(r=>(
+              <button key={r.v} onClick={()=>setTimeRange(r.v)}
+                className="btn btn-sm"
+                style={{background:timeRange===r.v?"var(--accent)":"var(--surface2)",
+                        color:timeRange===r.v?"#fff":"var(--text2)",
+                        border:`1px solid ${timeRange===r.v?"var(--accent)":"var(--border2)"}`}}>
+                {r.l}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="card-body">
+          {filtered.length<2?(
+            <div className="empty-state" style={{padding:"40px"}}>
+              <TrendingUp size={32}/>
+              <p>Not enough data for trends</p>
+              <span>Run at least 2 risk assessments to see trend chart</span>
+            </div>
+          ):(
+            <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:"visible"}}>
+              <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6366F1" stopOpacity="0.3"/>
+                  <stop offset="100%" stopColor="#6366F1" stopOpacity="0.02"/>
+                </linearGradient>
+                <linearGradient id="critGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#F87171" stopOpacity="0.08"/>
+                  <stop offset="100%" stopColor="#F87171" stopOpacity="0.02"/>
+                </linearGradient>
+              </defs>
+
+              {/* Risk zone backgrounds */}
+              <rect x={PAD.left} y={PAD.top} width={chartW} height={criticalY-PAD.top} fill="rgba(248,113,113,0.06)" rx="0"/>
+              <rect x={PAD.left} y={criticalY} width={chartW} height={highY-criticalY} fill="rgba(251,146,60,0.06)" rx="0"/>
+              <rect x={PAD.left} y={highY} width={chartW} height={mediumY-highY} fill="rgba(251,191,36,0.05)" rx="0"/>
+              <rect x={PAD.left} y={mediumY} width={chartW} height={PAD.top+chartH-mediumY} fill="rgba(52,211,153,0.05)" rx="0"/>
+
+              {/* Zone labels */}
+              <text x={PAD.left+8} y={criticalY-6} fontSize="10" fill="#F87171" opacity="0.7">Critical</text>
+              <text x={PAD.left+8} y={highY-6}     fontSize="10" fill="#FB923C" opacity="0.7">High</text>
+              <text x={PAD.left+8} y={mediumY-6}   fontSize="10" fill="#FBBF24" opacity="0.7">Medium</text>
+              <text x={PAD.left+8} y={PAD.top+chartH-8} fontSize="10" fill="#34D399" opacity="0.7">Low</text>
+
+              {/* Horizontal grid lines */}
+              {[0,25,50,75,100].map(v=>(
+                <g key={v}>
+                  <line x1={PAD.left} y1={PAD.top+yPos(v)} x2={PAD.left+chartW} y2={PAD.top+yPos(v)}
+                    stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="4,4"/>
+                  <text x={PAD.left-8} y={PAD.top+yPos(v)+4} fontSize="10" fill="#6B7190" textAnchor="end">{v}</text>
+                </g>
+              ))}
+
+              {/* Area fill */}
+              {areaPath&&<path d={areaPath} fill="url(#areaGrad)"/>}
+
+              {/* Main line */}
+              <path d={linePath} fill="none" stroke="#6366F1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+
+              {/* Data points */}
+              {filtered.map((a,i)=>{
+                const score = Number(a.risk_score)||0;
+                const cx = PAD.left+xPos(i);
+                const cy = PAD.top+yPos(score);
+                const color = riskColor(score);
+                return (
+                  <g key={a.id}>
+                    <circle cx={cx} cy={cy} r="5" fill={color} stroke="#1A1D27" strokeWidth="2"/>
+                    {/* Tooltip on hover — use title */}
+                    <title>{`${a.org_name}: ${score.toFixed(1)} (${new Date(a.created_at).toLocaleDateString("en-IN")})`}</title>
+                  </g>
+                );
+              })}
+
+              {/* X axis labels */}
+              {filtered.map((a,i)=>{
+                if(filtered.length>10 && i%Math.ceil(filtered.length/8)!==0 && i!==filtered.length-1) return null;
+                return (
+                  <text key={a.id} x={PAD.left+xPos(i)} y={PAD.top+chartH+18}
+                    fontSize="9" fill="#6B7190" textAnchor="middle">
+                    {new Date(a.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short"})}
+                  </text>
+                );
+              })}
+
+              {/* Axes */}
+              <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={PAD.top+chartH} stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+              <line x1={PAD.left} y1={PAD.top+chartH} x2={PAD.left+chartW} y2={PAD.top+chartH} stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+            </svg>
+          )}
+        </div>
+      </div>
+
+      {/* Assessment history table */}
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">Assessment History</div>
+          <div className="card-sub">{filtered.length} assessments in selected range</div>
+        </div>
+        <div style={{padding:0}}>
+          {filtered.length===0?(
+            <div className="empty-state"><Clock size={28}/><p>No assessments in this range</p></div>
+          ):(
+            <table className="data-table">
+              <thead>
+                <tr><th>#</th><th>Organisation</th><th>Risk Score</th><th>Level</th><th>Financial Exposure</th><th>vs Previous</th><th>Date</th></tr>
+              </thead>
+              <tbody>
+                {[...filtered].reverse().map((row,i,arr)=>{
+                  const score = Number(row.risk_score)||0;
+                  const prevScore = arr[i+1]?Number(arr[i+1].risk_score)||0:null;
+                  const delta = prevScore!==null ? score-prevScore : null;
+                  const color = riskColor(row.risk_level);
+                  return (
+                    <tr key={row.id}>
+                      <td><span className="mono" style={{fontSize:"11px",color:"var(--text3)"}}>{String(filtered.length-i).padStart(2,"0")}</span></td>
+                      <td><strong>{row.org_name}</strong></td>
+                      <td><span style={{fontWeight:"800",fontSize:"16px",color,letterSpacing:"-0.5px"}}>{score.toFixed(1)}</span></td>
+                      <td><span className="badge" style={{background:`${color}18`,color,border:`1px solid ${color}30`}}>{row.risk_level}</span></td>
+                      <td><span style={{fontWeight:"600",color:"var(--text)"}}>${(row.financial_exposure||0).toLocaleString()}</span></td>
+                      <td>
+                        {delta!==null?(
+                          <span style={{fontWeight:"700",fontSize:"13px",color:delta<0?"#34D399":delta>0?"#F87171":"var(--text3)"}}>
+                            {delta<0?"↓":delta>0?"↑":"–"} {Math.abs(delta).toFixed(1)}
+                          </span>
+                        ):<span style={{color:"var(--text3)"}}>—</span>}
+                      </td>
+                      <td style={{fontSize:"12px",color:"var(--text3)"}}>{fmtDate(row.created_at)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1692,6 +2006,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             <div className="page-header">
               <div className="page-title">
                 {activeTab==="overview"&&"Security Overview"}
+                {activeTab==="trends"&&"Risk Trends"}
                 {activeTab==="assessment"&&"Risk Assessment"}
                 {activeTab==="checklist"&&"Security Controls"}
                 {activeTab==="compliance"&&"Compliance Mapping"}
@@ -1700,9 +2015,13 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="users"&&"Team Management"}
                 {activeTab==="trustcenter"&&"Trust Center"}
                 {activeTab==="integrations"&&"Integrations"}
+                {activeTab==="audit-logs"&&"Audit Logs"}
+                {activeTab==="evidence"&&"Evidence"}
+                {activeTab==="policies"&&"Policy Management"}
               </div>
               <div className="page-sub">
                 {activeTab==="overview"&&"Executive summary of your organisation security posture"}
+                {activeTab==="trends"&&"Historical risk score trend and assessment analysis"}
                 {activeTab==="assessment"&&"Run an AI-powered security posture assessment"}
                 {activeTab==="checklist"&&"ISO 27001:2022 and NIST CSF v2.0 controls"}
                 {activeTab==="compliance"&&"Automated compliance mapping across 8 frameworks"}
@@ -1711,9 +2030,13 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="users"&&`Managing ${tenantName} workspace members`}
                 {activeTab==="trustcenter"&&"Share your compliance posture with customers and partners"}
                 {activeTab==="integrations"&&"Connect and pull security data from 10 tools"}
+                {activeTab==="audit-logs"&&"Full activity trail across your compliance platform"}
+                {activeTab==="evidence"&&"Upload and manage compliance evidence linked to controls"}
+                {activeTab==="policies"&&"Create, manage, and track approval of compliance policies"}
               </div>
             </div>
             {activeTab==="overview"     &&role==="ciso"&&<CISOOverview implemented={implemented} token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired} userName={userName}/>}
+            {activeTab==="trends"                      &&<RiskTrendsTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
             {activeTab==="assessment"                   &&<DeveloperAssessment token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
             {activeTab==="checklist"                    &&<ControlChecklist implemented={implemented} onToggle={toggleControl} role={role}/>}
             {activeTab==="compliance"                   &&<ComplianceTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
@@ -1722,6 +2045,9 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="users"        &&role==="ciso" &&<TeamManagement token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
             {activeTab==="trustcenter"                  &&<TrustCenterTab token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
             {activeTab==="integrations"                 &&<IntegrationsTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
+            {activeTab==="audit-logs"&&<AuditLogs token={token} tenantId={tenantId}/>}
+            {activeTab==="evidence"&&<EvidenceCollection token={token} tenantId={tenantId}/>}
+            {activeTab==="policies"&&<PolicyManagement token={token} tenantId={tenantId}/>}
           </div>
         </div>
       </div>

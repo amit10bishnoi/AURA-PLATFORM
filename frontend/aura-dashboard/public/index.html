@@ -4,40 +4,43 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
+    <meta name="theme-color" content="#9333ea" />
+    <meta name="description" content="AURA — Unified Risk & Compliance Platform. Enterprise-grade GRC with AI-powered insights." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <title>AURA — Unified Risk & Compliance Platform</title>
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box;}
+      html,body{height:100%;background:#f0edf8;}
+      #root{height:100%;}
+      .aura-loading{position:fixed;inset:0;background:linear-gradient(135deg,#f0edf8 0%,#e8e4f4 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.4s ease;}
+      .aura-loading.hidden{opacity:0;pointer-events:none;}
+      .aura-loading-logo{width:60px;height:60px;background:linear-gradient(135deg,#9333ea,#ec4899);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 8px 30px rgba(147,51,234,.35);animation:float 2s ease-in-out infinite;}
+      .aura-loading-text{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(135deg,#1a1035,#9333ea,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;}
+      .aura-loading-sub{font-size:13px;color:#a89dc8;font-family:'DM Sans',sans-serif;}
+      .aura-loading-bar{width:160px;height:3px;background:rgba(147,51,234,.15);border-radius:3px;margin-top:28px;overflow:hidden;}
+      .aura-loading-bar-fill{height:100%;background:linear-gradient(90deg,#9333ea,#ec4899);border-radius:3px;animation:load-bar 1.5s ease-in-out infinite;}
+      @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+      @keyframes load-bar{0%{width:0%;margin-left:0}50%{width:80%;margin-left:0}100%{width:0%;margin-left:100%}}
+    </style>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>You need to enable JavaScript to run AURA.</noscript>
+    <div class="aura-loading" id="aura-loading">
+      <div class="aura-loading-logo">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L3 7v10l9 5 9-5V7L12 2z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M12 2v20M3 7l9 5 9-5" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="aura-loading-text">AURA</div>
+      <div class="aura-loading-sub">Unified Risk & Compliance Platform</div>
+      <div class="aura-loading-bar"><div class="aura-loading-bar-fill"></div></div>
+    </div>
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+    <script>
+      window.addEventListener('load',function(){setTimeout(function(){var el=document.getElementById('aura-loading');if(el){el.classList.add('hidden');setTimeout(function(){el.remove();},400);}},600);});
+    </script>
   </body>
 </html>

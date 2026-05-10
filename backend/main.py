@@ -100,3 +100,43 @@ from routers import auto_evidence_routes, auditor_routes, monitoring_routes
 app.include_router(auto_evidence_routes.router)
 app.include_router(auditor_routes.router)
 app.include_router(monitoring_routes.router)
+
+# ── Production Auth v2 ─────────────────────────────────────────────────────────
+try:
+    from routers.production_auth import router as auth_v2_router
+    app.include_router(auth_v2_router)
+    print("✅ Auth v2 loaded")
+except Exception as e:
+    print(f"⚠️  Auth v2 skipped: {e}")
+
+# ── Billing (Stripe) ───────────────────────────────────────────────────────────
+try:
+    from routers.billing_routes import billing_router
+    app.include_router(billing_router)
+    print("✅ Billing loaded")
+except Exception as e:
+    print(f"⚠️  Billing skipped: {e}")
+
+# ── Missing Features ───────────────────────────────────────────────────────────
+try:
+    from routers.missing_features import (
+        access_router, comments_router, history_router,
+        framework_router, onboarding_router, webhooks_router
+    )
+    app.include_router(access_router)
+    app.include_router(comments_router)
+    app.include_router(history_router)
+    app.include_router(framework_router)
+    app.include_router(onboarding_router)
+    app.include_router(webhooks_router)
+    print("✅ Missing features loaded")
+except Exception as e:
+    print(f"⚠️  Missing features skipped: {e}")
+
+# ── OpenAPI / Swagger public docs ──────────────────────────────────────────────
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import HTMLResponse
+
+@app.get("/docs/api", include_in_schema=False)
+async def api_docs():
+    return get_swagger_ui_html(openapi_url="/openapi.json", title="AURA Public API")

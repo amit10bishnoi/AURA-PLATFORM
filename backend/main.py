@@ -140,3 +140,59 @@ from fastapi.responses import HTMLResponse
 @app.get("/docs/api", include_in_schema=False)
 async def api_docs():
     return get_swagger_ui_html(openapi_url="/openapi.json", title="AURA Public API")
+
+# ── Test Engine ────────────────────────────────────────────────────────────────
+try:
+    from routers.test_engine import router as test_engine_router
+    app.include_router(test_engine_router)
+    print("✅ Test Engine loaded")
+except Exception as e:
+    print(f"⚠️  Test Engine skipped: {e}")
+
+# ── ISO 27001 Module ───────────────────────────────────────────────────────────
+try:
+    from routers.iso27001_routes import router as iso27001_router
+    app.include_router(iso27001_router)
+    print("✅ ISO 27001 loaded")
+except Exception as e:
+    print(f"⚠️  ISO 27001 skipped: {e}")
+
+# ── RBI Compliance Center ──────────────────────────────────────────────────────
+try:
+    from routers.rbi_routes import router as rbi_router
+    app.include_router(rbi_router)
+    print("✅ RBI module loaded")
+except Exception as e:
+    print(f"⚠️  RBI skipped: {e}")
+
+# ── DPDP Privacy Management ────────────────────────────────────────────────────
+try:
+    from routers.dpdp_routes import router as dpdp_router
+    app.include_router(dpdp_router)
+    print("✅ DPDP module loaded")
+except Exception as e:
+    print(f"⚠️  DPDP skipped: {e}")
+
+# ── Risk Engine + Incidents ────────────────────────────────────────────────────
+try:
+    from routers.risk_engine import router as risk_engine_router
+    app.include_router(risk_engine_router)
+    print("✅ Risk Engine loaded")
+except Exception as e:
+    print(f"⚠️  Risk Engine skipped: {e}")
+
+# ── Unified Control Library ────────────────────────────────────────────────────
+try:
+    from routers.unified_controls import router as unified_router
+    app.include_router(unified_router)
+    print("✅ Unified Controls loaded")
+except Exception as e:
+    print(f"⚠️  Unified Controls skipped: {e}")
+
+# ── Slack Bot ──────────────────────────────────────────────────────────────────
+try:
+    from routers.slack_bot import router as slack_router
+    app.include_router(slack_router)
+    print("✅ Slack Bot loaded")
+except Exception as e:
+    print(f"⚠️  Slack Bot skipped: {e}")

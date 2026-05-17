@@ -1,6 +1,56 @@
 import TrustCenter from './TrustCenter';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  Activity,
+  AlertCircle,
+  AlertOctagon,
+  AlertTriangle,
+  Award,
+  BarChart2,
+  Bell,
+  Building2,
+  Check,
+  CheckCircle,
+  CheckSquare,
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  Code2,
+  Download,
+  Eye,
+  FileBarChart,
+  FileCheck,
+  FileText,
+  Filter,
+  Globe,
+  LayoutDashboard,
+  Lock,
+  LogOut,
+  Mail,
+  Plus,
+  RefreshCw,
+  Search,
+  Send,
+  Shield,
+  ShieldAlert,
+  Sparkles,
+  Square,
+  Terminal,
+  Trash2,
+  TrendingUp,
+  User,
+  Users,
+  Zap
+} from 'lucide-react';
 import PolicyManagement from "./PolicyManagement";
 import AIAssistant from "./AIAssistant";
+import TestEngine from "./TestEngine";
+import SOC2Hub from "./SOC2Hub";
+import ISO27001Hub from "./ISO27001Hub";
+import RBIHub from "./RBIHub";
+import DPDPHub from "./DPDPHub";
+import RiskRegister from "./RiskRegister";
 import { CommandPalette, ThemeToggle, OnboardingBanner, SkeletonStatGrid, EmptyState } from "./UIEnhancements";
 import QuestionnaireBuilder from "./QuestionnaireBuilder";
 import SSOSettings from "./SSOSettings";
@@ -13,17 +63,7 @@ import Notifications from "./Notifications";
 import Reports from "./Reports";
 import AuditLogs from './AuditLogs';
 import EvidenceCollection from './EvidenceCollection';
-import { useState, useEffect, useCallback } from "react";
-import {
-  Shield, AlertTriangle, LogOut, ChevronRight, Lock, Mail, User,
-  Download, CheckSquare, Square, ClipboardList, Clock, Sparkles,
-  Eye, Code2, FileCheck, TrendingUp, ShieldAlert, Terminal,
-  AlertOctagon, Users, Plus, Trash2, Send, CheckCircle,
-  RefreshCw, FileBarChart, Building2, Bell, Search, ChevronDown,
-  LayoutDashboard, Zap, Globe, AlertCircle, Check, Filter,
-  FileText,
-  Activity,
-} from "lucide-react";
+
 
 const API = "http://localhost:8000";
 const PROXY_KEY = "aura-dev-key-change-in-production";
@@ -214,10 +254,16 @@ const NAV_ITEMS = [
   {id:"reports",       label:"Reports",       icon:FileBarChart, roles:["ciso","auditor"]},
   {id:"auto-evidence",  label:"Auto Evidence",    icon:Zap,          roles:["ciso","auditor"]},
   {id:"auditor",        label:"Auditor Portal",   icon:Shield,       roles:["ciso","auditor"]},
+  {id:"test-engine",    label:"Live Checks",    icon:Activity,     roles:["ciso","developer"]},
   {id:"monitoring",     label:"Monitoring",       icon:Activity,     roles:["ciso","developer"]},
   {id:"ai-assistant",    label:"AI Assistant",    icon:Sparkles,     roles:["ciso","auditor","developer"]},
   {id:"questionnaires",  label:"Questionnaires",  icon:ClipboardList,roles:["ciso","auditor"]},
   {id:"sso",             label:"SSO",             icon:Lock,         roles:["ciso","admin"]},
+  {id:"iso27001",        label:"ISO 27001",        icon:Shield,       roles:["ciso","auditor","developer"]},
+  {id:"soc2",            label:"SOC 2",            icon:Award,        roles:["ciso","auditor","developer"]},
+  {id:"rbi",             label:"RBI Compliance",   icon:Shield,       roles:["ciso","auditor"]},
+  {id:"dpdp",            label:"DPDP Privacy",     icon:Lock,         roles:["ciso","auditor"]},
+  {id:"risk-register",   label:"Risk Register",    icon:AlertTriangle,roles:["ciso","auditor"]},
 ];
 
 const ALL_FRAMEWORK_CONTROLS = [
@@ -2085,10 +2131,13 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="reports"&&"Reports"}
                 {activeTab==="auto-evidence"&&"Auto Evidence Collection"}
                 {activeTab==="auditor"&&"Auditor Portal"}
+                {activeTab==="test-engine"&&"Automated Test Engine"}
                 {activeTab==="monitoring"&&"Continuous Monitoring"}
                 {activeTab==="ai-assistant"&&"AI Risk Assistant"}
                 {activeTab==="questionnaires"&&"Questionnaire Builder"}
                 {activeTab==="sso"&&"SSO Configuration"}
+                {activeTab==="iso27001"&&"ISO 27001 Certification Hub"}
+                {activeTab==="soc2"&&"SOC 2 Certification Hub"}
               </div>
               <div className="page-sub">
                 {activeTab==="overview"&&"Executive summary of your organisation security posture"}
@@ -2110,10 +2159,13 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="reports"&&"Generate and export board-ready compliance reports"}
                 {activeTab==="auto-evidence"&&"Automatically pull compliance evidence from connected integrations"}
                 {activeTab==="auditor"&&"Manage external audit engagements and auditor collaboration"}
+                {activeTab==="test-engine"&&"Real compliance checks against AWS, GitHub & Okta — live results"}
                 {activeTab==="monitoring"&&"Real-time compliance checks across all connected integrations"}
                 {activeTab==="ai-assistant"&&"Ask anything about your compliance posture or risk score"}
                 {activeTab==="questionnaires"&&"Build and send security questionnaires to customers and vendors"}
                 {activeTab==="sso"&&"Configure Single Sign-On for your team"}
+                {activeTab==="iso27001"&&"93 controls · Your complete path to ISO 27001:2022 certification"}
+                {activeTab==="soc2"&&"Trust Services Criteria · Your complete path to SOC 2 Type II"}
               </div>
             </div>
             {activeTab==="overview"     &&role==="ciso"&&<CISOOverview implemented={implemented} token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired} userName={userName}/>}
@@ -2135,6 +2187,12 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="reports"&&<Reports token={token} tenantId={tenantId}/>}
             {activeTab==="auto-evidence"&&<AutoEvidence token={token} tenantId={tenantId}/>}
             {activeTab==="auditor"&&<AuditorPortal token={token} tenantId={tenantId}/>}
+            {activeTab==="test-engine"&&<TestEngine token={token} tenantId={tenantId}/>}
+            {activeTab==="soc2"&&<SOC2Hub token={token} tenantId={tenantId}/>}
+            {activeTab==="rbi"&&<RBIHub token={token} tenantId={tenantId}/>}
+            {activeTab==="dpdp"&&<DPDPHub token={token} tenantId={tenantId}/>}
+            {activeTab==="risk-register"&&<RiskRegister token={token} tenantId={tenantId}/>}
+            {activeTab==="iso27001"&&<ISO27001Hub token={token} tenantId={tenantId}/>}
             {activeTab==="monitoring"&&<ContinuousMonitoring token={token} tenantId={tenantId}/>}
             {activeTab==="ai-assistant"&&<AIAssistant token={token} tenantId={tenantId} onNavigate={setActiveTab}/>}
             {activeTab==="questionnaires"&&<QuestionnaireBuilder token={token} tenantId={tenantId}/>}

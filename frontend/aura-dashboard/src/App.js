@@ -1893,7 +1893,7 @@ function Login({onLogin}) {
               <span className="auth-hero-logo-text">AURA</span>
             </div>
             <h1>Unified Risk &amp;<br/><span>Compliance Platform</span></h1>
-            <p>Enterprise-grade security posture management with real-time compliance mapping across ISO 27001, NIST CSF, and SOC 2.</p>
+            <p>Enterprise-grade security posture management with real-time compliance mapping across ISO 27001, SOC 2, RBI Cybersecurity, and DPDP Act 2023.</p>
             <div className="auth-hero-badges">
                 <span key={b} className="auth-hero-badge"><Check size={11}/>{b}</span>
               ))}
@@ -2034,7 +2034,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="overview"&&"Executive summary of your organisation security posture"}
                 {activeTab==="trends"&&"Historical risk score trend and assessment analysis"}
                 {activeTab==="assessment"&&"Run an AI-powered security posture assessment"}
-                {activeTab==="checklist"&&"ISO 27001:2022 and NIST CSF v2.0 controls"}
+                {activeTab==="checklist"&&"ISO 27001:2022 controls"}
                 {activeTab==="compliance"&&"Automated compliance mapping across 4 frameworks"}
                 {activeTab==="audit"&&"Full history of all risk assessments"}
                 {activeTab==="remediation"&&"Track and manage security remediation tasks"}

@@ -302,88 +302,6 @@ const ALL_FRAMEWORK_CONTROLS = [
   {id:"A.8.28",  framework:"ISO27001", control:"Secure coding",                               riskreduction:5},
   {id:"A.8.29",  framework:"ISO27001", control:"Security testing in development",             riskreduction:5},
   {id:"A.8.32",  framework:"ISO27001", control:"Change management",                           riskreduction:4},
-  // ── NIST CSF v2.0 ──────────────────────────────────────────────────────────
-  {id:"GV.OC-01",framework:"NIST_CSF", control:"Organisational cybersecurity mission understood",  riskreduction:3},
-  {id:"GV.PO-01",framework:"NIST_CSF", control:"Cybersecurity policy established & communicated",  riskreduction:4},
-  {id:"GV.PO-02",framework:"NIST_CSF", control:"Cybersecurity roles & responsibilities known",     riskreduction:3},
-  {id:"GV.RM-01",framework:"NIST_CSF", control:"Risk management objectives established",           riskreduction:4},
-  {id:"GV.RM-02",framework:"NIST_CSF", control:"Risk appetite & tolerance determined",             riskreduction:3},
-  {id:"GV.RM-06",framework:"NIST_CSF", control:"Cybersecurity risk reported to leadership",        riskreduction:4},
-  {id:"GV.RR-01",framework:"NIST_CSF", control:"Leadership accountable for cybersecurity",         riskreduction:4},
-  {id:"GV.RR-02",framework:"NIST_CSF", control:"Roles & responsibilities established",             riskreduction:4},
-  {id:"GV.SC-06",framework:"NIST_CSF", control:"Cybersecurity practices in supply chain",          riskreduction:4},
-  {id:"ID.AM-01",framework:"NIST_CSF", control:"Hardware asset inventories maintained",            riskreduction:4},
-  {id:"ID.AM-02",framework:"NIST_CSF", control:"Software asset inventories maintained",            riskreduction:4},
-  {id:"ID.AM-07",framework:"NIST_CSF", control:"Data & service inventories maintained",            riskreduction:4},
-  {id:"ID.RA-01",framework:"NIST_CSF", control:"Vulnerabilities identified & recorded",            riskreduction:5},
-  {id:"ID.RA-02",framework:"NIST_CSF", control:"Cyber threat intelligence received",               riskreduction:4},
-  {id:"ID.RA-05",framework:"NIST_CSF", control:"Threats & vulnerabilities prioritised",            riskreduction:5},
-  {id:"PR.AA-01",framework:"NIST_CSF", control:"Identities & credentials managed",                riskreduction:5},
-  {id:"PR.AA-03",framework:"NIST_CSF", control:"Users & hardware authenticated",                   riskreduction:6},
-  {id:"PR.AA-05",framework:"NIST_CSF", control:"Access permissions managed & enforced",            riskreduction:6},
-  {id:"PR.AT-01",framework:"NIST_CSF", control:"Users trained on cybersecurity risks",             riskreduction:6},
-  {id:"PR.DS-01",framework:"NIST_CSF", control:"Data-at-rest protected",                          riskreduction:6},
-  {id:"PR.DS-02",framework:"NIST_CSF", control:"Data-in-transit protected",                       riskreduction:6},
-  {id:"PR.DS-11",framework:"NIST_CSF", control:"Backups created, protected & tested",             riskreduction:6},
-  {id:"PR.IR-01",framework:"NIST_CSF", control:"Networks & environments protected",               riskreduction:5},
-  {id:"PR.IR-04",framework:"NIST_CSF", control:"Adequate resource capacity maintained",           riskreduction:3},
-  {id:"PR.PS-01",framework:"NIST_CSF", control:"Configuration management practices established",  riskreduction:5},
-  {id:"PR.PS-02",framework:"NIST_CSF", control:"Software maintained & updated",                   riskreduction:5},
-  {id:"PR.PS-04",framework:"NIST_CSF", control:"Logs generated & reviewed",                       riskreduction:5},
-  {id:"DE.AE-02",framework:"NIST_CSF", control:"Potentially adverse events analysed",             riskreduction:4},
-  {id:"DE.CM-01",framework:"NIST_CSF", control:"Networks monitored for adverse events",           riskreduction:5},
-  {id:"DE.CM-09",framework:"NIST_CSF", control:"Computing hardware & software monitored",         riskreduction:5},
-  {id:"RS.MA-01",framework:"NIST_CSF", control:"Incident response plan executed",                 riskreduction:6},
-  {id:"RS.MA-02",framework:"NIST_CSF", control:"Incidents categorised & prioritised",             riskreduction:5},
-  {id:"RS.CO-02",framework:"NIST_CSF", control:"Internal & external stakeholders notified",       riskreduction:4},
-  {id:"RC.RP-01",framework:"NIST_CSF", control:"Recovery plan executed",                          riskreduction:5},
-  // ── HIPAA ──────────────────────────────────────────────────────────────────
-  {id:"HIPAA.164.308.a.1", framework:"HIPAA", control:"Security Management Process",              riskreduction:6},
-  {id:"HIPAA.164.308.a.2", framework:"HIPAA", control:"Assigned Security Responsibility",         riskreduction:4},
-  {id:"HIPAA.164.308.a.3", framework:"HIPAA", control:"Workforce Security",                       riskreduction:5},
-  {id:"HIPAA.164.308.a.4", framework:"HIPAA", control:"Information Access Management",            riskreduction:6},
-  {id:"HIPAA.164.308.a.5", framework:"HIPAA", control:"Security Awareness & Training",            riskreduction:5},
-  {id:"HIPAA.164.308.a.6", framework:"HIPAA", control:"Security Incident Procedures",             riskreduction:6},
-  {id:"HIPAA.164.308.a.7", framework:"HIPAA", control:"Contingency Plan",                         riskreduction:5},
-  {id:"HIPAA.164.308.a.8", framework:"HIPAA", control:"Evaluation",                               riskreduction:4},
-  {id:"HIPAA.164.310.a.1", framework:"HIPAA", control:"Facility Access Controls",                 riskreduction:4},
-  {id:"HIPAA.164.310.b",   framework:"HIPAA", control:"Workstation Use Policy",                   riskreduction:3},
-  {id:"HIPAA.164.310.c",   framework:"HIPAA", control:"Workstation Security",                     riskreduction:3},
-  {id:"HIPAA.164.310.d.1", framework:"HIPAA", control:"Device & Media Controls",                  riskreduction:4},
-  {id:"HIPAA.164.312.a.1", framework:"HIPAA", control:"Access Control — ePHI",                    riskreduction:6},
-  {id:"HIPAA.164.312.b",   framework:"HIPAA", control:"Audit Controls",                           riskreduction:5},
-  {id:"HIPAA.164.312.c.1", framework:"HIPAA", control:"Integrity Controls",                       riskreduction:5},
-  {id:"HIPAA.164.312.d",   framework:"HIPAA", control:"Person or Entity Authentication",          riskreduction:6},
-  {id:"HIPAA.164.312.e.1", framework:"HIPAA", control:"Transmission Security",                    riskreduction:6},
-  // ── GDPR ───────────────────────────────────────────────────────────────────
-  {id:"GDPR.Art.5",  framework:"GDPR", control:"Principles of data processing",                   riskreduction:5},
-  {id:"GDPR.Art.6",  framework:"GDPR", control:"Lawfulness of processing",                        riskreduction:6},
-  {id:"GDPR.Art.7",  framework:"GDPR", control:"Conditions for consent",                          riskreduction:5},
-  {id:"GDPR.Art.12", framework:"GDPR", control:"Transparent information & communication",         riskreduction:4},
-  {id:"GDPR.Art.13", framework:"GDPR", control:"Information to be provided — collection",         riskreduction:4},
-  {id:"GDPR.Art.15", framework:"GDPR", control:"Right of access by the data subject",             riskreduction:4},
-  {id:"GDPR.Art.17", framework:"GDPR", control:"Right to erasure (right to be forgotten)",        riskreduction:5},
-  {id:"GDPR.Art.20", framework:"GDPR", control:"Right to data portability",                       riskreduction:3},
-  {id:"GDPR.Art.25", framework:"GDPR", control:"Data protection by design & by default",          riskreduction:6},
-  {id:"GDPR.Art.28", framework:"GDPR", control:"Processor obligations & contracts",               riskreduction:5},
-  {id:"GDPR.Art.30", framework:"GDPR", control:"Records of processing activities",                riskreduction:4},
-  {id:"GDPR.Art.32", framework:"GDPR", control:"Security of processing — technical measures",     riskreduction:6},
-  {id:"GDPR.Art.33", framework:"GDPR", control:"Notification of breach to supervisory authority", riskreduction:6},
-  {id:"GDPR.Art.35", framework:"GDPR", control:"Data protection impact assessment (DPIA)",        riskreduction:5},
-  {id:"GDPR.Art.37", framework:"GDPR", control:"Data protection officer (DPO)",                   riskreduction:4},
-  // ── PCI DSS v4.0 ───────────────────────────────────────────────────────────
-  {id:"PCI.1",  framework:"PCI_DSS", control:"Install & maintain network security controls",       riskreduction:6},
-  {id:"PCI.2",  framework:"PCI_DSS", control:"Apply secure configurations to all system components",riskreduction:6},
-  {id:"PCI.3",  framework:"PCI_DSS", control:"Protect stored account data",                        riskreduction:6},
-  {id:"PCI.4",  framework:"PCI_DSS", control:"Protect cardholder data with encryption in transit", riskreduction:6},
-  {id:"PCI.5",  framework:"PCI_DSS", control:"Protect all systems against malware",                riskreduction:6},
-  {id:"PCI.6",  framework:"PCI_DSS", control:"Develop & maintain secure systems & software",       riskreduction:5},
-  {id:"PCI.7",  framework:"PCI_DSS", control:"Restrict access to cardholder data by need-to-know", riskreduction:6},
-  {id:"PCI.8",  framework:"PCI_DSS", control:"Identify users & authenticate access to system components",riskreduction:6},
-  {id:"PCI.9",  framework:"PCI_DSS", control:"Restrict physical access to cardholder data",        riskreduction:4},
-  {id:"PCI.10", framework:"PCI_DSS", control:"Log & monitor all access to network & cardholder data",riskreduction:5},
-  {id:"PCI.11", framework:"PCI_DSS", control:"Test security of systems & networks regularly",       riskreduction:5},
-  {id:"PCI.12", framework:"PCI_DSS", control:"Support information security with policies & programs",riskreduction:4},
   // ── RBI Cybersecurity Framework ────────────────────────────────────────────
   {id:"RBI.IT.1", framework:"RBI", control:"IT Governance Framework",                              riskreduction:5},
   {id:"RBI.IT.2", framework:"RBI", control:"Information & Cyber Security Policy",                  riskreduction:6},
@@ -687,11 +605,6 @@ function ComplianceTab({token,tenantId,onExpired}) {
   const fwMeta={
     SOC2:    {color:"#EF4444",label:"SOC 2 Type II",     desc:"Trust Service Criteria"},
     ISO27001:{color:"#22C55E",label:"ISO 27001:2022",    desc:"Information Security Management"},
-    NIST_CSF:{color:"#8b5cf6",label:"NIST CSF v2.0",     desc:"Cybersecurity Framework"},
-    HIPAA:   {color:"#F59E0B",label:"HIPAA",              desc:"Health Data Protection"},
-    GDPR:    {color:"#EC4899",label:"GDPR",               desc:"EU Data Protection"},
-    PCI_DSS: {color:"#14B8A6",label:"PCI DSS v4.0",      desc:"Payment Card Industry"},
-    RBI:     {color:"#8B5CF6",label:"RBI Cybersecurity", desc:"Reserve Bank of India"},
     DPDP:    {color:"#F97316",label:"DPDP Act 2023",     desc:"India Personal Data Protection"},
   };
 
@@ -739,7 +652,7 @@ function ComplianceTab({token,tenantId,onExpired}) {
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px",flexWrap:"wrap",gap:"12px"}}>
         <div>
           <div style={{fontSize:"15px",fontWeight:"700",color:"var(--text)",marginBottom:"3px"}}>Framework Mapping</div>
-          <div style={{fontSize:"12px",color:"var(--text3)"}}>8 frameworks — SOC 2, ISO 27001, NIST CSF, HIPAA, GDPR, PCI DSS, RBI, DPDP</div>
+          <div style={{fontSize:"12px",color:"var(--text3)"}}>4 frameworks — SOC 2, ISO 27001, RBI Cybersecurity, DPDP Act 2023</div>
         </div>
         <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
           <select value={selectedId||""} onChange={e=>setSelectedId(e.target.value)} style={{fontSize:"12px",padding:"7px 12px",background:"var(--surface2)",border:"1px solid var(--border2)",borderRadius:"var(--radius)",color:"var(--text)",outline:"none"}}>
@@ -1013,10 +926,6 @@ function ControlChecklist({implemented,onToggle,role}) {
   const FRAMEWORK_TABS = [
     {key:"ALL",      label:"All Controls",    color:"#8b5cf6"},
     {key:"ISO27001", label:"ISO 27001:2022",  color:"#22C55E"},
-    {key:"NIST_CSF", label:"NIST CSF v2.0",  color:"#8b5cf6"},
-    {key:"HIPAA",    label:"HIPAA",           color:"#F59E0B"},
-    {key:"GDPR",     label:"GDPR",            color:"#EC4899"},
-    {key:"PCI_DSS",  label:"PCI DSS v4.0",   color:"#14B8A6"},
     {key:"RBI",      label:"RBI Cyber",       color:"#8B5CF6"},
     {key:"DPDP",     label:"DPDP Act 2023",  color:"#F97316"},
   ];
@@ -1281,17 +1190,7 @@ function TeamManagement({token,tenantId,tenantName,onExpired}) {
   );
 }
 
-function CISOOverview({implemented,token,tenantId,tenantName,onExpired,userName}) {
-  const controls=ALL_FRAMEWORK_CONTROLS;
-  const iso=controls.filter(c=>c.framework==="ISO27001");
-  const nist=controls.filter(c=>c.framework==="NIST_CSF");
-  const nPct=nist.length?Math.round(nist.filter(c=>implemented.includes(c.id)).length/nist.length*100):0;
-  const iPct=iso.length?Math.round(iso.filter(c=>implemented.includes(c.id)).length/iso.length*100):0;
-  const overallRisk=Math.max(0,100-Math.round((nPct+iPct)/2));
-  const riskLevel=overallRisk>=75?"CRITICAL":overallRisk>=50?"HIGH":overallRisk>=25?"MEDIUM":"LOW";
-  const [generating,setGenerating]=useState(false);
-  const [reportError,setReportError]=useState("");
-  const [lastAssessment,setLastAssessment]=useState({});
+function CISOOverview({implemented,token,tenantId,tenantName,onExpired,userName}) );
   const [openTasks,setOpenTasks]=useState(0);
   const [execSummary,setExecSummary]=useState("");
   const [genSummary,setGenSummary]=useState(false);
@@ -1348,7 +1247,6 @@ function CISOOverview({implemented,token,tenantId,tenantName,onExpired,userName}
           <div className="card-body" style={{display:"flex",flexDirection:"column",alignItems:"center",paddingTop:"24px"}}>
             <RiskGauge score={overallRisk}/>
             <div style={{marginTop:"16px",width:"100%"}}>
-              {[{l:"NIST CSF",v:nPct,c:"var(--accent)"},{l:"ISO 27001",v:iPct,c:"var(--green)"}].map(f=>(
                 <div key={f.l} style={{marginBottom:"10px"}}>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:"12px",fontWeight:"600",color:"var(--text2)",marginBottom:"5px"}}><span>{f.l}</span><span style={{color:f.c}}>{f.v}%</span></div>
                   <div className="progress-wrap" style={{height:"6px"}}><div className="progress-fill" style={{width:`${f.v}%`,height:"6px",background:f.c}}/></div>
@@ -1422,11 +1320,6 @@ function TrustCenterTab({token,tenantId,tenantName,onExpired}) {
   const fwMeta={
     SOC2:    {label:"SOC 2 Type II",    color:"#EF4444",desc:"Trust Service Criteria"},
     ISO27001:{label:"ISO 27001:2022",   color:"#22C55E",desc:"Information Security Management"},
-    NIST_CSF:{label:"NIST CSF v2.0",    color:"#8b5cf6",desc:"Cybersecurity Framework"},
-    HIPAA:   {label:"HIPAA",            color:"#F59E0B",desc:"Health Data Protection"},
-    GDPR:    {label:"GDPR",             color:"#3B82F6",desc:"EU Data Protection"},
-    PCI_DSS: {label:"PCI DSS v4.0",     color:"#8B5CF6",desc:"Payment Card Industry"},
-    RBI:     {label:"RBI Cybersecurity",color:"#EC4899",desc:"Reserve Bank of India"},
     DPDP:    {label:"DPDP Act 2023",    color:"#14B8A6",desc:"India Personal Data Protection"},
   };
 
@@ -1441,7 +1334,6 @@ function TrustCenterTab({token,tenantId,tenantName,onExpired}) {
         if(cancelled)return;
         const latest=assessments.length>0?assessments[assessments.length-1]:null;
         const frameworkScores={};
-        ["SOC2","ISO27001","NIST_CSF","HIPAA","GDPR","PCI_DSS","RBI","DPDP"].forEach(fw=>{
           const rows=summary.filter(s=>s.framework===fw);
           if(rows.length>0)frameworkScores[fw]=rows.reduce((s,r)=>s+r.score,0)/rows.length;
         });
@@ -2003,7 +1895,6 @@ function Login({onLogin}) {
             <h1>Unified Risk &amp;<br/><span>Compliance Platform</span></h1>
             <p>Enterprise-grade security posture management with real-time compliance mapping across ISO 27001, NIST CSF, and SOC 2.</p>
             <div className="auth-hero-badges">
-              {["ISO 27001:2022","NIST CSF v2.0","SOC 2 Type II","FAIR Risk Model"].map(b=>(
                 <span key={b} className="auth-hero-badge"><Check size={11}/>{b}</span>
               ))}
             </div>
@@ -2144,7 +2035,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="trends"&&"Historical risk score trend and assessment analysis"}
                 {activeTab==="assessment"&&"Run an AI-powered security posture assessment"}
                 {activeTab==="checklist"&&"ISO 27001:2022 and NIST CSF v2.0 controls"}
-                {activeTab==="compliance"&&"Automated compliance mapping across 8 frameworks"}
+                {activeTab==="compliance"&&"Automated compliance mapping across 4 frameworks"}
                 {activeTab==="audit"&&"Full history of all risk assessments"}
                 {activeTab==="remediation"&&"Track and manage security remediation tasks"}
                 {activeTab==="team-mgmt"&&`Managing ${tenantName} workspace members`}

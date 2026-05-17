@@ -3,7 +3,6 @@ compliance_frameworks.py
 Full control definitions for:
   - SOC 2 (8 Trust Service Criteria controls)
   - ISO 27001:2022 (93 controls across Annexes A.5–A.8)
-  - NIST CSF v2.0 (all 6 Functions, 22 Categories, 106 Subcategories)
 
 Place this file in your backend root (same folder as models.py).
 """
@@ -463,7 +462,6 @@ ISO27001_CONTROLS: List[Dict[str, Any]] = [
 # Weights sum to 100 across all subcategories
 # ─────────────────────────────────────────────────────────────────────────────
 
-NIST_CSF_CONTROLS: List[Dict[str, Any]] = [
 
     # ══════════════════════════════════════════════════════════════════════════
     # FUNCTION: GOVERN (GV) — New in CSF v2.0
@@ -859,7 +857,6 @@ NIST_CSF_CONTROLS: List[Dict[str, Any]] = [
 FRAMEWORKS: Dict[str, List[Dict[str, Any]]] = {
     "SOC2":     SOC2_CONTROLS,
     "ISO27001": ISO27001_CONTROLS,
-    "NIST_CSF": NIST_CSF_CONTROLS,
 }
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -14,12 +14,10 @@ from models import Assessment
 from extra_frameworks import score_extra_framework, EXTRA_FRAMEWORK_META
 
 # Add this to your existing compliance router
-extra_router = APIRouter(prefix="/api/extra-compliance", tags=["Extra Frameworks — HIPAA, GDPR, PCI DSS, RBI, DPDP"])
 
 
 @extra_router.get("/frameworks", summary="List all 5 extra compliance frameworks")
 def list_extra_frameworks(_=Depends(get_current_user)):
-    """Returns metadata for HIPAA, GDPR, PCI DSS, RBI, and DPDP Act 2023."""
     return [
         {
             "key":      k,
@@ -69,7 +67,6 @@ def score_all_extra(
 
 @extra_router.get(
     "/assessments/{assessment_id}/{framework}",
-    summary="Score against specific framework (HIPAA/GDPR/PCI_DSS/RBI/DPDP)",
 )
 def score_one_framework(
     assessment_id: str,

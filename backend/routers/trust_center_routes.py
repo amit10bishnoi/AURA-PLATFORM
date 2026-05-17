@@ -86,10 +86,7 @@ def _get_trust_data(tenant_id: str, db: Session):
 
     frameworks = [
         {"key": "ISO27001",  "name": "ISO 27001:2022",                  "score": iso_pct,   "status": status(iso_pct),   "color": "#6366F1", "description": "Information Security Management"},
-        {"key": "NIST_CSF",  "name": "NIST CSF v2.0",                   "score": nist_pct,  "status": status(nist_pct),  "color": "#3B82F6", "description": "Cybersecurity Framework"},
         {"key": "SOC2",      "name": "SOC 2 Type II",                    "score": soc2_pct,  "status": status(soc2_pct),  "color": "#8B5CF6", "description": "Trust Service Criteria"},
-        {"key": "HIPAA",     "name": "HIPAA",                            "score": hipaa_pct, "status": status(hipaa_pct), "color": "#EC4899", "description": "Health Data Protection"},
-        {"key": "GDPR",      "name": "GDPR",                             "score": gdpr_pct,  "status": status(gdpr_pct),  "color": "#F59E0B", "description": "EU Data Protection"},
         {"key": "RBI",       "name": "RBI Cybersecurity Framework",      "score": rbi_pct,   "status": status(rbi_pct),   "color": "#10B981", "description": "Reserve Bank of India"},
         {"key": "DPDP",      "name": "DPDP Act 2023",                    "score": dpdp_pct,  "status": status(dpdp_pct),  "color": "#F97316", "description": "India Digital Personal Data"},
     ]

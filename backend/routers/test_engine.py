@@ -19,7 +19,6 @@ def get_demo_aws():
         {"id":"aws_guardduty","name":"GuardDuty Threat Detection","category":"Threat Detection","framework":"SOC2","control":"CC7.1","status":"PASS","details":"GuardDuty enabled (1 detector)","severity":"HIGH","demo":True},
         {"id":"aws_ec2_ssh","name":"No Open SSH (0.0.0.0/0:22)","category":"Network Security","framework":"SOC2","control":"CC6.6","status":"FAIL","details":"2 security groups allow SSH from anywhere","remediation":"Restrict port 22 to your office IP in: sg-web-servers, sg-bastion","severity":"CRITICAL","demo":True},
         {"id":"aws_ec2_rdp","name":"No Open RDP (0.0.0.0/0:3389)","category":"Network Security","framework":"SOC2","control":"CC6.6","status":"PASS","details":"No security groups expose RDP","severity":"CRITICAL","demo":True},
-        {"id":"aws_rds_encryption","name":"RDS Encryption at Rest","category":"Data Security","framework":"HIPAA","control":"164.312","status":"PASS","details":"All 3 RDS instances encrypted","severity":"HIGH","demo":True},
         {"id":"aws_rds_public","name":"RDS Not Publicly Accessible","category":"Data Security","framework":"SOC2","control":"CC6.6","status":"PASS","details":"No public RDS instances","severity":"CRITICAL","demo":True},
         {"id":"aws_vpc_flow_logs","name":"VPC Flow Logs Enabled","category":"Network Security","framework":"SOC2","control":"CC7.2","status":"WARNING","details":"1 of 2 VPCs missing flow logs","remediation":"Enable VPC flow logs for vpc-0abc123","severity":"MEDIUM","demo":True},
         {"id":"aws_config_enabled","name":"AWS Config Enabled","category":"Audit Logging","framework":"SOC2","control":"CC7.2","status":"PASS","details":"AWS Config recording enabled in us-east-1","severity":"MEDIUM","demo":True},
@@ -140,10 +139,8 @@ async def run_real_aws(creds):
             instances=rds.describe_db_instances()["DBInstances"]
             unenc=[i["DBInstanceIdentifier"] for i in instances if not i.get("StorageEncrypted")]
             pub=[i["DBInstanceIdentifier"] for i in instances if i.get("PubliclyAccessible")]
-            results.append({"id":"aws_rds_encryption","name":"RDS Encryption at Rest","category":"Data Security","framework":"HIPAA","control":"164.312","status":"PASS" if not unenc else "FAIL","details":f"{len(unenc)} unencrypted instances" if unenc else f"All {len(instances)} RDS instances encrypted","remediation":None if not unenc else f"Enable encryption on: {','.join(unenc[:3])}","severity":"HIGH","evidence":{"unencrypted":unenc}})
             results.append({"id":"aws_rds_public","name":"RDS Not Publicly Accessible","category":"Data Security","framework":"SOC2","control":"CC6.6","status":"PASS" if not pub else "FAIL","details":f"{len(pub)} public instances" if pub else "No public RDS instances","remediation":None if not pub else f"Disable public access on: {','.join(pub[:3])}","severity":"CRITICAL","evidence":{"public":pub}})
         except Exception as e:
-            results.append({"id":"aws_rds","name":"RDS Checks","status":"ERROR","details":str(e),"category":"Data Security","framework":"HIPAA","control":"164.312","severity":"HIGH"})
 
         return results
     except Exception as e:

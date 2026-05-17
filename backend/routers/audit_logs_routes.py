@@ -34,13 +34,9 @@ def get_db():
 
 DEMO_LOGS = [
     {"user_name":"Amit Shah","user_email":"amit@acme.com","action":"CONTROL_UPDATED","category":"Compliance","framework":"SOC2","resource":"CC6.1 Logical Access","status":"SUCCESS","detail":{"old":"IN_PROGRESS","new":"IMPLEMENTED"}},
-    {"user_name":"Priya Nair","user_email":"priya@acme.com","action":"EVIDENCE_UPLOADED","category":"Evidence","framework":"HIPAA","resource":"Access Control Policy.pdf","status":"SUCCESS","detail":{"size_kb":245}},
     {"user_name":"System","user_email":"system@aura","action":"RISK_SCAN_COMPLETED","category":"Risk","framework":None,"resource":"Full Platform Scan","status":"SUCCESS","detail":{"findings":12,"critical":2}},
     {"user_name":"Amit Shah","user_email":"amit@acme.com","action":"INTEGRATION_CONNECTED","category":"Integration","framework":None,"resource":"Okta SSO","status":"SUCCESS","detail":{}},
     {"user_name":"Riya Mehta","user_email":"riya@acme.com","action":"USER_INVITED","category":"User","framework":None,"resource":"new.user@acme.com","status":"SUCCESS","detail":{"role":"Auditor"}},
-    {"user_name":"Priya Nair","user_email":"priya@acme.com","action":"REPORT_EXPORTED","category":"Compliance","framework":"GDPR","resource":"GDPR Compliance Report Q1","status":"SUCCESS","detail":{"format":"PDF"}},
-    {"user_name":"Amit Shah","user_email":"amit@acme.com","action":"CONTROL_UPDATED","category":"Compliance","framework":"PCI_DSS","resource":"Req 1.1 Firewall Config","status":"SUCCESS","detail":{"old":"NOT_STARTED","new":"IN_PROGRESS"}},
-    {"user_name":"System","user_email":"system@aura","action":"ALERT_TRIGGERED","category":"Risk","framework":"NIST_CSF","resource":"Anomalous Login Pattern","status":"WARNING","detail":{"severity":"HIGH"}},
     {"user_name":"Riya Mehta","user_email":"riya@acme.com","action":"LOGIN","category":"User","framework":None,"resource":None,"status":"SUCCESS","detail":{"method":"SSO"}},
     {"user_name":"Unknown","user_email":"attacker@evil.com","action":"LOGIN","category":"User","framework":None,"resource":None,"status":"FAILURE","detail":{"reason":"Invalid credentials"}},
     {"user_name":"Amit Shah","user_email":"amit@acme.com","action":"TRUST_CENTER_UPDATED","category":"Compliance","framework":None,"resource":"Trust Center","status":"SUCCESS","detail":{"section":"Security Policies"}},

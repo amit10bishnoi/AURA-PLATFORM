@@ -11,8 +11,6 @@ RISK_RESPONSES = [
 ]
 COMPLIANCE_RESPONSES = [
     "SOC2 readiness is 74%. Biggest gaps: CC7.1 (System Monitoring) and CC7.2 (Vulnerability Management). Fixing these pushes you above 80%.",
-    "GDPR gap: missing DPAs with 2 sub-processors, privacy policy not reviewed in 18 months.",
-    "HIPAA at 81% — remaining gap is workforce training documentation for 3 new employees.",
 ]
 REMEDIATION_RESPONSES = [
     "Fix SSH port: AWS Console → EC2 → Security Groups → sg-0abc123 → Edit inbound rules → Remove 0.0.0.0/0 on port 22. Replace with your office IP.",
@@ -29,7 +27,6 @@ SUGGESTIONS = [
     "Why is my risk score high?","What should I fix first?","How do I improve my SOC2 score?",
     "Which vendors need attention?","What evidence is expiring?","How do I fix the open SSH port?",
     "What are my biggest compliance gaps?","Am I ready for a SOC2 audit?",
-    "How do I remediate the dependency vulnerability?","What is my GDPR status?",
 ]
 
 def ai_response(question):
@@ -43,7 +40,6 @@ def ai_response(question):
     elif any(w in q for w in ["vendor","questionnaire","third"]):
         return "2 critical vendors need immediate attention: PaymentGateway Pro (score: 82, questionnaire overdue) and DataAnalytics Co (score: 68, sent but incomplete). Escalate both this week.","Vendor Risk",[{"label":"View Vendors","tab":"vendors"}]
     elif any(w in q for w in ["evidence","expir","upload"]):
-        return "3 evidence items expiring within 30 days: AWS Security Groups Audit (15d), Okta Admin Review (22d), HIPAA Risk Assessment (28d). Pull fresh evidence now.","Evidence",[{"label":"Auto-Pull Evidence","tab":"auto-evidence"}]
     else:
         return random.choice(GENERAL_RESPONSES),"General Insights",[{"label":"Dashboard","tab":"overview"},{"label":"Reports","tab":"reports"}]
 
@@ -70,20 +66,15 @@ def get_summary(tenant_id:str=Query(...)):
 def get_recommendations(tenant_id:str=Query(...)):
     return {"recommendations":[
         {"priority":1,"title":"Close Open SSH Port","effort":"Low","impact":"High","framework":"SOC2","control":"CC6.6","tab":"monitoring"},
-        {"priority":2,"title":"Send PaymentGateway Pro Questionnaire","effort":"Low","impact":"High","framework":"PCI_DSS","control":"CC9.2","tab":"vendors"},
         {"priority":3,"title":"Update Lodash Dependency","effort":"Low","impact":"High","framework":"SOC2","control":"CC7.1","tab":"monitoring"},
         {"priority":4,"title":"Pull Fresh AWS Evidence","effort":"Low","impact":"Medium","framework":"SOC2","control":"CC6.6","tab":"auto-evidence"},
-        {"priority":5,"title":"Complete GDPR DPA for Sub-processors","effort":"Medium","impact":"High","framework":"GDPR","control":"Art.28","tab":"policies"},
-        {"priority":6,"title":"Review Expired HIPAA Policy","effort":"Medium","impact":"Medium","framework":"HIPAA","control":"164.308","tab":"policies"},
     ]}
 
 # ── QUESTIONNAIRE ──────────────────────────────────────────────────────────────
 q_router = APIRouter(prefix="/api/questionnaires", tags=["questionnaires"])
 
 DEMO_QUESTIONNAIRES = [
-    {"id":"q_001","title":"Standard Security Questionnaire","description":"Comprehensive security assessment covering SOC2, HIPAA, and GDPR controls","status":"ACTIVE","questions_count":15,"responses_count":3,"created_by":"Amit Shah","created_at":(datetime.utcnow()-timedelta(days=30)).isoformat(),"frameworks":["SOC2","HIPAA","GDPR"]},
     {"id":"q_002","title":"Vendor Security Assessment","description":"Third-party vendor risk assessment questionnaire","status":"ACTIVE","questions_count":15,"responses_count":7,"created_by":"Priya Nair","created_at":(datetime.utcnow()-timedelta(days=60)).isoformat(),"frameworks":["SOC2","ISO27001"]},
-    {"id":"q_003","title":"PCI DSS Pre-Assessment","description":"Self-assessment questionnaire for PCI DSS compliance","status":"DRAFT","questions_count":15,"responses_count":0,"created_by":"Amit Shah","created_at":(datetime.utcnow()-timedelta(days=5)).isoformat(),"frameworks":["PCI_DSS"]},
 ]
 
 DEMO_QUESTIONS = [
@@ -99,8 +90,6 @@ DEMO_QUESTIONS = [
     {"id":10,"section":"Incident Response","question":"When was your last incident response tabletop exercise?","type":"multiple_choice","options":["Last 6 months","Last year","2+ years ago","Never"],"required":False,"framework_ref":"SOC2 CC7.4"},
     {"id":11,"section":"Business Continuity","question":"Do you have a Business Continuity Plan (BCP)?","type":"yes_no","required":True,"framework_ref":"SOC2 A1.2"},
     {"id":12,"section":"Business Continuity","question":"What is your RTO for critical systems?","type":"multiple_choice","options":["< 1 hour","1-4 hours","4-24 hours","24+ hours","Not defined"],"required":True,"framework_ref":"SOC2 A1.2"},
-    {"id":13,"section":"Third Party Risk","question":"Do you perform security assessments of sub-processors?","type":"yes_no","required":True,"framework_ref":"GDPR Art.28"},
-    {"id":14,"section":"Third Party Risk","question":"Do you have signed DPAs with all sub-processors?","type":"yes_no","required":True,"framework_ref":"GDPR Art.28"},
     {"id":15,"section":"Compliance","question":"Are you SOC2 Type II certified?","type":"yes_no","required":True,"framework_ref":"SOC2"},
 ]
 

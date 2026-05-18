@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Bell, CheckCircle, AlertTriangle, Info, XCircle, RefreshCw, Check, Settings, ChevronRight } from "lucide-react";
-const API="http://localhost:8000";
+const API="http://localhost:8001";
 const TYPE_CFG={ALERT:{color:"#F87171",bg:"rgba(248,113,113,.12)",icon:XCircle},WARNING:{color:"#FBBF24",bg:"rgba(251,191,36,.12)",icon:AlertTriangle},INFO:{color:"#60A5FA",bg:"rgba(96,165,250,.12)",icon:Info},SUCCESS:{color:"#34D399",bg:"rgba(52,211,153,.12)",icon:CheckCircle}};
 const CATEGORIES=["All","Compliance","Risk","Evidence","Policy","Vendor","System"];
 const CHANNEL_COLORS={in_app:"#60A5FA",email:"#34D399",slack:"#A78BFA"};

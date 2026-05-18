@@ -1,3 +1,5 @@
+from security import SecurityHeadersMiddleware, RateLimitMiddleware, AuditLogMiddleware, get_security_status
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -43,13 +45,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# ── CORS — locked to known origins only ──────────────────────────────────
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "https://aura-platform.up.railway.app",  # production
+    "https://aura.io",                        # future domain
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Tenant-ID", "X-Request-ID"],
 )
+# ── Security middleware stack (order matters — outermost first) ───────────
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(AuditLogMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 app.include_router(auth_router)
 app.include_router(assessment_router)
@@ -67,6 +81,7 @@ app.include_router(advanced_router)
 from routers.evidence_routes import router as evidence_router
 app.include_router(evidence_router)
 from routers.trust_center_routes import router as trust_router
+from routers.ai_assistant_routes import ai_router, q_router, sso_router
 app.include_router(trust_router)
 app.include_router(p2_router)
 
@@ -97,9 +112,13 @@ app.include_router(report_routes.router)
 
 # ── Critical Gap Features ──────────────────────────────────────────────────────
 from routers import auto_evidence_routes, auditor_routes, monitoring_routes
+import logging
 app.include_router(auto_evidence_routes.router)
 app.include_router(auditor_routes.router)
 app.include_router(monitoring_routes.router)
+app.include_router(ai_router)
+app.include_router(q_router)
+app.include_router(sso_router)
 
 # ── Production Auth v2 ─────────────────────────────────────────────────────────
 try:
@@ -196,3 +215,16 @@ try:
     print("✅ Slack Bot loaded")
 except Exception as e:
     print(f"⚠️  Slack Bot skipped: {e}")
+
+# ── Health & Security endpoints ────────────────────────────────────────────────
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "AURA Platform", "version": "2.0"}
+
+@app.get("/api/security/status")
+def security_status():
+    try:
+        from security import get_security_status
+        return get_security_status()
+    except Exception as e:
+        return {"status": "active", "error": str(e)}

@@ -5,7 +5,7 @@ import {
   ChevronDown, Eye, Zap, Globe, Terminal, FileCheck, Users
 } from "lucide-react";
 
-const API = "http://localhost:8000";
+const API = "http://localhost:8001";
 
 const ACTION_ICONS = {
   CONTROL_UPDATED:       { icon: Shield,      color: "#60A5FA" },

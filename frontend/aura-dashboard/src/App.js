@@ -79,7 +79,7 @@ import {
 } from 'lucide-react';;;
 
 
-const API = "http://localhost:8000";
+const API = "http://localhost:8001";
 const PROXY_KEY = "aura-dev-key-change-in-production";
 
 function authHeaders(t, tid) {
@@ -3102,7 +3102,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="evidence"&&"Evidence"}
                 {activeTab==="policies"&&"Policy Management"}
                 {activeTab==="vendors"&&"Vendor Risk"}
-                {activeTab==="team-mgmt"&&"Team"}
+
                 {activeTab==="notifications"&&"Notifications"}
                 {activeTab==="reports"&&"Reports"}
                 {activeTab==="auto-evidence"&&"Auto Evidence Collection"}
@@ -3123,52 +3123,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="compliance"&&"Automated compliance mapping across 4 frameworks"}
                 {activeTab==="audit"&&"Full history of all risk assessments"}
                 {activeTab==="remediation"&&"Track and manage security remediation tasks"}
-                {activeTab==="team-mgmt"&&`Managing ${tenantName} workspace members
-.nav-item span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav-item.active span { color: #e2e8f0; }
-
-/* Content area cards fix */
-.card, [class*="card"] {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-lg);
-}
-
-/* Fix select dropdowns dark */
-select {
-  background: var(--surface) !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border2) !important;
-  border-radius: var(--radius) !important;
-}
-
-/* Fix any white backgrounds leaking */
-.page-body * { box-sizing: border-box; }
-
-/* Evidence cards */
-.evidence-card, .check-item, .ctrl-row, .remed-item {
-  background: var(--surface) !important;
-  border-color: var(--border2) !important;
-  color: var(--text) !important;
-}
-
-/* Stat cards number colors */
-.stat-val { color: var(--text); }
-
-/* Fix buttons that might be white */
-button:not(.nav-item):not(.auth-btn):not(.btn-primary) {
-  font-family: inherit;
-}
-
-/* Session toast */
-.session-toast {
-  position: fixed; top: 16px; right: 16px; z-index: 999;
-  background: var(--redbg); border: 1px solid rgba(239,68,68,.2);
-  color: var(--red); padding: 12px 16px; border-radius: 10px;
-  display: flex; align-items: center; gap: 8px; font-size: 13px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-}
-`}
+                {activeTab==="team-mgmt"&&"Manage team members and role-based access"}
                 {activeTab==="trustcenter"&&"Share your compliance posture with customers and partners"}
                 {activeTab==="integrations"&&"Connect and pull security data from 10 tools"}
                 {activeTab==="audit-logs"&&"Full activity trail across your compliance platform"}

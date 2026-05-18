@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Activity, RefreshCw, CheckCircle, XCircle, AlertTriangle, Play, Bell } from "lucide-react";
-const API="http://localhost:8000";
+const API="http://localhost:8001";
 const STATUS_CFG={PASS:{color:"#34D399",bg:"rgba(52,211,153,.12)",icon:CheckCircle},FAIL:{color:"#F87171",bg:"rgba(248,113,113,.12)",icon:XCircle},WARNING:{color:"#FBBF24",bg:"rgba(251,191,36,.12)",icon:AlertTriangle}};
 const SEVERITY_CFG={CRITICAL:{color:"#EF4444"},HIGH:{color:"#F87171"},MEDIUM:{color:"#FBBF24"},LOW:{color:"#94A3B8"}};
 const INT_COLORS={aws:"#FF9900",okta:"#00297A",github:"#E2E8F0",jira:"#0052CC",crowdstrike:"#E31B23",datadog:"#632CA6"};

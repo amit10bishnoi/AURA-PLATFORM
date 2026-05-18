@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Award, CheckCircle, XCircle, AlertTriangle, RefreshCw, ChevronRight, Download, Shield } from "lucide-react";
-const API = "http://localhost:8000";
+const API = "http://localhost:8001";
 
 const TSC = {
   CC: { name:"Common Criteria (Security)", color:"#7c3aed", controls:33, desc:"Core security controls covering access, operations, and change management" },

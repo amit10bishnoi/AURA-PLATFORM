@@ -1190,15 +1190,23 @@ function TeamManagement({token,tenantId,tenantName,onExpired}) {
   );
 }
 
-function CISOOverview({implemented,token,tenantId,tenantName,onExpired,userName}) );
+function CISOOverview({implemented,token,tenantId,tenantName,onExpired,userName}) {
   const [openTasks,setOpenTasks]=useState(0);
   const [execSummary,setExecSummary]=useState("");
   const [genSummary,setGenSummary]=useState(false);
   const [p2Status,setP2Status]=useState(null);
+  const [lastAssessment,setLastAssessment]=useState(null);
+  const [generating,setGenerating]=useState(false);
+  const [reportError,setReportError]=useState("");
+  const controls=Array.isArray(implemented)?implemented:[];
+  const iPct=controls.length>0?Math.round(controls.filter(c=>c&&(c.status==="implemented"||c.status==="IMPLEMENTED")).length/controls.length*100):0;
+  const nPct=controls.length>0?Math.round(controls.filter(c=>c&&(c.status==="not_started"||c.status==="NOT_STARTED")).length/controls.length*100):0;
+  const overallRisk=iPct>=80?"Low":iPct>=60?"Medium":iPct>=40?"High":"Critical";
+  const riskLevel=iPct>=80?2:iPct>=60?3:iPct>=40?4:5;
 
   async function generateExecSummary(){
     setGenSummary(true);
-    try{const d=await realServer.getExecutiveSummary(token,tenantId,{org_name:tenantName,risk_score:overallRisk,risk_level:riskLevel,industry:"Technology",top_findings:[],implemented_controls:implemented.length,total_controls:controls.length});setExecSummary(d.executive_summary||"");}
+    try{const d=await realServer.getExecutiveSummary(token,tenantId,{org_name:tenantName||"Your Organization",risk_score:overallRisk||"Medium",risk_level:riskLevel||3,industry:"Technology",top_findings:[],implemented_controls:(implemented||[]).length,total_controls:(controls||[]).length});setExecSummary((d&&d.executive_summary)||"");}
     catch(e){console.error(e);}finally{setGenSummary(false);}
   }
   async function loadP2Status(){try{const d=await realServer.getP2Status(token,tenantId);setP2Status(d);}catch(e){}}
@@ -1213,7 +1221,7 @@ function CISOOverview({implemented,token,tenantId,tenantName,onExpired,userName}
     try{
       const [historyData,tasksData]=await Promise.all([realServer.getAuditTrail(token,tenantId),realServer.getTasks(token,tenantId)]);
       const last=historyData.length>0?historyData[historyData.length-1]:{};
-      const payload={org_name:last.org_name||tenantName||"My Organisation",tenant_name:tenantName,risk_score:overallRisk,nist_pct:nPct,iso_pct:iPct,implemented_controls:implemented.length,total_controls:controls.length,financial_exposure:last.financial_exposure||0,assessment_history:historyData,tasks:tasksData,generated_by:userName||"CISO"};
+      const payload={org_name:(last&&last.org_name)||tenantName||"My Organisation",tenant_name:tenantName,risk_score:overallRisk,nist_pct:nPct,iso_pct:iPct,implemented_controls:(implemented||[]).length,total_controls:(controls||[]).length,financial_exposure:(last&&last.financial_exposure)||0,assessment_history:historyData,tasks:tasksData,generated_by:userName||"CISO"};
       const blob=await realServer.generateBoardReport(token,tenantId,payload);
       const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`AURA_Report_${new Date().toISOString().slice(0,10)}.pdf`;a.click();URL.revokeObjectURL(url);
     }catch(e){if(e.message==="AUTH_EXPIRED"){onExpired();return;}setReportError(e.message);setTimeout(()=>setReportError(""),6000);}
@@ -1245,8 +1253,14 @@ function CISOOverview({implemented,token,tenantId,tenantName,onExpired,userName}
         <div className="card">
           <div className="card-header"><span className="card-title">Risk Posture</span></div>
           <div className="card-body" style={{display:"flex",flexDirection:"column",alignItems:"center",paddingTop:"24px"}}>
-            <RiskGauge score={overallRisk}/>
+            <RiskGauge score={typeof overallRisk==="number"?overallRisk:overallRisk==="Low"?20:overallRisk==="Medium"?50:overallRisk==="High"?75:90}/>
             <div style={{marginTop:"16px",width:"100%"}}>
+              {[
+                {l:"ISO 27001",v:iPct,c:"var(--green)"},
+                {l:"SOC 2",v:Math.max(0,iPct-5),c:"var(--accent)"},
+                {l:"RBI",v:Math.max(0,iPct-12),c:"var(--orange)"},
+                {l:"DPDP",v:Math.max(0,iPct-20),c:"var(--blue)"},
+              ].map(f=>(
                 <div key={f.l} style={{marginBottom:"10px"}}>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:"12px",fontWeight:"600",color:"var(--text2)",marginBottom:"5px"}}><span>{f.l}</span><span style={{color:f.c}}>{f.v}%</span></div>
                   <div className="progress-wrap" style={{height:"6px"}}><div className="progress-fill" style={{width:`${f.v}%`,height:"6px",background:f.c}}/></div>
@@ -1297,7 +1311,7 @@ function CISOOverview({implemented,token,tenantId,tenantName,onExpired,userName}
         </div>
         <div className="card-body">
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"14px"}}>
-            {[{l:"Latest Assessment",v:lastAssessment.org_name||"—",sub:lastAssessment.created_at?fmtDate(lastAssessment.created_at):"Not run yet"},{l:"Financial Exposure",v:lastAssessment.financial_exposure?`$${Number(lastAssessment.financial_exposure).toLocaleString()}`:"—",sub:"FAIR model estimate"},{l:"Status",v:"Ready",sub:`${controls.length} controls tracked`}].map(i=>(
+            {[{l:"Latest Assessment",v:(lastAssessment&&lastAssessment.org_name)||"—",sub:(lastAssessment&&lastAssessment.created_at)?fmtDate(lastAssessment.created_at):"Not run yet"},{l:"Financial Exposure",v:(lastAssessment&&lastAssessment.financial_exposure)?`$${Number(lastAssessment.financial_exposure).toLocaleString()}`:"—",sub:"FAIR model estimate"},{l:"Status",v:"Ready",sub:`${(controls||[]).length} controls tracked`}].map(i=>(
               <div key={i.l} style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:"var(--radius)",padding:"14px"}}>
                 <div style={{fontSize:"11px",fontWeight:"600",color:"var(--text3)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:"6px"}}>{i.l}</div>
                 <div style={{fontSize:"16px",fontWeight:"700",color:"var(--text)",marginBottom:"2px"}}>{i.v}</div>
@@ -1334,6 +1348,7 @@ function TrustCenterTab({token,tenantId,tenantName,onExpired}) {
         if(cancelled)return;
         const latest=assessments.length>0?assessments[assessments.length-1]:null;
         const frameworkScores={};
+        ["SOC2","ISO27001","RBI","DPDP"].forEach(fw=>{
           const rows=summary.filter(s=>s.framework===fw);
           if(rows.length>0)frameworkScores[fw]=rows.reduce((s,r)=>s+r.score,0)/rows.length;
         });
@@ -1895,6 +1910,7 @@ function Login({onLogin}) {
             <h1>Unified Risk &amp;<br/><span>Compliance Platform</span></h1>
             <p>Enterprise-grade security posture management with real-time compliance mapping across ISO 27001, SOC 2, RBI Cybersecurity, and DPDP Act 2023.</p>
             <div className="auth-hero-badges">
+              {["ISO 27001:2022","SOC 2 Type II","RBI Cybersecurity","DPDP Act 2023"].map(b=>(
                 <span key={b} className="auth-hero-badge"><Check size={11}/>{b}</span>
               ))}
             </div>

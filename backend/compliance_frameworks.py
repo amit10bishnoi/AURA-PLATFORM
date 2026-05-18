@@ -86,63 +86,23 @@ ISO27001_CONTROLS: List[Dict[str, Any]] = [
     {"id":"A.8.29", "name":"Security testing in development",              "description":"Security testing processes defined and implemented.",         "assessment_fields":["vulnerabilities","patch_days"],    "weight":10},
     {"id":"A.8.32", "name":"Change management",                            "description":"Changes to systems managed with security controls.",          "assessment_fields":["patch_days","has_irp"],            "weight":10},
 ]
-NIST_CSF_CONTROLS: List[Dict[str, Any]] = [
-    {"id":"GV.OC-01","name":"Organisational cybersecurity mission",         "description":"Organisation's mission and risk strategy understood.",      "assessment_fields":["has_irp"],                         "weight":8},
-    {"id":"GV.PO-01","name":"Cybersecurity policy established",             "description":"Cybersecurity policy communicated across organisation.",    "assessment_fields":["has_irp","training_percent"],      "weight":10},
-    {"id":"GV.PO-02","name":"Cybersecurity roles known",                    "description":"Roles, responsibilities and authorities established.",      "assessment_fields":["has_irp"],                         "weight":8},
-    {"id":"GV.RM-01","name":"Risk management objectives established",       "description":"Risk management objectives set and communicated.",          "assessment_fields":["has_irp","vulnerabilities"],       "weight":10},
-    {"id":"GV.RM-02","name":"Risk appetite determined",                     "description":"Risk appetite and tolerance determined and communicated.",   "assessment_fields":["has_irp"],                         "weight":8},
-    {"id":"GV.RM-06","name":"Risk reported to leadership",                  "description":"Cybersecurity risk reported to executives and board.",       "assessment_fields":["has_irp"],                         "weight":10},
-    {"id":"GV.RR-01","name":"Leadership accountable for cybersecurity",     "description":"Senior leaders accountable for cybersecurity outcomes.",    "assessment_fields":["has_irp","training_percent"],      "weight":10},
-    {"id":"GV.RR-02","name":"Roles & responsibilities established",         "description":"Cybersecurity roles, responsibilities defined.",             "assessment_fields":["training_percent"],                "weight":8},
-    {"id":"GV.SC-06","name":"Cybersecurity in supply chain",                "description":"Cybersecurity requirements included in supply chain.",       "assessment_fields":["has_irp"],                         "weight":8},
-    {"id":"ID.AM-01","name":"Hardware asset inventories",                   "description":"Inventories of hardware managed and maintained.",            "assessment_fields":["patch_days"],                      "weight":10},
-    {"id":"ID.AM-02","name":"Software asset inventories",                   "description":"Inventories of software managed and maintained.",            "assessment_fields":["patch_days"],                      "weight":10},
-    {"id":"ID.AM-07","name":"Data & service inventories",                   "description":"Inventories of data and services maintained.",               "assessment_fields":["has_irp"],                         "weight":8},
-    {"id":"ID.RA-01","name":"Vulnerabilities identified",                   "description":"Vulnerabilities in assets identified and documented.",       "assessment_fields":["vulnerabilities","patch_days"],    "weight":15},
-    {"id":"ID.RA-02","name":"Threat intelligence received",                 "description":"Cyber threat intelligence received and analysed.",           "assessment_fields":["vulnerabilities"],                 "weight":10},
-    {"id":"ID.RA-05","name":"Threats & vulnerabilities prioritised",        "description":"Threats, vulnerabilities and impacts prioritised.",          "assessment_fields":["vulnerabilities","patch_days"],    "weight":12},
-    {"id":"PR.AA-01","name":"Identities & credentials managed",             "description":"Identities and credentials managed for users and devices.", "assessment_fields":["has_mfa","mfa_coverage"],          "weight":12},
-    {"id":"PR.AA-03","name":"Users & hardware authenticated",               "description":"Users, services, and hardware authenticated.",              "assessment_fields":["has_mfa","mfa_coverage"],          "weight":15},
-    {"id":"PR.AA-05","name":"Access permissions managed",                   "description":"Access permissions and authorisations managed.",             "assessment_fields":["has_mfa","mfa_coverage"],          "weight":15},
-    {"id":"PR.AT-01","name":"Users trained on cybersecurity",               "description":"Users informed and trained on security responsibilities.",   "assessment_fields":["training_percent"],                "weight":15},
-    {"id":"PR.DS-01","name":"Data-at-rest protected",                       "description":"Data-at-rest protected using appropriate controls.",         "assessment_fields":["has_mfa"],                         "weight":15},
-    {"id":"PR.DS-02","name":"Data-in-transit protected",                    "description":"Data-in-transit protected using appropriate controls.",      "assessment_fields":["has_mfa"],                         "weight":15},
-    {"id":"PR.DS-11","name":"Backups created & tested",                     "description":"Backups created, protected and tested periodically.",        "assessment_fields":["has_irp"],                         "weight":12},
-    {"id":"PR.IR-01","name":"Networks & environments protected",            "description":"Networks and environments protected from unauthorised access.","assessment_fields":["has_mfa","patch_days"],          "weight":12},
-    {"id":"PR.IR-04","name":"Adequate resource capacity",                   "description":"Adequate resource capacity maintained for resilience.",      "assessment_fields":["has_irp"],                         "weight":8},
-    {"id":"PR.PS-01","name":"Configuration management",                     "description":"Configuration management practices established.",            "assessment_fields":["patch_days"],                      "weight":12},
-    {"id":"PR.PS-02","name":"Software maintained & updated",                "description":"Software maintained, replaced and removed appropriately.",   "assessment_fields":["patch_days"],                      "weight":12},
-    {"id":"PR.PS-04","name":"Logs generated & reviewed",                    "description":"Logs generated and reviewed for anomalies.",                 "assessment_fields":["vulnerabilities"],                 "weight":12},
-    {"id":"DE.AE-02","name":"Adverse events analysed",                      "description":"Potentially adverse events analysed to characterise them.",  "assessment_fields":["vulnerabilities","has_irp"],       "weight":10},
-    {"id":"DE.CM-01","name":"Networks monitored",                           "description":"Networks monitored to detect adverse events.",               "assessment_fields":["vulnerabilities","patch_days"],    "weight":12},
-    {"id":"DE.CM-09","name":"Hardware & software monitored",                "description":"Computing hardware and software monitored.",                 "assessment_fields":["patch_days","vulnerabilities"],    "weight":10},
-    {"id":"RS.MA-01","name":"Incident response plan executed",              "description":"Incident response plan executed when incidents detected.",   "assessment_fields":["has_irp"],                         "weight":15},
-    {"id":"RS.MA-02","name":"Incidents categorised & prioritised",          "description":"Incidents categorised and prioritised per response plans.",  "assessment_fields":["has_irp"],                         "weight":12},
-    {"id":"RS.CO-02","name":"Stakeholders notified",                        "description":"Internal and external stakeholders notified of incidents.",  "assessment_fields":["has_irp","training_percent"],      "weight":10},
-    {"id":"RC.RP-01","name":"Recovery plan executed",                       "description":"Recovery plan executed to restore systems after incident.",  "assessment_fields":["has_irp"],                         "weight":12},
-]
 FRAMEWORKS: Dict[str, List[Dict[str, Any]]] = {
     "SOC2": SOC2_CONTROLS,
     "ISO27001": ISO27001_CONTROLS,
-    "NIST_CSF": NIST_CSF_CONTROLS,
 }
-
-def _field_passes(value: Any) -> bool:
-    if value is None:
-        return False
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, int):
-        return value > 0
-    if isinstance(value, str):
-        return value.strip().lower() not in ("", "no", "none", "false", "n/a")
-    return bool(value)
 
 def score_framework(framework_name: str, assessment_data: Dict[str, Any]) -> Dict[str, Any]:
     controls = FRAMEWORKS.get(framework_name, [])
-    if not controls:
-        raise ValueError(f"Unknown framework: {framework_name}")
+    return _score_controls(framework_name, controls, assessment_data)
+
+def _field_passes(val) -> bool:
+    if val is None: return False
+    if isinstance(val, bool): return val
+    if isinstance(val, (int, float)): return val > 0
+    if isinstance(val, str): return val.lower() not in ("", "false", "no", "0")
+    return bool(val)
+
+def _score_controls(framework_name, controls, assessment_data):
     scored_controls = []
     total_earned = 0.0
     for control in controls:

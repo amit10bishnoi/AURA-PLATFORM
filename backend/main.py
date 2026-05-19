@@ -228,3 +228,11 @@ def security_status():
         return get_security_status()
     except Exception as e:
         return {"status": "active", "error": str(e)}
+
+# ── MSP White-Label Portal ─────────────────────────────────────────────────────
+try:
+    from routers.msp_routes import router as msp_router
+    app.include_router(msp_router)
+    print("✅ MSP White-Label module loaded")
+except Exception as e:
+    print(f"⚠️  MSP skipped: {e}")

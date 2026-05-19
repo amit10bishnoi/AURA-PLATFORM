@@ -29,6 +29,20 @@ class Tenant(Base):
     is_active  = Column(Boolean,     default=True)
     created_at = Column(DateTime,    default=ist_now)
 
+    # ── White-label / MSP fields ─────────────────────────────────────
+    is_msp          = Column(Boolean, default=False)          # Is this an MSP partner?
+    msp_partner_id  = Column(String(60), nullable=True)       # Parent MSP tenant ID
+    brand_name      = Column(String(120), nullable=True)      # Custom brand name
+    brand_logo_url  = Column(String(500), nullable=True)      # Logo URL
+    brand_primary   = Column(String(20), default="#7c3aed")   # Primary color
+    brand_secondary = Column(String(20), default="#db2777")   # Secondary color
+    custom_domain   = Column(String(200), nullable=True)      # e.g. compliance.rahulsec.com
+    msp_plan        = Column(String(50), default="starter")   # starter/growth/enterprise
+    max_sub_tenants = Column(Integer, default=5)              # Max client workspaces
+    revenue_share   = Column(Float, default=0.20)             # 20% rev share
+    is_active       = Column(Boolean, default=True)
+    created_at      = Column(DateTime, default=datetime.utcnow)
+
     users       = relationship("User",       back_populates="tenant", cascade="all, delete-orphan")
     assessments = relationship("Assessment", back_populates="tenant", cascade="all, delete-orphan")
     tasks       = relationship("Task",       back_populates="tenant", cascade="all, delete-orphan")

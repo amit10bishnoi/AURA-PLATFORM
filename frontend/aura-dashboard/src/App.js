@@ -1,5 +1,6 @@
 import TrustCenter from './TrustCenter';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import MSPPortal from './MSPPortal';
 import PolicyManagement from "./PolicyManagement";
 import AIAssistant from "./AIAssistant";
 import TestEngine from "./TestEngine";
@@ -285,6 +286,7 @@ const NAV_ITEMS = [
   {id:"auto-evidence", label:"Auto Evidence",     icon:Zap,             roles:["ciso","auditor"],             section:"Trust"},
   {id:"questionnaires",label:"Questionnaires",    icon:ClipboardList,   roles:["ciso","auditor"],             section:"Trust"},
   {id:"monitoring",    label:"Monitoring",        icon:Activity,        roles:["ciso","developer"],           section:"Trust"},
+  {id:"msp-portal",   label:"MSP Portal",        icon:Building2,       roles:["ciso"],                       section:"Trust"},
 ];
 
 const ALL_FRAMEWORK_CONTROLS = [
@@ -3170,6 +3172,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="risk-register"&&<RiskRegister token={token} tenantId={tenantId}/>}
             {activeTab==="iso27001"&&<ISO27001Hub token={token} tenantId={tenantId}/>}
             {activeTab==="monitoring"&&<ContinuousMonitoring token={token} tenantId={tenantId}/>}
+            {activeTab==="msp-portal"&&<MSPPortal token={token} tenantId={tenantId}/>}
             {activeTab==="ai-assistant"&&<AIAssistant token={token} tenantId={tenantId} onNavigate={setActiveTab}/>}
             {activeTab==="questionnaires"&&<QuestionnaireBuilder token={token} tenantId={tenantId}/>}
             {activeTab==="sso"&&<SSOSettings token={token} tenantId={tenantId}/>}

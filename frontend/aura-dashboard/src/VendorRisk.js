@@ -72,7 +72,7 @@ export default function VendorRisk({token,tenantId}){
   };
 
   const sendQ=async(id)=>{try{await fetch(`${API}/api/vendors/${id}/questionnaire`,{method:"PATCH",headers:{Authorization:`Bearer ${token}`}});load();}catch{alert("Failed");}};
-  const del=async(id)=>{if(!confirm("Remove vendor?"))return;try{await fetch(`${API}/api/vendors/${id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}});setSelected(null);load();}catch{alert("Failed");}};
+  const del=async(id)=>{if(!window.confirm("Remove vendor?"))return;try{await fetch(`${API}/api/vendors/${id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}});setSelected(null);load();}catch{alert("Failed");}};
   const toggleArr=(key,val)=>setForm(f=>({...f,[key]:f[key].includes(val)?f[key].filter(x=>x!==val):[...f[key],val]}));
 
   if(selected){

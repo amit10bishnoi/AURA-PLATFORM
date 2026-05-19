@@ -1740,15 +1740,16 @@ function ComplianceTab({token,tenantId,onExpired}) {
                     <div style={{fontWeight:"700",fontSize:"13px",color:"var(--text)",marginBottom:"2px"}}>{m.label}</div>
                     <div style={{fontSize:"11px",color:"var(--text3)"}}>{pass}/{r.controls.length} passing</div>
                   </div>
-                  <div style={{fontSize:"24px",fontWeight:"800",color:m.color,letterSpacing:"-1px"}}>{r.score.toFixed(0)}<span style={{fontSize:"12px",fontWeight:"500"}}>%</span></div>
+                  <div style={{fontSize:"24px",fontWeight:"800",color:m.color,letterSpacing:"-1px"}}>{(()=>{const tw=r.controls.reduce((a,c)=>a+(c.weight||0),0);return tw>0?Math.round(r.score/tw*100):Math.min(Math.round(r.score),100);})()}<span style={{fontSize:"12px",fontWeight:"500"}}>%</span></div>
                 </div>
+                {(()=>{const tw=r.controls.reduce((a,c)=>a+(c.weight||0),0);const pct=tw>0?Math.round(r.score/tw*100):Math.min(Math.round(r.score),100);return(<>
                 <div className="progress-wrap" style={{height:"6px",marginBottom:"12px"}}>
-                  <div className="progress-fill" style={{width:`${Math.min(r.score,100)}%`,background:m.color,height:"6px"}}/>
+                  <div className="progress-fill" style={{width:`${Math.min(pct,100)}%`,background:m.color,height:"6px"}}/>
                 </div>
-                <span className="badge" style={{background:r.score>=75?"var(--greenbg)":r.score>=50?"var(--yellowbg)":"var(--redbg)",color:r.score>=75?"var(--green)":r.score>=50?"var(--yellow)":"var(--red)",border:"none"}}>
-                  <span className="badge-dot" style={{background:r.score>=75?"var(--green)":r.score>=50?"var(--yellow)":"var(--red)"}}/>
-                  {r.score>=75?"Compliant":r.score>=50?"Partial":"Non-Compliant"}
-                </span>
+                <span className="badge" style={{background:pct>=75?"var(--greenbg)":pct>=50?"var(--yellowbg)":"var(--redbg)",color:pct>=75?"var(--green)":pct>=50?"var(--yellow)":"var(--red)",border:"none"}}>
+                  <span className="badge-dot" style={{background:pct>=75?"var(--green)":pct>=50?"var(--yellow)":"var(--red)"}}/>
+                  {pct>=75?"Compliant":pct>=50?"Partial":"Non-Compliant"}
+                </span></>);})()}
               </div>
             );
           })}

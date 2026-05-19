@@ -301,3 +301,11 @@ def alert_status():
         "smtp_user": SMTP_USER[:3]+"***" if SMTP_USER else "not configured",
         "to_enable": "Add SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, ALERT_EMAIL to .env",
     }
+
+# ── ISO 27001 Hub ──────────────────────────────────────────────────────────────
+try:
+    from routers.iso27001_routes import router as iso27001_router
+    app.include_router(iso27001_router)
+    print("✅ ISO 27001 Hub loaded")
+except Exception as e:
+    print(f"⚠️  ISO 27001 skipped: {e}")

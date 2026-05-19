@@ -14,9 +14,24 @@ def get_all_8(assessment):
     results = list(score_all_frameworks(assessment_dict))
     try:
         from extra_frameworks import score_extra_framework, EXTRA_FRAMEWORK_META
+        # Build enriched assessment object with all fields for RBI/DPDP scoring
+        class EnrichedAssessment:
+            pass
+        ea = EnrichedAssessment()
+        # Copy all SQLAlchemy fields
+        for col in ['has_mfa','mfa_coverage','patch_days','training_percent',
+                    'has_irp','vulnerabilities','vuln_critical','vuln_high',
+                    'vuln_medium','vuln_low','org_name','industry','employees']:
+            setattr(ea, col, getattr(assessment, col, None))
+        # Add new DPDP/RBI fields with safe defaults
+        for col in ['has_consent_mgmt','has_privacy_notice','has_data_minimisation',
+                    'has_retention_policy','has_breach_notify','has_dsr_workflow',
+                    'has_data_localisation','has_vapt','has_rbi_reporting']:
+            setattr(ea, col, getattr(assessment, col, False))
+
         for key in EXTRA_FRAMEWORK_META.keys():
-            r = score_extra_framework(key, assessment)
-            if r and isinstance(r, dict):
+            r = score_extra_framework(key, ea)
+            if r and isinstance(r, dict) and r.get("score") is not None:
                 results.append(r)
     except Exception as e:
         print(f"extra error: {e}")

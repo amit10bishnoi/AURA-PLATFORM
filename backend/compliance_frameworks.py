@@ -121,44 +121,67 @@ def _score_controls(framework_name, controls, assessment_data):
         total_earned += earned
         status = "pass" if ratio == 1.0 else "fail" if ratio == 0.0 else "partial"
         scored_controls.append({"id": control["id"], "name": control["name"], "description": control["description"], "status": status, "passing_fields": passing_fields, "failing_fields": failing_fields, "weight": control["weight"], "earned": earned})
-    return {"framework": framework_name, "score": round(total_earned, 2), "controls": scored_controls}
+    total_possible = sum(c["weight"] for c in controls)
+    pct = round(total_earned / total_possible * 100, 1) if total_possible > 0 else 0
+    return {"framework": framework_name, "score": pct, "total_earned": round(total_earned,2), "total_possible": total_possible, "controls": scored_controls}
 
 def score_all_frameworks(assessment_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     return [score_framework(name, assessment_data) for name in FRAMEWORKS]
 
 def build_assessment_dict(assessment) -> Dict[str, Any]:
-    """Map Assessment model fields to compliance field names."""
+    """Map Assessment model fields to compliance scoring field names.
+    Controls reference these exact keys in their assessment_fields lists.
+    """
     a = assessment
     def g(field, default=None):
-        return getattr(a, field, default)
+        v = getattr(a, field, default)
+        return default if v is None else v
+
+    mfa        = bool(g("has_mfa", False))
+    mfa_cov    = float(g("mfa_coverage", 0) or 0)
+    patch      = float(g("patch_days", 99) or 99)
+    training   = float(g("training_percent", 0) or 0)
+    has_irp    = bool(g("has_irp", False))
+    vulns      = int(g("vulnerabilities", 99) or 99)
+    vuln_crit  = int(g("vuln_critical", 0) or 0)
+
     return {
-        "mfa_enabled": g("has_mfa", False),
-        "access_control_policy": "yes" if (g("mfa_coverage", 0) or 0) >= 50 else None,
-        "privileged_access_management": "yes" if (g("mfa_coverage", 0) or 0) >= 80 else None,
-        "segregation_of_duties": False,
-        "patch_management": "yes" if (g("patch_days", 99) or 99) <= 30 else None,
-        "malware_protection": False,
-        "change_management_process": "yes" if (g("patch_days", 99) or 99) <= 14 else None,
-        "monitoring_tools": False,
-        "siem_enabled": False,
-        "audit_logging": True if (g("vuln_critical", 99) or 99) == 0 else False,
-        "vulnerability_scanning": "yes" if (g("vulnerabilities", 0) or 0) > 0 else None,
-        "incident_response_plan": g("has_irp", False),
-        "incident_reporting_process": "yes" if g("has_irp", False) else None,
-        "business_continuity_plan": False,
-        "disaster_recovery": False,
-        "backup_strategy": False,
-        "data_encryption": False,
-        "data_classification": False,
-        "data_retention_policy": False,
-        "encryption_key_management": False,
-        "security_awareness_training": True if (g("training_percent", 0) or 0) >= 70 else False,
-        "phishing_simulation": True if (g("training_percent", 0) or 0) >= 85 else False,
-        "security_policy_document": False,
-        "policy_review_cycle": False,
-        "security_roles_defined": False,
-        "privacy_policy": False,
-        "asset_inventory": False,
-        "risk_assessment_process": False,
-        "data_validation": False,
+        # ── Direct field names used by SOC2 + ISO27001 controls ──────────────
+        "has_mfa":          mfa,
+        "mfa_coverage":     mfa_cov >= 80,     # True if 80%+ users have MFA
+        "patch_days":       patch <= 30,        # True if patching within 30 days
+        "training_percent": training >= 70,     # True if 70%+ trained
+        "has_irp":          has_irp,
+        "vulnerabilities":  vulns < 20,         # True if fewer than 20 open vulns
+
+        # ── Legacy mapped names (keep for backward compat) ───────────────────
+        "mfa_enabled":                  mfa,
+        "access_control_policy":        mfa and mfa_cov >= 50,
+        "privileged_access_management": mfa and mfa_cov >= 80,
+        "segregation_of_duties":        has_irp and training >= 70,
+        "patch_management":             patch <= 30,
+        "malware_protection":           patch <= 14 or vuln_crit == 0,
+        "change_management_process":    patch <= 14,
+        "monitoring_tools":             vulns < 10,
+        "siem_enabled":                 vulns < 5,
+        "audit_logging":                vuln_crit == 0,
+        "vulnerability_scanning":       vulns > 0,  # has a scanner
+        "incident_response_plan":       has_irp,
+        "incident_reporting_process":   has_irp,
+        "business_continuity_plan":     has_irp and training >= 80,
+        "disaster_recovery":            has_irp,
+        "backup_strategy":              has_irp,
+        "data_encryption":              mfa,
+        "data_classification":          training >= 70,
+        "data_retention_policy":        has_irp,
+        "encryption_key_management":    mfa and mfa_cov >= 80,
+        "security_awareness_training":  training >= 70,
+        "phishing_simulation":          training >= 85,
+        "security_policy_document":     has_irp,
+        "policy_review_cycle":          has_irp and training >= 70,
+        "security_roles_defined":       has_irp,
+        "privacy_policy":               training >= 60,
+        "asset_inventory":              patch <= 45,
+        "risk_assessment_process":      has_irp and vulns < 30,
+        "data_validation":              mfa,
     }

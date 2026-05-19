@@ -209,3 +209,12 @@ def trigger_now(tenant_id: Optional[str] = None):
     """
     logger.info(f"[Scheduler] Manual trigger for tenant: {tenant_id or 'ALL'}")
     _run_weekly_assessments()
+
+def run_continuous_checks():
+    """Run automated compliance checks every hour."""
+    try:
+        from services.continuous_monitoring import run_all_checks
+        run_all_checks("demo")
+        print(f"⏰ Hourly checks completed at {__import__('datetime').datetime.utcnow().isoformat()}")
+    except Exception as e:
+        print(f"⚠️  Hourly checks failed: {e}")

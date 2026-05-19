@@ -236,3 +236,68 @@ try:
     print("✅ MSP White-Label module loaded")
 except Exception as e:
     print(f"⚠️  MSP skipped: {e}")
+
+# ── Continuous Monitoring Checks ───────────────────────────────────────────────
+try:
+    from routers.continuous_checks_routes import router as checks_router
+    app.include_router(checks_router)
+    print("✅ Continuous checks loaded")
+except Exception as e:
+    print(f"⚠️  Checks skipped: {e}")
+
+# ── Live Score Engine ──────────────────────────────────────────────────────────
+@app.get("/api/scores/live")
+def live_scores(tenant_id: str = "demo"):
+    try:
+        from services.live_score_engine import get_live_scores
+        return get_live_scores(tenant_id)
+    except Exception as e:
+        return {"error": str(e), "overall_score": 65, "frameworks": {}}
+
+@app.get("/api/scores/cached")
+def cached_scores(tenant_id: str = "demo"):
+    try:
+        from services.live_score_engine import get_cached_scores
+        return get_cached_scores(tenant_id)
+    except Exception as e:
+        return {"error": str(e), "overall_score": 65, "frameworks": {}}
+
+# ── Email Alerts ───────────────────────────────────────────────────────────────
+from fastapi import Body as FBody
+
+@app.post("/api/alerts/test-email")
+def test_email_alert(body: dict = FBody(...)):
+    """Send a test alert email."""
+    from services.email_alerts import alert_weekly_digest, EMAIL_ENABLED
+    to = body.get("email", "")
+    if not to:
+        return {"error": "Email required"}
+    sent = alert_weekly_digest(
+        to=to,
+        org_name=body.get("org_name", "Demo Corp"),
+        scores={"SOC2":74,"ISO27001":68,"RBI":61,"DPDP":22},
+        failed_checks=5,
+        pending_evidence=3,
+    )
+    return {
+        "sent": sent,
+        "email_enabled": EMAIL_ENABLED,
+        "message": "Email sent!" if sent else "Demo mode — add SMTP credentials to .env to send real emails",
+        "setup_instructions": {
+            "SMTP_HOST": "smtp.gmail.com",
+            "SMTP_PORT": "587",
+            "SMTP_USER": "your@gmail.com",
+            "SMTP_PASS": "Use Gmail App Password (not your login password)",
+            "ALERT_EMAIL": "ciso@yourcompany.com",
+        }
+    }
+
+@app.get("/api/alerts/status")
+def alert_status():
+    from services.email_alerts import EMAIL_ENABLED, SMTP_HOST, SMTP_USER
+    return {
+        "email_enabled": EMAIL_ENABLED,
+        "smtp_host": SMTP_HOST or "not configured",
+        "smtp_user": SMTP_USER[:3]+"***" if SMTP_USER else "not configured",
+        "to_enable": "Add SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, ALERT_EMAIL to .env",
+    }

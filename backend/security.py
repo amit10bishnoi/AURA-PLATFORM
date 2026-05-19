@@ -127,16 +127,20 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 class RateLimitMiddleware(BaseHTTPMiddleware):
     # Per-route limits: (window_seconds, max_requests)
     ROUTE_LIMITS = {
-        "/login":          (60, 10),   # 10 login attempts per minute
-        "/register":       (3600, 5),  # 5 registrations per hour
-        "/api/ai/chat":    (60, 30),   # 30 AI messages per minute
-        "/api/reports":    (60, 20),   # 20 report requests per minute
-        "default":         (60, 120),  # 120 requests per minute default
+        "/login":          (300, 30),  # 30 login attempts per 5 min
+        "/register":       (3600, 20), # 20 registrations per hour
+        "/api/ai/chat":    (60, 60),   # 60 AI messages per minute
+        "/api/reports":    (60, 40),   # 40 report requests per minute
+        "default":         (60, 300),  # 300 requests per minute default
     }
 
     async def dispatch(self, request: Request, call_next):
         ip = request.client.host if request.client else "unknown"
         path = request.url.path
+
+        # Whitelist localhost from rate limiting
+        if ip in ("127.0.0.1", "::1", "localhost"):
+            return await call_next(request)
 
         # Check if IP is blocked
         if rate_store.is_blocked(ip):

@@ -66,3 +66,32 @@ def create_incident(body: dict, tenant_id: str = Query(...)):
     inc = {"id":f"INC-{secrets.token_hex(3).upper()}","title":body.get("title"),"severity":body.get("severity","MEDIUM"),"status":"OPEN","category":body.get("category","Security"),"detected_at":datetime.utcnow().isoformat(),"reported_to_rbi":False,"reported_to_cert_in":False,"affected_users":body.get("affected_users",0),"data_breach":body.get("data_breach",False),"description":body.get("description","")}
     INCIDENTS.append(inc)
     return {"message":"Incident logged","incident":inc,"rbi_reporting_required":inc["severity"]=="CRITICAL","cert_in_deadline":"Within 6 hours"}
+
+# ── Auto-populate risks from failed checks ─────────────────────────────────────
+@router.post("/api/risk/auto-populate")
+def auto_populate_risks(tenant_id: str = Query(default="demo")):
+    """Generate risk register items from failed compliance checks."""
+    from services.continuous_monitoring import get_latest_results
+    results = get_latest_results(tenant_id)
+    failed = [r for r in results.get("results",[]) if r["status"]=="FAIL"]
+    
+    auto_risks = []
+    for f in failed[:10]:
+        severity_map = {"CRITICAL":5,"HIGH":4,"MEDIUM":3,"LOW":2}
+        score = severity_map.get(f["severity"],3)
+        auto_risks.append({
+            "id": f"auto_{f['check_id']}",
+            "title": f"[AUTO] {f['name']} — Control Failure",
+            "category": "Compliance",
+            "severity": f["severity"],
+            "inherent_score": score * score,
+            "owner": "CISO",
+            "status": "OPEN",
+            "framework_refs": [f["framework"]],
+            "description": f.get("details",""),
+            "financial_impact_inr": {"CRITICAL":50000000,"HIGH":20000000,"MEDIUM":5000000,"LOW":1000000}.get(f["severity"],5000000),
+            "source": "automated_check",
+            "control": f["control"],
+        })
+    
+    return {"auto_risks": auto_risks, "total": len(auto_risks), "message": f"Generated {len(auto_risks)} risks from failed checks"}

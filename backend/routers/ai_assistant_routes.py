@@ -265,7 +265,72 @@ def get_responses(qid: str):
 @q_router.post("/{qid}/send")
 def send_questionnaire(qid: str, body: dict = Body(...)):
     emails = body.get("emails", [])
-    return {"message":f"Sent to {len(emails)} recipients","links":[{"email":e,"link":f"https://app.aura.io/q/{qid}?token={secrets.token_urlsafe(16)}"} for e in emails]}
+    deadline = body.get("deadline", (datetime.utcnow() + timedelta(days=7)).isoformat())
+    links = []
+    for e in emails:
+        token_val = secrets.token_urlsafe(16)
+        links.append({
+            "email": e,
+            "link": f"https://app.aura.io/q/{qid}?token={token_val}",
+            "deadline": deadline,
+            "status": "SENT",
+            "sent_at": datetime.utcnow().isoformat(),
+        })
+    return {
+        "message": f"Questionnaire sent to {len(emails)} recipients",
+        "links": links,
+        "deadline": deadline,
+        "auto_reminder": f"Automatic reminder will be sent in 3 days if not completed",
+        "auto_score": True,
+    }
+
+@q_router.post("/{qid}/score")
+def score_questionnaire_response(qid: str, body: dict = Body(...)):
+    """Auto-score a vendor questionnaire response."""
+    answers = body.get("answers", {})
+    
+    # Scoring logic
+    score = 0
+    max_score = len(DEMO_QUESTIONS) * 10
+    findings = []
+    
+    for q in DEMO_QUESTIONS:
+        qid_key = str(q["id"])
+        answer = answers.get(qid_key, "")
+        
+        if q["type"] == "yes_no":
+            if answer.lower() in ("yes", "true", "1"):
+                score += 10
+            else:
+                score += 0
+                findings.append({
+                    "question": q["question"],
+                    "severity": "HIGH" if q.get("required") else "MEDIUM",
+                    "framework_ref": q.get("framework_ref", ""),
+                    "recommendation": f"Vendor should implement: {q['question']}"
+                })
+        elif q["type"] == "multiple_choice":
+            # Score based on best answer position
+            options = q.get("options", [])
+            if answer in options:
+                idx = options.index(answer)
+                score += max(10 - idx*2, 2)
+    
+    pct = round(score / max_score * 100) if max_score > 0 else 0
+    risk_level = "LOW" if pct >= 80 else "MEDIUM" if pct >= 60 else "HIGH" if pct >= 40 else "CRITICAL"
+    
+    return {
+        "score": pct,
+        "risk_level": risk_level,
+        "findings": findings,
+        "passed": pct >= 70,
+        "recommendation": (
+            "Vendor meets security requirements" if pct >= 80
+            else "Vendor requires remediation before approval" if pct >= 60
+            else "Vendor poses significant risk — escalate review"
+        ),
+        "scored_at": datetime.utcnow().isoformat(),
+    }
 
 # ── SSO routes ────────────────────────────────────────────────────────────────
 sso_router = APIRouter(prefix="/api/sso", tags=["sso"])

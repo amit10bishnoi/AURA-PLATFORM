@@ -1,910 +1,405 @@
 """
-integrations_service.py — 10 new security tool integrations
-Okta, Jira, Slack, Datadog, CrowdStrike, GitHub, Snowflake, Splunk, ServiceNow, Tenable
+integrations_service.py — Real API integrations with smart fallbacks
+AWS, GitHub, Okta pull REAL data when API keys are configured.
+All others use intelligent simulation.
 """
-import random
+import os, random, requests
 from datetime import datetime, timedelta
 
-
-def _rand(lo, hi): return random.randint(lo, hi)
-def _choice(lst): return random.choice(lst)
 def _now(): return datetime.utcnow().isoformat() + "Z"
-def _ago(days): return (datetime.utcnow() - timedelta(days=days)).isoformat() + "Z"
+def _rand(lo, hi): return random.randint(lo, hi)
+
+# ── AWS REAL INTEGRATION ──────────────────────────────────────────────────────
+def pull_aws(org_name: str):
+    key = os.getenv("AWS_ACCESS_KEY_ID", "")
+    secret = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+    region = os.getenv("AWS_DEFAULT_REGION", "ap-south-1")
+
+    if not key or not secret:
+        # Smart simulation
+        return _aws_simulated(org_name)
+
+    try:
+        import boto3
+        session = boto3.Session(
+            aws_access_key_id=key,
+            aws_secret_access_key=secret,
+            region_name=region
+        )
+        findings = []
+        metrics = {}
+
+        # ── IAM checks ────────────────────────────────────────────────────────
+        iam = session.client("iam")
+        try:
+            # Root account MFA
+            summary = iam.get_account_summary()["SummaryMap"]
+            root_mfa = summary.get("AccountMFAEnabled", 0)
+            metrics["root_mfa_enabled"] = bool(root_mfa)
+            if not root_mfa:
+                findings.append({"severity":"CRITICAL","title":"Root account MFA not enabled","description":"AWS root account does not have MFA enabled — highest risk finding.","recommendation":"Enable MFA on root account immediately: AWS Console → My Account → Security Credentials → MFA"})
+
+            # IAM users without MFA
+            users = iam.list_users()["Users"]
+            mfa_devices = iam.list_virtual_mfa_devices()["VirtualMFADevices"]
+            mfa_user_ids = {d["User"]["UserId"] for d in mfa_devices if "User" in d}
+            users_without_mfa = [u for u in users if u["UserId"] not in mfa_user_ids]
+            metrics["total_iam_users"] = len(users)
+            metrics["users_without_mfa"] = len(users_without_mfa)
+            mfa_pct = round((1 - len(users_without_mfa)/max(len(users),1))*100)
+            metrics["mfa_coverage_pct"] = mfa_pct
+            if users_without_mfa:
+                findings.append({"severity":"HIGH" if len(users_without_mfa)>3 else "MEDIUM","title":f"{len(users_without_mfa)} IAM users without MFA","description":f"Users: {', '.join(u['UserName'] for u in users_without_mfa[:5])}","recommendation":"IAM Console → Users → Select user → Security credentials → Assign MFA device"})
+
+            # Access keys older than 90 days
+            old_keys = []
+            for user in users:
+                keys = iam.list_access_keys(UserName=user["UserName"])["AccessKeyMetadata"]
+                for k in keys:
+                    if k["Status"] == "Active":
+                        age = (datetime.utcnow() - k["CreateDate"].replace(tzinfo=None)).days
+                        if age > 90:
+                            old_keys.append({"user": user["UserName"], "age": age})
+            metrics["old_access_keys"] = len(old_keys)
+            if old_keys:
+                findings.append({"severity":"HIGH","title":f"{len(old_keys)} access keys older than 90 days","description":f"Keys: {', '.join(f['user'] for f in old_keys[:3])}","recommendation":"Rotate access keys: IAM → Users → Security credentials → Create new key → Delete old"})
+
+            # Password policy
+            try:
+                policy = iam.get_account_password_policy()["PasswordPolicy"]
+                metrics["min_password_length"] = policy.get("MinimumPasswordLength", 0)
+                if policy.get("MinimumPasswordLength", 0) < 14:
+                    findings.append({"severity":"MEDIUM","title":"Weak IAM password policy","description":f"Minimum password length is {policy.get('MinimumPasswordLength')} — recommend 14+","recommendation":"IAM → Account settings → Edit password policy → Set minimum 14 characters"})
+            except: pass
+
+        except Exception as e:
+            metrics["iam_error"] = str(e)[:100]
+
+        # ── S3 checks ─────────────────────────────────────────────────────────
+        s3 = session.client("s3")
+        try:
+            buckets = s3.list_buckets()["Buckets"]
+            public_buckets, unencrypted_buckets, no_versioning = [], [], []
+
+            for bucket in buckets[:20]:  # limit to first 20
+                name = bucket["Name"]
+                # Public access
+                try:
+                    acl = s3.get_bucket_acl(Bucket=name)
+                    for grant in acl.get("Grants", []):
+                        if "AllUsers" in str(grant.get("Grantee", {})):
+                            public_buckets.append(name)
+                            break
+                except: pass
+                # Encryption
+                try:
+                    s3.get_bucket_encryption(Bucket=name)
+                except s3.exceptions.ClientError:
+                    unencrypted_buckets.append(name)
+                except: pass
+                # Versioning
+                try:
+                    v = s3.get_bucket_versioning(Bucket=name)
+                    if v.get("Status") != "Enabled":
+                        no_versioning.append(name)
+                except: pass
+
+            metrics["total_buckets"] = len(buckets)
+            metrics["public_buckets"] = len(public_buckets)
+            metrics["unencrypted_buckets"] = len(unencrypted_buckets)
+
+            if public_buckets:
+                findings.append({"severity":"CRITICAL","title":f"{len(public_buckets)} public S3 buckets","description":f"Public: {', '.join(public_buckets[:3])}","recommendation":"S3 Console → Bucket → Permissions → Block all public access → Enable"})
+            if unencrypted_buckets:
+                findings.append({"severity":"HIGH","title":f"{len(unencrypted_buckets)} unencrypted S3 buckets","description":f"Not encrypted: {', '.join(unencrypted_buckets[:3])}","recommendation":"S3 → Bucket → Properties → Default encryption → Enable SSE-S3 or SSE-KMS"})
+        except Exception as e:
+            metrics["s3_error"] = str(e)[:100]
+
+        # ── CloudTrail checks ─────────────────────────────────────────────────
+        try:
+            ct = session.client("cloudtrail")
+            trails = ct.describe_trails()["trailList"]
+            active_trails = [t for t in trails if t.get("IsMultiRegionTrail")]
+            metrics["cloudtrail_trails"] = len(trails)
+            metrics["multiregion_trails"] = len(active_trails)
+            if not active_trails:
+                findings.append({"severity":"HIGH","title":"No multi-region CloudTrail enabled","description":"CloudTrail is not enabled across all regions — gaps in audit logging.","recommendation":"CloudTrail Console → Create trail → Apply to all regions → Enable"})
+        except Exception as e:
+            metrics["cloudtrail_error"] = str(e)[:100]
+
+        # ── Security Groups (open SSH/RDP) ────────────────────────────────────
+        try:
+            ec2 = session.client("ec2")
+            sgs = ec2.describe_security_groups()["SecurityGroups"]
+            open_ssh, open_rdp = [], []
+            for sg in sgs:
+                for rule in sg.get("IpPermissions", []):
+                    for ip in rule.get("IpRanges", []):
+                        if ip.get("CidrIp") == "0.0.0.0/0":
+                            if rule.get("FromPort") == 22:
+                                open_ssh.append(sg["GroupId"])
+                            elif rule.get("FromPort") == 3389:
+                                open_rdp.append(sg["GroupId"])
+            metrics["open_ssh_groups"] = len(open_ssh)
+            metrics["open_rdp_groups"] = len(open_rdp)
+            if open_ssh:
+                findings.append({"severity":"HIGH","title":f"SSH open to 0.0.0.0/0 in {len(open_ssh)} security group(s)","description":f"Security groups: {', '.join(open_ssh[:3])}","recommendation":"EC2 → Security Groups → Edit inbound → Remove 0.0.0.0/0 on port 22 → Use office IP or AWS SSM"})
+            if open_rdp:
+                findings.append({"severity":"HIGH","title":f"RDP open to 0.0.0.0/0 in {len(open_rdp)} security group(s)","description":f"Security groups: {', '.join(open_rdp[:3])}","recommendation":"EC2 → Security Groups → Edit inbound → Remove 0.0.0.0/0 on port 3389"})
+        except Exception as e:
+            metrics["ec2_error"] = str(e)[:100]
+
+        sev_order = {"CRITICAL":0,"HIGH":1,"MEDIUM":2,"LOW":3}
+        findings.sort(key=lambda x: sev_order.get(x["severity"],4))
+
+        return {
+            "provider":"AWS","icon":"☁️","color":"#FF9900",
+            "status":"connected","real_data":True,
+            "summary":f"{metrics.get('total_iam_users',0)} IAM users · {metrics.get('mfa_coverage_pct',0)}% MFA · {metrics.get('total_buckets',0)} S3 buckets · {len(findings)} findings",
+            "findings":findings[:8],
+            "metrics":metrics,
+            "last_synced":_now(),
+            "region":region,
+        }
+    except Exception as e:
+        return {**_aws_simulated(org_name), "error": str(e)[:200], "real_data":False}
 
 
-# ── Okta ──────────────────────────────────────────────────────────────────────
-def pull_okta(org_name: str):
-    users = _rand(80, 500)
-    mfa_enabled = _rand(60, 100)
-    suspicious = _rand(0, 12)
-    locked = _rand(0, 8)
+def _aws_simulated(org_name):
+    unenc = _rand(0,8); pub = _rand(0,4); no_mfa = _rand(0,12); old_keys = _rand(0,6)
     return {
-        "provider": "Okta",
-        "icon": "🔐",
-        "color": "#00297A",
-        "status": "connected",
-        "summary": f"{mfa_enabled}% MFA adoption · {suspicious} suspicious logins · {locked} locked accounts",
-        "findings": [
-            {"severity": "HIGH" if suspicious > 5 else "MEDIUM",
-             "title": f"{suspicious} suspicious login attempts detected",
-             "description": "Logins from unusual locations or times flagged by Okta ThreatInsight.",
-             "recommendation": "Review flagged sessions and enforce re-authentication."},
-            {"severity": "MEDIUM" if mfa_enabled < 90 else "LOW",
-             "title": f"MFA coverage at {mfa_enabled}%",
-             "description": f"{users - round(users * mfa_enabled/100)} users without MFA enrolled.",
-             "recommendation": "Enable Okta MFA policy enforcement for all users."},
-            {"severity": "LOW",
-             "title": f"{locked} accounts currently locked",
-             "description": "Accounts locked due to failed login attempts.",
-             "recommendation": "Review locked accounts for potential brute-force activity."},
+        "provider":"AWS","icon":"☁️","color":"#FF9900","status":"demo_mode","real_data":False,
+        "summary":f"{no_mfa} users without MFA · {pub} public buckets · {unenc} unencrypted buckets",
+        "findings":[
+            {"severity":"HIGH","title":f"{no_mfa} IAM users without MFA","description":"IAM users lack MFA — vulnerable to credential theft.","recommendation":"IAM Console → Users → Security credentials → Assign MFA"},
+            {"severity":"HIGH" if pub>0 else "LOW","title":f"{pub} public S3 buckets detected","description":"S3 buckets with public access enabled.","recommendation":"S3 → Block all public access → Enable for all buckets"},
+            {"severity":"MEDIUM","title":f"{unenc} unencrypted S3 buckets","description":"S3 buckets without default encryption.","recommendation":"S3 → Properties → Default encryption → Enable SSE-S3"},
+            {"severity":"MEDIUM","title":f"{old_keys} access keys older than 90 days","description":"Old access keys increase breach risk.","recommendation":"IAM → Security credentials → Rotate access keys"},
         ],
-        "metrics": {
-            "total_users": users,
-            "mfa_enabled_pct": mfa_enabled,
-            "suspicious_logins": suspicious,
-            "locked_accounts": locked,
-            "sso_apps": _rand(10, 60),
-        },
-        "last_synced": _now(),
+        "metrics":{"total_iam_users":_rand(10,100),"users_without_mfa":no_mfa,"mfa_coverage_pct":_rand(60,95),"total_buckets":_rand(5,30),"public_buckets":pub,"unencrypted_buckets":unenc,"old_access_keys":old_keys},
+        "last_synced":_now(),
+        "note":"Add AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY to .env for real data",
     }
 
 
-# ── Jira ──────────────────────────────────────────────────────────────────────
-def pull_jira(org_name: str):
-    open_vulns = _rand(5, 40)
-    overdue = _rand(0, 15)
-    critical = _rand(0, 8)
-    return {
-        "provider": "Jira",
-        "icon": "📋",
-        "color": "#0052CC",
-        "status": "connected",
-        "summary": f"{open_vulns} open security tickets · {overdue} overdue · {critical} critical",
-        "findings": [
-            {"severity": "HIGH" if critical > 3 else "MEDIUM",
-             "title": f"{critical} critical security issues unresolved",
-             "description": "Critical severity Jira tickets in security project remain open.",
-             "recommendation": "Prioritise critical tickets in next sprint."},
-            {"severity": "MEDIUM" if overdue > 5 else "LOW",
-             "title": f"{overdue} security tickets past due date",
-             "description": "Security remediation tickets have exceeded their target resolution date.",
-             "recommendation": "Review SLA compliance and escalate overdue items."},
-        ],
-        "metrics": {
-            "open_tickets": open_vulns,
-            "overdue_tickets": overdue,
-            "critical_tickets": critical,
-            "avg_resolution_days": _rand(3, 21),
-            "projects_scanned": _rand(3, 15),
-        },
-        "last_synced": _now(),
-    }
-
-
-# ── Slack ─────────────────────────────────────────────────────────────────────
-def pull_slack(org_name: str):
-    workspaces = _rand(1, 5)
-    external_shared = _rand(0, 20)
-    dlp_alerts = _rand(0, 8)
-    return {
-        "provider": "Slack",
-        "icon": "💬",
-        "color": "#4A154B",
-        "status": "connected",
-        "summary": f"{external_shared} external shared channels · {dlp_alerts} DLP alerts · {workspaces} workspace(s)",
-        "findings": [
-            {"severity": "HIGH" if dlp_alerts > 3 else "MEDIUM",
-             "title": f"{dlp_alerts} potential data leakage alerts",
-             "description": "Messages flagged for potential sensitive data (PII, credentials) shared in Slack.",
-             "recommendation": "Review flagged messages and update Slack DLP policy."},
-            {"severity": "MEDIUM" if external_shared > 10 else "LOW",
-             "title": f"{external_shared} external shared channels active",
-             "description": "Channels shared with external organisations — risk of data exposure.",
-             "recommendation": "Audit external channels and remove unnecessary access."},
-        ],
-        "metrics": {
-            "workspaces": workspaces,
-            "external_channels": external_shared,
-            "dlp_alerts": dlp_alerts,
-            "total_users": _rand(50, 500),
-            "guest_users": _rand(0, 30),
-        },
-        "last_synced": _now(),
-    }
-
-
-# ── Datadog ───────────────────────────────────────────────────────────────────
-def pull_datadog(org_name: str):
-    alerts = _rand(2, 30)
-    critical_alerts = _rand(0, 8)
-    anomalies = _rand(0, 15)
-    return {
-        "provider": "Datadog",
-        "icon": "📊",
-        "color": "#632CA6",
-        "status": "connected",
-        "summary": f"{alerts} active alerts · {critical_alerts} critical · {anomalies} anomalies detected",
-        "findings": [
-            {"severity": "HIGH" if critical_alerts > 2 else "MEDIUM",
-             "title": f"{critical_alerts} critical security monitors triggered",
-             "description": "Datadog SIEM monitors in critical state requiring immediate attention.",
-             "recommendation": "Investigate critical monitors and update detection rules."},
-            {"severity": "MEDIUM" if anomalies > 5 else "LOW",
-             "title": f"{anomalies} anomalous patterns detected",
-             "description": "ML-based anomaly detection flagged unusual behaviour in logs/metrics.",
-             "recommendation": "Review anomaly traces and correlate with other events."},
-        ],
-        "metrics": {
-            "active_alerts": alerts,
-            "critical_alerts": critical_alerts,
-            "anomalies": anomalies,
-            "monitors": _rand(20, 200),
-            "logs_per_day_gb": _rand(1, 50),
-        },
-        "last_synced": _now(),
-    }
-
-
-# ── CrowdStrike ───────────────────────────────────────────────────────────────
-def pull_crowdstrike(org_name: str):
-    detections = _rand(0, 25)
-    endpoints = _rand(50, 500)
-    high_sev = _rand(0, 8)
-    unprotected = _rand(0, 10)
-    return {
-        "provider": "CrowdStrike",
-        "icon": "🦅",
-        "color": "#E3130D",
-        "status": "connected",
-        "summary": f"{detections} detections · {high_sev} high severity · {unprotected} unprotected endpoints",
-        "findings": [
-            {"severity": "CRITICAL" if high_sev > 3 else "HIGH",
-             "title": f"{high_sev} high severity threat detections",
-             "description": "CrowdStrike Falcon detected high severity threats requiring investigation.",
-             "recommendation": "Review detections in Falcon console and contain affected endpoints."},
-            {"severity": "HIGH" if unprotected > 5 else "MEDIUM",
-             "title": f"{unprotected} endpoints without Falcon sensor",
-             "description": "Endpoints not covered by CrowdStrike EDR — blind spots in detection.",
-             "recommendation": "Deploy Falcon sensor to all endpoints immediately."},
-        ],
-        "metrics": {
-            "protected_endpoints": endpoints,
-            "unprotected_endpoints": unprotected,
-            "total_detections": detections,
-            "high_severity": high_sev,
-            "prevention_rate_pct": _rand(85, 99),
-        },
-        "last_synced": _now(),
-    }
-
-
-# ── GitHub ────────────────────────────────────────────────────────────────────
+# ── GITHUB REAL INTEGRATION ───────────────────────────────────────────────────
 def pull_github(org_name: str):
-    secret_alerts = _rand(0, 15)
-    dependabot = _rand(0, 40)
-    critical_deps = _rand(0, 10)
-    public_repos = _rand(0, 20)
+    token = os.getenv("GITHUB_TOKEN", "")
+    github_org = os.getenv("GITHUB_ORG", "")
+
+    if not token:
+        return _github_simulated(org_name)
+
+    try:
+        from github import Github
+        g = Github(token)
+        findings = []
+        metrics = {}
+
+        target = g.get_organization(github_org) if github_org else None
+        repos = list(target.get_repos()[:20] if target else g.get_user().get_repos()[:20])
+        metrics["total_repos"] = len(repos)
+
+        public_repos = [r for r in repos if not r.private]
+        metrics["public_repos"] = len(public_repos)
+        if len(public_repos) > 5:
+            findings.append({"severity":"MEDIUM","title":f"{len(public_repos)} public repositories","description":f"Public: {', '.join(r.name for r in public_repos[:5])}","recommendation":"Review public repos — make private if they contain internal code"})
+
+        # Branch protection
+        unprotected = []
+        for repo in repos[:10]:
+            try:
+                branch = repo.get_branch(repo.default_branch)
+                if not branch.protected:
+                    unprotected.append(repo.name)
+            except: pass
+        metrics["unprotected_repos"] = len(unprotected)
+        if unprotected:
+            findings.append({"severity":"HIGH","title":f"{len(unprotected)} repos without branch protection","description":f"Repos: {', '.join(unprotected[:5])}","recommendation":"Settings → Branches → Add rule → Require PR reviews before merging"})
+
+        # Secret scanning alerts
+        secret_count = 0
+        for repo in repos[:10]:
+            try:
+                alerts = list(repo.get_secret_scanning_alerts())
+                secret_count += len([a for a in alerts if a.state == "open"])
+            except: pass
+        metrics["secret_alerts"] = secret_count
+        if secret_count > 0:
+            findings.append({"severity":"CRITICAL","title":f"{secret_count} exposed secrets in code","description":"GitHub secret scanning detected API keys or credentials in repositories.","recommendation":"Rotate exposed secrets immediately → Add to .gitignore → Use GitHub Secrets"})
+
+        # Dependabot
+        dep_count = 0
+        for repo in repos[:10]:
+            try:
+                alerts = list(repo.get_dependabot_alerts())
+                dep_count += len([a for a in alerts if a.state == "open" and a.security_advisory.severity in ["critical","high"]])
+            except: pass
+        metrics["critical_dependabot_alerts"] = dep_count
+        if dep_count > 0:
+            findings.append({"severity":"HIGH","title":f"{dep_count} critical/high dependency vulnerabilities","description":"Dependabot detected critical CVEs in project dependencies.","recommendation":"Enable auto-merge for Dependabot PRs or manually update vulnerable packages"})
+
+        # Org 2FA
+        if target:
+            try:
+                members_no_2fa = list(target.get_members(filter_="2fa_disabled"))
+                metrics["members_no_2fa"] = len(members_no_2fa)
+                if members_no_2fa:
+                    findings.append({"severity":"HIGH","title":f"{len(members_no_2fa)} org members without 2FA","description":f"Members: {', '.join(m.login for m in members_no_2fa[:5])}","recommendation":"Org Settings → Authentication → Require 2FA for all members"})
+            except: pass
+
+        findings.sort(key=lambda x: {"CRITICAL":0,"HIGH":1,"MEDIUM":2,"LOW":3}.get(x["severity"],4))
+
+        return {
+            "provider":"GitHub","icon":"🐙","color":"#24292E","status":"connected","real_data":True,
+            "summary":f"{metrics['total_repos']} repos · {metrics.get('secret_alerts',0)} secrets · {metrics.get('unprotected_repos',0)} unprotected branches",
+            "findings":findings[:6],"metrics":metrics,"last_synced":_now(),
+        }
+    except Exception as e:
+        return {**_github_simulated(org_name), "error":str(e)[:200], "real_data":False}
+
+
+def _github_simulated(org_name):
+    secrets = _rand(0,8); deps = _rand(0,25); pub = _rand(0,10); unprot = _rand(0,5)
     return {
-        "provider": "GitHub",
-        "icon": "🐙",
-        "color": "#24292E",
-        "status": "connected",
-        "summary": f"{secret_alerts} secret alerts · {dependabot} dependency alerts · {public_repos} public repos",
-        "findings": [
-            {"severity": "CRITICAL" if secret_alerts > 3 else "HIGH",
-             "title": f"{secret_alerts} exposed secrets detected",
-             "description": "GitHub secret scanning detected API keys, tokens or credentials in code.",
-             "recommendation": "Rotate all exposed secrets immediately and add to .gitignore."},
-            {"severity": "HIGH" if critical_deps > 3 else "MEDIUM",
-             "title": f"{critical_deps} critical dependency vulnerabilities",
-             "description": "Dependabot detected critical CVEs in project dependencies.",
-             "recommendation": "Update vulnerable dependencies via Dependabot pull requests."},
-            {"severity": "MEDIUM" if public_repos > 5 else "LOW",
-             "title": f"{public_repos} public repositories detected",
-             "description": "Public repositories may expose internal code or configurations.",
-             "recommendation": "Audit public repos and make private if not intentional."},
+        "provider":"GitHub","icon":"🐙","color":"#24292E","status":"demo_mode","real_data":False,
+        "summary":f"{secrets} secret alerts · {deps} dependency alerts · {pub} public repos",
+        "findings":[
+            {"severity":"CRITICAL" if secrets>3 else "HIGH","title":f"{secrets} exposed secrets detected","description":"GitHub secret scanning found API keys in code.","recommendation":"Rotate all exposed secrets immediately"},
+            {"severity":"HIGH","title":f"{deps} critical dependency vulnerabilities","description":"Dependabot detected critical CVEs in dependencies.","recommendation":"Update via Dependabot PRs or npm/pip upgrade"},
+            {"severity":"MEDIUM","title":f"{unprot} repos without branch protection","description":"Direct commits to main branch possible.","recommendation":"Add branch protection rules requiring PR reviews"},
         ],
-        "metrics": {
-            "secret_alerts": secret_alerts,
-            "dependabot_alerts": dependabot,
-            "critical_dependencies": critical_deps,
-            "public_repos": public_repos,
-            "total_repos": _rand(20, 200),
-        },
-        "last_synced": _now(),
+        "metrics":{"total_repos":_rand(10,100),"public_repos":pub,"secret_alerts":secrets,"critical_dependabot_alerts":deps,"unprotected_repos":unprot},
+        "last_synced":_now(),
+        "note":"Add GITHUB_TOKEN to .env for real data",
     }
 
 
-# ── Snowflake ─────────────────────────────────────────────────────────────────
-def pull_snowflake(org_name: str):
-    unmasked = _rand(0, 15)
-    failed_logins = _rand(0, 20)
-    public_tables = _rand(0, 8)
+# ── OKTA REAL INTEGRATION ─────────────────────────────────────────────────────
+def pull_okta(org_name: str):
+    domain = os.getenv("OKTA_DOMAIN", "")
+    token = os.getenv("OKTA_API_TOKEN", "")
+
+    if not domain or not token:
+        return _okta_simulated(org_name)
+
+    try:
+        base = f"https://{domain}/api/v1"
+        headers = {"Authorization": f"SSWS {token}", "Accept": "application/json"}
+        findings = []
+        metrics = {}
+
+        # Users
+        users_resp = requests.get(f"{base}/users?limit=200", headers=headers, timeout=10)
+        users = users_resp.json() if users_resp.ok else []
+        metrics["total_users"] = len(users)
+
+        # MFA factors
+        no_mfa = []
+        for user in users[:50]:
+            factors = requests.get(f"{base}/users/{user['id']}/factors", headers=headers, timeout=5)
+            if factors.ok and len(factors.json()) == 0:
+                no_mfa.append(user.get("profile",{}).get("login","unknown"))
+
+        metrics["users_without_mfa"] = len(no_mfa)
+        mfa_pct = round((1 - len(no_mfa)/max(len(users),1))*100)
+        metrics["mfa_coverage_pct"] = mfa_pct
+
+        if no_mfa:
+            findings.append({"severity":"HIGH" if len(no_mfa)>5 else "MEDIUM","title":f"{len(no_mfa)} users without MFA","description":f"Users: {', '.join(no_mfa[:5])}","recommendation":"Okta Admin → Security → Multifactor → Create policy → Required for All Users"})
+
+        # Suspicious activity
+        logs_resp = requests.get(f"{base}/logs?filter=eventType eq \"user.authentication.auth_via_mfa\" and outcome.result eq \"FAILURE\"&limit=50", headers=headers, timeout=10)
+        failed_mfa = len(logs_resp.json()) if logs_resp.ok else 0
+        metrics["failed_mfa_attempts"] = failed_mfa
+        if failed_mfa > 10:
+            findings.append({"severity":"HIGH","title":f"{failed_mfa} failed MFA attempts","description":"Multiple failed MFA attempts — possible account takeover.","recommendation":"Review failed attempts in Okta System Log and block suspicious IPs"})
+
+        # Inactive users
+        inactive = [u for u in users if u.get("status") == "STAGED"]
+        metrics["inactive_staged_users"] = len(inactive)
+
+        return {
+            "provider":"Okta","icon":"🔐","color":"#007DC1","status":"connected","real_data":True,
+            "summary":f"{metrics['total_users']} users · {mfa_pct}% MFA · {failed_mfa} failed auths",
+            "findings":findings,"metrics":metrics,"last_synced":_now(),
+        }
+    except Exception as e:
+        return {**_okta_simulated(org_name), "error":str(e)[:200], "real_data":False}
+
+
+def _okta_simulated(org_name):
+    users = _rand(80,500); mfa = _rand(70,100); susp = _rand(0,12); locked = _rand(0,8)
     return {
-        "provider": "Snowflake",
-        "icon": "❄️",
-        "color": "#29B5E8",
-        "status": "connected",
-        "summary": f"{unmasked} unmasked sensitive columns · {failed_logins} failed logins · {public_tables} public tables",
-        "findings": [
-            {"severity": "HIGH" if unmasked > 5 else "MEDIUM",
-             "title": f"{unmasked} sensitive columns without data masking",
-             "description": "PII and sensitive columns accessible without dynamic data masking policy.",
-             "recommendation": "Apply Snowflake dynamic data masking policies to sensitive columns."},
-            {"severity": "MEDIUM" if failed_logins > 10 else "LOW",
-             "title": f"{failed_logins} failed authentication attempts",
-             "description": "Multiple failed login attempts to Snowflake accounts detected.",
-             "recommendation": "Enable MFA for Snowflake accounts and review access logs."},
+        "provider":"Okta","icon":"🔐","color":"#007DC1","status":"demo_mode","real_data":False,
+        "summary":f"{mfa}% MFA adoption · {susp} suspicious logins · {locked} locked accounts",
+        "findings":[
+            {"severity":"HIGH" if susp>5 else "MEDIUM","title":f"{susp} suspicious login attempts","description":"Logins from unusual locations flagged by Okta ThreatInsight.","recommendation":"Review flagged sessions and enforce re-authentication"},
+            {"severity":"MEDIUM" if mfa<90 else "LOW","title":f"MFA coverage at {mfa}%","description":f"{users-round(users*mfa/100)} users without MFA.","recommendation":"Enable Okta MFA enforcement for all users"},
         ],
-        "metrics": {
-            "unmasked_columns": unmasked,
-            "failed_logins": failed_logins,
-            "public_tables": public_tables,
-            "warehouses": _rand(2, 20),
-            "data_gb": _rand(100, 10000),
-        },
-        "last_synced": _now(),
+        "metrics":{"total_users":users,"mfa_enabled_pct":mfa,"suspicious_logins":susp,"locked_accounts":locked,"sso_apps":_rand(10,60)},
+        "last_synced":_now(),
+        "note":"Add OKTA_DOMAIN + OKTA_API_TOKEN to .env for real data",
     }
 
 
-# ── Splunk ────────────────────────────────────────────────────────────────────
-def pull_splunk(org_name: str):
-    notable_events = _rand(5, 50)
-    high_risk_users = _rand(0, 10)
-    correlation_alerts = _rand(2, 20)
+# ── Keep all other integrations as smart simulation ───────────────────────────
+def _sim(provider, icon, color, org_name):
+    """Generic smart simulation for tools without real API integration yet."""
+    critical = _rand(0,8); high = _rand(2,20); assets = _rand(50,500)
     return {
-        "provider": "Splunk",
-        "icon": "🔍",
-        "color": "#65A637",
-        "status": "connected",
-        "summary": f"{notable_events} notable events · {high_risk_users} high-risk users · {correlation_alerts} correlation alerts",
-        "findings": [
-            {"severity": "HIGH" if high_risk_users > 3 else "MEDIUM",
-             "title": f"{high_risk_users} high-risk users identified",
-             "description": "Splunk UBA identified users with anomalous behaviour patterns.",
-             "recommendation": "Review high-risk users and validate behaviour with managers."},
-            {"severity": "MEDIUM" if correlation_alerts > 10 else "LOW",
-             "title": f"{correlation_alerts} SIEM correlation alerts triggered",
-             "description": "Splunk correlation searches triggered security alerts requiring review.",
-             "recommendation": "Triage alerts in Splunk ES and close false positives."},
+        "provider":provider,"icon":icon,"color":color,"status":"demo_mode","real_data":False,
+        "summary":f"{critical} critical · {high} high severity · {assets} assets monitored",
+        "findings":[
+            {"severity":"HIGH" if critical>3 else "MEDIUM","title":f"{critical} critical security issues","description":f"{provider} detected critical security issues requiring attention.","recommendation":f"Review {provider} console and remediate critical findings first"},
+            {"severity":"MEDIUM" if high>10 else "LOW","title":f"{high} high severity findings","description":f"High severity security findings detected by {provider}.","recommendation":f"Schedule remediation within 7 days per security SLA"},
         ],
-        "metrics": {
-            "notable_events": notable_events,
-            "high_risk_users": high_risk_users,
-            "correlation_alerts": correlation_alerts,
-            "data_ingestion_gb_day": _rand(5, 500),
-            "searches_per_day": _rand(100, 5000),
-        },
-        "last_synced": _now(),
+        "metrics":{"critical_issues":critical,"high_issues":high,"assets_monitored":assets,"last_scan_hours_ago":_rand(0,24)},
+        "last_synced":_now(),
     }
 
+def pull_jira(org): return _sim("Jira","📋","#0052CC",org)
+def pull_slack(org): return _sim("Slack","💬","#4A154B",org)
+def pull_datadog(org): return _sim("Datadog","📊","#632CA6",org)
+def pull_crowdstrike(org): return _sim("CrowdStrike","🦅","#E3130D",org)
+def pull_snowflake(org): return _sim("Snowflake","❄️","#29B5E8",org)
+def pull_splunk(org): return _sim("Splunk","🔍","#65A637",org)
+def pull_servicenow(org): return _sim("ServiceNow","⚙️","#81B5A1",org)
+def pull_tenable(org): return _sim("Tenable","🛡️","#00B388",org)
+def pull_pagerduty(org): return _sim("PagerDuty","🚨","#06AC38",org)
+def pull_qualys(org): return _sim("Qualys","🔬","#ED1C24",org)
+def pull_sentinelone(org): return _sim("SentinelOne","🤖","#6B00F5",org)
+def pull_microsoft_defender(org): return _sim("Microsoft Defender","🛡","#0078D4",org)
+def pull_cloudflare(org): return _sim("Cloudflare","🌐","#F48120",org)
+def pull_hashicorp_vault(org): return _sim("HashiCorp Vault","🔑","#000000",org)
+def pull_elastic_security(org): return _sim("Elastic Security","🔎","#FEC514",org)
+def pull_wiz(org): return _sim("Wiz","🌩","#2B6CB0",org)
+def pull_sonarqube(org): return _sim("SonarQube","📝","#4E9BCD",org)
+def pull_rapid7(org): return _sim("Rapid7","🎯","#E3170A",org)
+def pull_carbon_black(org): return _sim("Carbon Black","⚫","#1A1A1A",org)
+def pull_trend_micro(org): return _sim("Trend Micro","📡","#D71920",org)
+def pull_lacework(org): return _sim("Lacework","🏔","#00B4D8",org)
+def pull_prisma_cloud(org): return _sim("Prisma Cloud","🔷","#00C0E8",org)
+def pull_veracode(org): return _sim("Veracode","🧪","#009BDE",org)
+def pull_nessus(org): return _sim("Nessus Pro","🔭","#00B388",org)
+def pull_duo(org): return _sim("Duo Security","👥","#6BBB47",org)
+def pull_snyk(org): return _sim("Snyk","🐛","#4C4A73",org)
+def pull_beyondtrust(org): return _sim("BeyondTrust","🏰","#E31837",org)
+def pull_darktrace(org): return _sim("Darktrace","🧠","#6236FF",org)
 
-# ── ServiceNow ────────────────────────────────────────────────────────────────
-def pull_servicenow(org_name: str):
-    open_incidents = _rand(3, 30)
-    sla_breach = _rand(0, 10)
-    vulnerabilities = _rand(5, 50)
-    return {
-        "provider": "ServiceNow",
-        "icon": "⚙️",
-        "color": "#81B5A1",
-        "status": "connected",
-        "summary": f"{open_incidents} open incidents · {sla_breach} SLA breaches · {vulnerabilities} vuln tickets",
-        "findings": [
-            {"severity": "HIGH" if sla_breach > 3 else "MEDIUM",
-             "title": f"{sla_breach} incidents breached SLA",
-             "description": "Security incidents exceeded agreed SLA response/resolution times.",
-             "recommendation": "Review SLA policies and escalate overdue incidents immediately."},
-            {"severity": "MEDIUM" if vulnerabilities > 20 else "LOW",
-             "title": f"{vulnerabilities} open vulnerability management tickets",
-             "description": "Vulnerability tickets in ServiceNow VR awaiting remediation.",
-             "recommendation": "Prioritise and assign vulnerability tickets to engineering teams."},
-        ],
-        "metrics": {
-            "open_incidents": open_incidents,
-            "sla_breaches": sla_breach,
-            "vuln_tickets": vulnerabilities,
-            "avg_mttr_hours": _rand(4, 72),
-            "change_requests": _rand(5, 50),
-        },
-        "last_synced": _now(),
-    }
-
-
-# ── Tenable ───────────────────────────────────────────────────────────────────
-def pull_tenable(org_name: str):
-    critical_vulns = _rand(0, 25)
-    high_vulns = _rand(5, 60)
-    assets = _rand(50, 500)
-    unscanned = _rand(0, 20)
-    return {
-        "provider": "Tenable",
-        "icon": "🛡️",
-        "color": "#00B388",
-        "status": "connected",
-        "summary": f"{critical_vulns} critical CVEs · {high_vulns} high · {unscanned} unscanned assets",
-        "findings": [
-            {"severity": "CRITICAL" if critical_vulns > 5 else "HIGH",
-             "title": f"{critical_vulns} critical vulnerabilities detected",
-             "description": f"Tenable.io identified {critical_vulns} CVSS 9.0+ vulnerabilities across {assets} assets.",
-             "recommendation": "Patch critical CVEs within 24 hours per remediation SLA."},
-            {"severity": "HIGH" if unscanned > 10 else "MEDIUM",
-             "title": f"{unscanned} assets not scanned in 30+ days",
-             "description": "Assets missing from recent vulnerability scan coverage.",
-             "recommendation": "Ensure all assets are included in weekly scan schedule."},
-            {"severity": "MEDIUM",
-             "title": f"{high_vulns} high severity vulnerabilities",
-             "description": "High severity CVEs requiring remediation within standard SLA.",
-             "recommendation": "Schedule patching for high severity issues within 7 days."},
-        ],
-        "metrics": {
-            "critical_vulns": critical_vulns,
-            "high_vulns": high_vulns,
-            "total_assets": assets,
-            "unscanned_assets": unscanned,
-            "scan_coverage_pct": _rand(75, 100),
-        },
-        "last_synced": _now(),
-    }
-
-
-
-
-# ── PagerDuty ─────────────────────────────────────────────────────────────────
-def pull_pagerduty(org_name: str):
-    incidents = _rand(0, 20)
-    critical = _rand(0, 5)
-    mtta = _rand(2, 45)
-    mttr = _rand(15, 480)
-    return {
-        "provider": "PagerDuty",
-        "icon": "🚨",
-        "color": "#06AC38",
-        "status": "connected",
-        "summary": f"{incidents} open incidents · {critical} critical · MTTA {mtta}min · MTTR {mttr}min",
-        "findings": [
-            {"severity": "HIGH" if critical > 2 else "MEDIUM",
-             "title": f"{critical} critical incidents unresolved",
-             "description": "Critical severity PagerDuty incidents requiring immediate attention.",
-             "recommendation": "Assign on-call engineers and resolve critical incidents immediately."},
-            {"severity": "MEDIUM" if mttr > 120 else "LOW",
-             "title": f"Mean Time to Resolve: {mttr} minutes",
-             "description": "MTTR exceeds target SLA of 120 minutes for security incidents.",
-             "recommendation": "Review incident response runbooks and automate resolution steps."},
-        ],
-        "metrics": {"open_incidents": incidents, "critical_incidents": critical,
-                    "mtta_minutes": mtta, "mttr_minutes": mttr, "services": _rand(5, 50)},
-        "last_synced": _now(),
-    }
-
-
-# ── Qualys ────────────────────────────────────────────────────────────────────
-def pull_qualys(org_name: str):
-    critical = _rand(0, 30)
-    high = _rand(5, 80)
-    assets = _rand(50, 1000)
-    patchable = _rand(5, 40)
-    return {
-        "provider": "Qualys",
-        "icon": "🔬",
-        "color": "#ED1C24",
-        "status": "connected",
-        "summary": f"{critical} critical CVEs · {high} high · {assets} assets scanned · {patchable} patchable",
-        "findings": [
-            {"severity": "CRITICAL" if critical > 10 else "HIGH",
-             "title": f"{critical} critical vulnerabilities detected",
-             "description": f"Qualys VMDR identified CVSS 9.0+ vulnerabilities across {assets} assets.",
-             "recommendation": "Apply patches for critical CVEs within 24-hour SLA."},
-            {"severity": "HIGH" if patchable > 20 else "MEDIUM",
-             "title": f"{patchable} vulnerabilities have available patches",
-             "description": "Patches available but not yet applied to vulnerable assets.",
-             "recommendation": "Deploy available patches via patch management system immediately."},
-        ],
-        "metrics": {"critical_vulns": critical, "high_vulns": high,
-                    "total_assets": assets, "patchable": patchable, "scan_coverage_pct": _rand(80, 100)},
-        "last_synced": _now(),
-    }
-
-
-# ── SentinelOne ───────────────────────────────────────────────────────────────
-def pull_sentinelone(org_name: str):
-    threats = _rand(0, 20)
-    endpoints = _rand(50, 500)
-    mitigated = _rand(0, threats)
-    return {
-        "provider": "SentinelOne",
-        "icon": "🤖",
-        "color": "#6B00F5",
-        "status": "connected",
-        "summary": f"{threats} threats detected · {mitigated} auto-mitigated · {endpoints} endpoints",
-        "findings": [
-            {"severity": "HIGH" if (threats - mitigated) > 3 else "MEDIUM",
-             "title": f"{threats - mitigated} unmitigated threats",
-             "description": "Threats detected by SentinelOne Singularity not yet remediated.",
-             "recommendation": "Review unmitigated threats in Singularity console and remediate."},
-            {"severity": "LOW",
-             "title": f"{mitigated} threats auto-mitigated by AI",
-             "description": "SentinelOne autonomous AI successfully contained threats.",
-             "recommendation": "Review mitigation actions to validate no false positives."},
-        ],
-        "metrics": {"threats_detected": threats, "auto_mitigated": mitigated,
-                    "protected_endpoints": endpoints, "prevention_rate_pct": _rand(88, 99)},
-        "last_synced": _now(),
-    }
-
-
-# ── Microsoft Defender ────────────────────────────────────────────────────────
-def pull_microsoft_defender(org_name: str):
-    alerts = _rand(2, 40)
-    high_alerts = _rand(0, 10)
-    exposed_devices = _rand(0, 20)
-    return {
-        "provider": "Microsoft Defender",
-        "icon": "🛡",
-        "color": "#0078D4",
-        "status": "connected",
-        "summary": f"{alerts} alerts · {high_alerts} high · {exposed_devices} exposed devices",
-        "findings": [
-            {"severity": "HIGH" if high_alerts > 3 else "MEDIUM",
-             "title": f"{high_alerts} high severity Defender alerts",
-             "description": "Microsoft Defender for Endpoint raised high severity security alerts.",
-             "recommendation": "Investigate alerts in Defender Security Centre and remediate."},
-            {"severity": "HIGH" if exposed_devices > 10 else "MEDIUM",
-             "title": f"{exposed_devices} devices with exposure score > 7",
-             "description": "Devices with high exposure score increasing organisation attack surface.",
-             "recommendation": "Apply security recommendations to reduce device exposure score."},
-        ],
-        "metrics": {"total_alerts": alerts, "high_alerts": high_alerts,
-                    "exposed_devices": exposed_devices, "secure_score_pct": _rand(40, 85)},
-        "last_synced": _now(),
-    }
-
-
-# ── Cloudflare ────────────────────────────────────────────────────────────────
-def pull_cloudflare(org_name: str):
-    threats_blocked = _rand(100, 10000)
-    ddos_events = _rand(0, 5)
-    bot_score = _rand(0, 30)
-    return {
-        "provider": "Cloudflare",
-        "icon": "🌐",
-        "color": "#F48120",
-        "status": "connected",
-        "summary": f"{threats_blocked:,} threats blocked · {ddos_events} DDoS events · {bot_score}% bot traffic",
-        "findings": [
-            {"severity": "HIGH" if ddos_events > 2 else "LOW",
-             "title": f"{ddos_events} DDoS attack events detected",
-             "description": "Cloudflare detected and mitigated distributed denial-of-service attacks.",
-             "recommendation": "Review DDoS rules and consider enabling Under Attack mode."},
-            {"severity": "MEDIUM" if bot_score > 20 else "LOW",
-             "title": f"{bot_score}% of traffic identified as bot traffic",
-             "description": "Significant bot traffic detected on protected domains.",
-             "recommendation": "Enable Cloudflare Bot Management to filter malicious bots."},
-        ],
-        "metrics": {"threats_blocked": threats_blocked, "ddos_events": ddos_events,
-                    "bot_traffic_pct": bot_score, "bandwidth_saved_gb": _rand(10, 1000)},
-        "last_synced": _now(),
-    }
-
-
-# ── HashiCorp Vault ───────────────────────────────────────────────────────────
-def pull_hashicorp_vault(org_name: str):
-    secrets = _rand(50, 500)
-    expiring = _rand(0, 20)
-    leaked = _rand(0, 3)
-    return {
-        "provider": "HashiCorp Vault",
-        "icon": "🔑",
-        "color": "#000000",
-        "status": "connected",
-        "summary": f"{secrets} secrets managed · {expiring} expiring · {leaked} potentially leaked",
-        "findings": [
-            {"severity": "CRITICAL" if leaked > 0 else "LOW",
-             "title": f"{leaked} secrets potentially leaked",
-             "description": "Vault audit logs indicate secrets may have been exposed outside Vault.",
-             "recommendation": "Rotate leaked secrets immediately and audit access logs."},
-            {"severity": "MEDIUM" if expiring > 10 else "LOW",
-             "title": f"{expiring} secrets expiring within 7 days",
-             "description": "Secrets approaching expiry may cause service disruptions if not rotated.",
-             "recommendation": "Rotate expiring secrets before they expire to prevent outages."},
-        ],
-        "metrics": {"total_secrets": secrets, "expiring_secrets": expiring,
-                    "leaked_secrets": leaked, "policies": _rand(10, 100)},
-        "last_synced": _now(),
-    }
-
-
-# ── Elastic Security ──────────────────────────────────────────────────────────
-def pull_elastic_security(org_name: str):
-    alerts = _rand(5, 60)
-    critical = _rand(0, 10)
-    rules = _rand(50, 500)
-    return {
-        "provider": "Elastic Security",
-        "icon": "🔎",
-        "color": "#FEC514",
-        "status": "connected",
-        "summary": f"{alerts} SIEM alerts · {critical} critical · {rules} detection rules active",
-        "findings": [
-            {"severity": "HIGH" if critical > 3 else "MEDIUM",
-             "title": f"{critical} critical SIEM alerts triggered",
-             "description": "Elastic Security SIEM detection rules triggered critical alerts.",
-             "recommendation": "Investigate critical alerts in Elastic Kibana Security dashboard."},
-            {"severity": "LOW",
-             "title": f"{rules} detection rules active",
-             "description": "Elastic Security running detection rules across all log sources.",
-             "recommendation": "Review and tune detection rules to reduce false positive rate."},
-        ],
-        "metrics": {"total_alerts": alerts, "critical_alerts": critical,
-                    "detection_rules": rules, "logs_indexed_gb": _rand(10, 500)},
-        "last_synced": _now(),
-    }
-
-
-# ── Wiz ───────────────────────────────────────────────────────────────────────
-def pull_wiz(org_name: str):
-    critical_issues = _rand(0, 30)
-    toxic_combos = _rand(0, 10)
-    cloud_resources = _rand(100, 5000)
-    return {
-        "provider": "Wiz",
-        "icon": "🌩",
-        "color": "#2B6CB0",
-        "status": "connected",
-        "summary": f"{critical_issues} critical issues · {toxic_combos} toxic combinations · {cloud_resources:,} resources",
-        "findings": [
-            {"severity": "CRITICAL" if toxic_combos > 3 else "HIGH",
-             "title": f"{toxic_combos} toxic security combinations detected",
-             "description": "Wiz identified attack path combinations that could lead to critical breach.",
-             "recommendation": "Prioritise toxic combinations — these represent highest breach risk."},
-            {"severity": "HIGH" if critical_issues > 10 else "MEDIUM",
-             "title": f"{critical_issues} critical cloud security issues",
-             "description": "Critical misconfigurations and vulnerabilities across cloud infrastructure.",
-             "recommendation": "Remediate critical Wiz issues using built-in fix guidance."},
-        ],
-        "metrics": {"critical_issues": critical_issues, "toxic_combinations": toxic_combos,
-                    "cloud_resources": cloud_resources, "compliance_score_pct": _rand(50, 90)},
-        "last_synced": _now(),
-    }
-
-
-# ── SonarQube ─────────────────────────────────────────────────────────────────
-def pull_sonarqube(org_name: str):
-    bugs = _rand(0, 100)
-    vulnerabilities = _rand(0, 40)
-    code_smells = _rand(10, 500)
-    coverage = _rand(30, 90)
-    return {
-        "provider": "SonarQube",
-        "icon": "📝",
-        "color": "#4E9BCD",
-        "status": "connected",
-        "summary": f"{vulnerabilities} code vulnerabilities · {bugs} bugs · {coverage}% test coverage",
-        "findings": [
-            {"severity": "HIGH" if vulnerabilities > 10 else "MEDIUM",
-             "title": f"{vulnerabilities} security vulnerabilities in code",
-             "description": "SonarQube SAST detected security vulnerabilities in application source code.",
-             "recommendation": "Fix security vulnerabilities before deploying to production."},
-            {"severity": "MEDIUM" if coverage < 60 else "LOW",
-             "title": f"Test coverage at {coverage}%",
-             "description": "Low test coverage increases risk of undetected security bugs.",
-             "recommendation": "Increase test coverage to minimum 80% for security-critical code."},
-        ],
-        "metrics": {"vulnerabilities": vulnerabilities, "bugs": bugs,
-                    "code_smells": code_smells, "test_coverage_pct": coverage},
-        "last_synced": _now(),
-    }
-
-
-# ── Rapid7 InsightVM ──────────────────────────────────────────────────────────
-def pull_rapid7(org_name: str):
-    critical = _rand(0, 25)
-    exploitable = _rand(0, 15)
-    assets = _rand(50, 800)
-    return {
-        "provider": "Rapid7 InsightVM",
-        "icon": "🎯",
-        "color": "#E3170A",
-        "status": "connected",
-        "summary": f"{critical} critical vulns · {exploitable} exploitable · {assets} assets",
-        "findings": [
-            {"severity": "CRITICAL" if exploitable > 5 else "HIGH",
-             "title": f"{exploitable} vulnerabilities actively exploitable",
-             "description": "Rapid7 threat intelligence confirms these CVEs are actively exploited.",
-             "recommendation": "Prioritise exploitable vulnerabilities — patch within 24 hours."},
-            {"severity": "HIGH" if critical > 10 else "MEDIUM",
-             "title": f"{critical} critical severity vulnerabilities",
-             "description": "CVSS 9.0+ vulnerabilities detected across your asset inventory.",
-             "recommendation": "Schedule emergency patching cycle for critical vulnerabilities."},
-        ],
-        "metrics": {"critical_vulns": critical, "exploitable_vulns": exploitable,
-                    "total_assets": assets, "risk_score": _rand(400, 900)},
-        "last_synced": _now(),
-    }
-
-
-# ── Carbon Black ──────────────────────────────────────────────────────────────
-def pull_carbon_black(org_name: str):
-    alerts = _rand(0, 25)
-    policy_violations = _rand(0, 15)
-    endpoints = _rand(50, 500)
-    return {
-        "provider": "VMware Carbon Black",
-        "icon": "⚫",
-        "color": "#1A1A1A",
-        "status": "connected",
-        "summary": f"{alerts} alerts · {policy_violations} policy violations · {endpoints} endpoints protected",
-        "findings": [
-            {"severity": "HIGH" if alerts > 10 else "MEDIUM",
-             "title": f"{alerts} Carbon Black EDR alerts",
-             "description": "Carbon Black detected suspicious endpoint behaviour requiring investigation.",
-             "recommendation": "Review alerts in Carbon Black console and isolate affected endpoints."},
-            {"severity": "MEDIUM" if policy_violations > 5 else "LOW",
-             "title": f"{policy_violations} security policy violations",
-             "description": "Endpoints violating Carbon Black security policies detected.",
-             "recommendation": "Enforce policy and remediate violations on non-compliant endpoints."},
-        ],
-        "metrics": {"total_alerts": alerts, "policy_violations": policy_violations,
-                    "protected_endpoints": endpoints, "blocked_attacks": _rand(10, 200)},
-        "last_synced": _now(),
-    }
-
-
-# ── Trend Micro ───────────────────────────────────────────────────────────────
-def pull_trend_micro(org_name: str):
-    threats = _rand(0, 30)
-    ransomware_attempts = _rand(0, 5)
-    endpoints = _rand(50, 500)
-    return {
-        "provider": "Trend Micro",
-        "icon": "📡",
-        "color": "#D71920",
-        "status": "connected",
-        "summary": f"{threats} threats blocked · {ransomware_attempts} ransomware attempts · {endpoints} protected",
-        "findings": [
-            {"severity": "CRITICAL" if ransomware_attempts > 0 else "LOW",
-             "title": f"{ransomware_attempts} ransomware execution attempts blocked",
-             "description": "Trend Micro detected and blocked ransomware execution attempts.",
-             "recommendation": "Investigate ransomware source and strengthen email/web filtering."},
-            {"severity": "MEDIUM" if threats > 15 else "LOW",
-             "title": f"{threats} threats blocked this period",
-             "description": "Trend Micro blocked various malware, phishing and exploit attempts.",
-             "recommendation": "Review threat reports and update detection signatures."},
-        ],
-        "metrics": {"threats_blocked": threats, "ransomware_attempts": ransomware_attempts,
-                    "protected_endpoints": endpoints, "detection_rate_pct": _rand(94, 99)},
-        "last_synced": _now(),
-    }
-
-
-# ── Lacework ──────────────────────────────────────────────────────────────────
-def pull_lacework(org_name: str):
-    anomalies = _rand(0, 20)
-    critical = _rand(0, 8)
-    accounts = _rand(1, 10)
-    return {
-        "provider": "Lacework",
-        "icon": "🏔",
-        "color": "#00B4D8",
-        "status": "connected",
-        "summary": f"{anomalies} cloud anomalies · {critical} critical · {accounts} cloud accounts",
-        "findings": [
-            {"severity": "HIGH" if critical > 3 else "MEDIUM",
-             "title": f"{critical} critical cloud security anomalies",
-             "description": "Lacework ML detected critical unusual behaviour in cloud environment.",
-             "recommendation": "Investigate anomalies in Lacework console and remediate root cause."},
-            {"severity": "MEDIUM" if anomalies > 10 else "LOW",
-             "title": f"{anomalies} total anomalies detected",
-             "description": "Behavioural anomalies across cloud accounts flagged by Lacework ML.",
-             "recommendation": "Review and classify anomalies to identify true positives."},
-        ],
-        "metrics": {"anomalies": anomalies, "critical_anomalies": critical,
-                    "cloud_accounts": accounts, "resources_monitored": _rand(100, 5000)},
-        "last_synced": _now(),
-    }
-
-
-# ── Prisma Cloud ──────────────────────────────────────────────────────────────
-def pull_prisma_cloud(org_name: str):
-    alerts = _rand(5, 80)
-    critical = _rand(0, 15)
-    compliance_pct = _rand(50, 95)
-    return {
-        "provider": "Prisma Cloud",
-        "icon": "🔷",
-        "color": "#00C0E8",
-        "status": "connected",
-        "summary": f"{alerts} alerts · {critical} critical · {compliance_pct}% compliance",
-        "findings": [
-            {"severity": "HIGH" if critical > 5 else "MEDIUM",
-             "title": f"{critical} critical cloud security alerts",
-             "description": "Palo Alto Prisma Cloud detected critical misconfigurations and threats.",
-             "recommendation": "Remediate critical alerts using Prisma Cloud guided remediation."},
-            {"severity": "MEDIUM" if compliance_pct < 75 else "LOW",
-             "title": f"Cloud compliance at {compliance_pct}%",
-             "description": "Cloud infrastructure compliance below target across monitored frameworks.",
-             "recommendation": "Apply auto-remediation for compliant resource configurations."},
-        ],
-        "metrics": {"total_alerts": alerts, "critical_alerts": critical,
-                    "compliance_pct": compliance_pct, "resources": _rand(100, 10000)},
-        "last_synced": _now(),
-    }
-
-
-# ── Veracode ──────────────────────────────────────────────────────────────────
-def pull_veracode(org_name: str):
-    flaws = _rand(0, 50)
-    very_high = _rand(0, 10)
-    apps_scanned = _rand(1, 20)
-    return {
-        "provider": "Veracode",
-        "icon": "🧪",
-        "color": "#009BDE",
-        "status": "connected",
-        "summary": f"{flaws} security flaws · {very_high} very high severity · {apps_scanned} apps scanned",
-        "findings": [
-            {"severity": "HIGH" if very_high > 3 else "MEDIUM",
-             "title": f"{very_high} very high severity application flaws",
-             "description": "Veracode SAST/DAST identified critical security flaws in applications.",
-             "recommendation": "Fix very high severity flaws before next production deployment."},
-            {"severity": "MEDIUM" if flaws > 20 else "LOW",
-             "title": f"{flaws} total security flaws across {apps_scanned} applications",
-             "description": "Application security flaws detected across scanned codebases.",
-             "recommendation": "Create remediation tickets for all detected flaws by severity."},
-        ],
-        "metrics": {"total_flaws": flaws, "very_high_severity": very_high,
-                    "apps_scanned": apps_scanned, "policy_pass_rate_pct": _rand(40, 90)},
-        "last_synced": _now(),
-    }
-
-
-# ── Nessus / Tenable.sc ───────────────────────────────────────────────────────
-def pull_nessus(org_name: str):
-    critical = _rand(0, 20)
-    high = _rand(5, 60)
-    plugins = _rand(50000, 80000)
-    return {
-        "provider": "Nessus Pro",
-        "icon": "🔭",
-        "color": "#00B388",
-        "status": "connected",
-        "summary": f"{critical} critical · {high} high · {plugins:,} plugins active",
-        "findings": [
-            {"severity": "CRITICAL" if critical > 5 else "HIGH",
-             "title": f"{critical} critical vulnerabilities found",
-             "description": "Nessus scanner identified critical severity vulnerabilities in network.",
-             "recommendation": "Prioritise critical findings and patch within emergency SLA."},
-            {"severity": "HIGH" if high > 20 else "MEDIUM",
-             "title": f"{high} high severity vulnerabilities",
-             "description": "High severity CVEs detected requiring remediation within standard SLA.",
-             "recommendation": "Schedule patching for high severity findings within 7 days."},
-        ],
-        "metrics": {"critical_vulns": critical, "high_vulns": high,
-                    "active_plugins": plugins, "hosts_scanned": _rand(50, 500)},
-        "last_synced": _now(),
-    }
-
-
-# ── Duo Security ──────────────────────────────────────────────────────────────
-def pull_duo(org_name: str):
-    users = _rand(50, 500)
-    mfa_pct = _rand(70, 100)
-    failed_auths = _rand(0, 30)
-    bypass_codes = _rand(0, 10)
-    return {
-        "provider": "Duo Security",
-        "icon": "👥",
-        "color": "#6BBB47",
-        "status": "connected",
-        "summary": f"{mfa_pct}% MFA coverage · {failed_auths} failed auths · {bypass_codes} bypass codes",
-        "findings": [
-            {"severity": "MEDIUM" if mfa_pct < 90 else "LOW",
-             "title": f"MFA coverage at {mfa_pct}%",
-             "description": f"{round(users * (100-mfa_pct)/100)} users not enrolled in Duo MFA.",
-             "recommendation": "Enforce Duo MFA policy for all users — no exceptions."},
-            {"severity": "HIGH" if failed_auths > 15 else "MEDIUM",
-             "title": f"{failed_auths} failed authentication attempts",
-             "description": "Multiple failed Duo authentications — potential account takeover attempts.",
-             "recommendation": "Review failed auth sources and block suspicious IP addresses."},
-        ],
-        "metrics": {"total_users": users, "mfa_coverage_pct": mfa_pct,
-                    "failed_auths": failed_auths, "bypass_codes_active": bypass_codes},
-        "last_synced": _now(),
-    }
-
-
-# ── Snyk ──────────────────────────────────────────────────────────────────────
-def pull_snyk(org_name: str):
-    critical_vulns = _rand(0, 20)
-    total_vulns = _rand(10, 100)
-    projects = _rand(5, 50)
-    fixable = _rand(5, 60)
-    return {
-        "provider": "Snyk",
-        "icon": "🐛",
-        "color": "#4C4A73",
-        "status": "connected",
-        "summary": f"{critical_vulns} critical · {total_vulns} total vulns · {fixable}% fixable · {projects} projects",
-        "findings": [
-            {"severity": "HIGH" if critical_vulns > 5 else "MEDIUM",
-             "title": f"{critical_vulns} critical open source vulnerabilities",
-             "description": "Snyk detected critical CVEs in open source dependencies.",
-             "recommendation": "Run snyk fix to automatically upgrade vulnerable packages."},
-            {"severity": "MEDIUM",
-             "title": f"{fixable}% of vulnerabilities auto-fixable",
-             "description": "Snyk can automatically fix majority of detected vulnerabilities.",
-             "recommendation": "Run snyk fix or open Snyk PRs to fix vulnerabilities automatically."},
-        ],
-        "metrics": {"critical_vulns": critical_vulns, "total_vulns": total_vulns,
-                    "projects_monitored": projects, "auto_fixable_pct": fixable},
-        "last_synced": _now(),
-    }
-
-
-# ── BeyondTrust ───────────────────────────────────────────────────────────────
-def pull_beyondtrust(org_name: str):
-    privileged_accounts = _rand(10, 100)
-    password_age_old = _rand(0, 20)
-    sessions = _rand(0, 50)
-    return {
-        "provider": "BeyondTrust",
-        "icon": "🏰",
-        "color": "#E31837",
-        "status": "connected",
-        "summary": f"{privileged_accounts} privileged accounts · {password_age_old} aged passwords · {sessions} active sessions",
-        "findings": [
-            {"severity": "HIGH" if password_age_old > 10 else "MEDIUM",
-             "title": f"{password_age_old} privileged accounts with aged passwords",
-             "description": "Privileged account passwords not rotated within policy timeframe.",
-             "recommendation": "Rotate aged privileged account passwords using BeyondTrust PAM."},
-            {"severity": "MEDIUM" if sessions > 20 else "LOW",
-             "title": f"{sessions} active privileged sessions",
-             "description": "Concurrent privileged sessions — review for unneeded access.",
-             "recommendation": "Audit active privileged sessions and terminate unnecessary ones."},
-        ],
-        "metrics": {"privileged_accounts": privileged_accounts, "aged_passwords": password_age_old,
-                    "active_sessions": sessions, "policy_compliance_pct": _rand(60, 95)},
-        "last_synced": _now(),
-    }
-
-
-# ── Darktrace ─────────────────────────────────────────────────────────────────
-def pull_darktrace(org_name: str):
-    ai_alerts = _rand(0, 30)
-    critical = _rand(0, 8)
-    autonomous_actions = _rand(0, 20)
-    return {
-        "provider": "Darktrace",
-        "icon": "🧠",
-        "color": "#6236FF",
-        "status": "connected",
-        "summary": f"{ai_alerts} AI alerts · {critical} critical · {autonomous_actions} autonomous responses",
-        "findings": [
-            {"severity": "HIGH" if critical > 3 else "MEDIUM",
-             "title": f"{critical} critical AI-detected threats",
-             "description": "Darktrace AI identified critical unusual behaviour in network traffic.",
-             "recommendation": "Review critical model breaches in Darktrace Threat Visualiser."},
-            {"severity": "LOW",
-             "title": f"{autonomous_actions} threats autonomously contained by Antigena",
-             "description": "Darktrace Antigena autonomously responded to detected threats.",
-             "recommendation": "Review autonomous actions to confirm appropriate responses."},
-        ],
-        "metrics": {"ai_alerts": ai_alerts, "critical_alerts": critical,
-                    "autonomous_responses": autonomous_actions, "devices_monitored": _rand(100, 2000)},
-        "last_synced": _now(),
-    }
-
+# ── NEW: AWS added to handler map ─────────────────────────────────────────────
 INTEGRATION_HANDLERS = {
-    "okta":        pull_okta,
-    "jira":        pull_jira,
-    "slack":       pull_slack,
-    "datadog":     pull_datadog,
-    "crowdstrike": pull_crowdstrike,
-    "github":      pull_github,
-    "snowflake":   pull_snowflake,
-    "splunk":      pull_splunk,
-    "servicenow":  pull_servicenow,
-    "tenable":     pull_tenable,
+    "aws":               pull_aws,
+    "okta":              pull_okta,
+    "github":            pull_github,
+    "jira":              pull_jira,
+    "slack":             pull_slack,
+    "datadog":           pull_datadog,
+    "crowdstrike":       pull_crowdstrike,
+    "snowflake":         pull_snowflake,
+    "splunk":            pull_splunk,
+    "servicenow":        pull_servicenow,
+    "tenable":           pull_tenable,
     "pagerduty":         pull_pagerduty,
     "qualys":            pull_qualys,
     "sentinelone":       pull_sentinelone,
@@ -925,16 +420,13 @@ INTEGRATION_HANDLERS = {
     "snyk":              pull_snyk,
     "beyondtrust":       pull_beyondtrust,
     "darktrace":         pull_darktrace,
-
 }
-
 
 def pull_integration(provider: str, org_name: str = "Organisation"):
     handler = INTEGRATION_HANDLERS.get(provider.lower())
     if not handler:
         return {"error": f"Unknown provider: {provider}"}
     return handler(org_name)
-
 
 def pull_all_integrations(org_name: str = "Organisation"):
     return {k: v(org_name) for k, v in INTEGRATION_HANDLERS.items()}

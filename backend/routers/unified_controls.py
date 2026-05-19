@@ -47,3 +47,69 @@ def get_overall_score(tenant_id: str = Query(...)):
         scores[fw] = int(impl/len(fw_controls)*100) if fw_controls else 0
     overall = int(sum(scores.values())/len(scores))
     return {"overall":overall,"frameworks":scores,"trend":"improving","last_updated":datetime.utcnow().isoformat()}
+
+# ── Custom Controls ────────────────────────────────────────────────────────────
+import secrets as _secrets
+
+CUSTOM_CONTROLS = []  # Tenant-specific controls stored in memory (use DB in prod)
+
+@router.get("/custom-controls")
+def get_custom_controls(tenant_id: str = Query(default="demo")):
+    tenant_controls = [c for c in CUSTOM_CONTROLS if c.get("tenant_id")==tenant_id]
+    return {"controls": tenant_controls, "total": len(tenant_controls)}
+
+@router.post("/custom-controls")
+def create_custom_control(body: dict, tenant_id: str = Query(default="demo")):
+    control = {
+        "id": f"CC-{_secrets.token_hex(3).upper()}",
+        "tenant_id": tenant_id,
+        "name": body.get("name", ""),
+        "description": body.get("description", ""),
+        "category": body.get("category", "Custom"),
+        "owner": body.get("owner", "CISO"),
+        "frameworks": body.get("frameworks", {}),
+        "status": "NOT_STARTED",
+        "automated": False,
+        "evidence_count": 0,
+        "test_procedure": body.get("test_procedure", ""),
+        "frequency": body.get("frequency", "Annual"),
+        "risk_level": body.get("risk_level", "MEDIUM"),
+        "is_custom": True,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    CUSTOM_CONTROLS.append(control)
+    return {"message": "Custom control created", "control": control}
+
+@router.patch("/custom-controls/{control_id}")
+def update_custom_control(control_id: str, body: dict, tenant_id: str = Query(default="demo")):
+    for c in CUSTOM_CONTROLS:
+        if c["id"] == control_id and c["tenant_id"] == tenant_id:
+            for k, v in body.items():
+                if k not in ("id","tenant_id","created_at"):
+                    c[k] = v
+            c["updated_at"] = datetime.utcnow().isoformat()
+            return {"message": "Updated", "control": c}
+    return {"error": "Not found"}
+
+@router.delete("/custom-controls/{control_id}")
+def delete_custom_control(control_id: str, tenant_id: str = Query(default="demo")):
+    global CUSTOM_CONTROLS
+    CUSTOM_CONTROLS = [c for c in CUSTOM_CONTROLS if not (c["id"]==control_id and c["tenant_id"]==tenant_id)]
+    return {"message": "Deleted"}
+
+@router.patch("/controls/{control_id}/status")
+def update_control_status(control_id: str, body: dict, tenant_id: str = Query(default="demo")):
+    """Update status of any control (built-in or custom)."""
+    new_status = body.get("status", "NOT_STARTED")
+    # Check custom controls first
+    for c in CUSTOM_CONTROLS:
+        if c["id"] == control_id and c["tenant_id"] == tenant_id:
+            c["status"] = new_status
+            c["updated_at"] = datetime.utcnow().isoformat()
+            return {"message": "Status updated", "control": c}
+    # Check unified controls
+    for c in UNIFIED_CONTROLS:
+        if c["id"] == control_id:
+            c["status"] = new_status
+            return {"message": "Status updated", "control": c}
+    return {"error": "Control not found"}

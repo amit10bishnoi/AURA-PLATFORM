@@ -48,8 +48,8 @@ export default function TestEngine({ token, tenantId }) {
   const fetchResults = useCallback(async () => {
     try {
       const [resResp, scoreResp] = await Promise.all([
-        fetch(`${API}/api/test-engine/results?tenant_id=${tenantId||"demo"}`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API}/api/test-engine/score?tenant_id=${tenantId||"demo"}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API}/api/checks/latest?tenant_id=${tenantId||"demo"}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API}/api/scores/live?tenant_id=${tenantId||"demo"}`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       const resData = await resResp.json();
       const scoreData = await scoreResp.json();
@@ -66,7 +66,7 @@ export default function TestEngine({ token, tenantId }) {
 
   const pollRun = useCallback(async (rid) => {
     try {
-      const resp = await fetch(`${API}/api/test-engine/run/${rid}`, { headers: { Authorization: `Bearer ${token}` } });
+      const resp = await fetch(`${API}/api/checks/run/${rid}`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await resp.json();
       setRunProgress(data.progress || 0);
       if (data.status === "COMPLETED") {
@@ -83,7 +83,7 @@ export default function TestEngine({ token, tenantId }) {
     setRunProgress(5);
     setShowConfig(false);
     try {
-      const resp = await fetch(`${API}/api/test-engine/run?tenant_id=${tenantId||"demo"}`, {
+      const resp = await fetch(`${API}/api/checks/run?tenant_id=${tenantId||"demo"}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ integrations: ["aws","github","okta"], ...creds }),

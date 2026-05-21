@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Award, CheckCircle, XCircle, AlertTriangle, RefreshCw, ChevronRight, Download, Shield } from "lucide-react";
-const API = "http://localhost:8001";
+const API = "http://localhost:8000";
 
 const TSC = {
   CC: { name:"Common Criteria (Security)", color:"#7c3aed", controls:33, desc:"Core security controls covering access, operations, and change management" },
@@ -73,7 +73,7 @@ export default function SOC2Hub({token,tenantId}){
 
   const implemented=DEMO_CONTROLS.filter(c=>c.status==="IMPLEMENTED").length;
   const total=DEMO_CONTROLS.length;
-  const score=Math.round(implemented/total*100);
+  const score=Math.round(total>0?total>0?implemented/total*100:0:0);
   const automated=DEMO_CONTROLS.filter(c=>c.automated&&c.status==="IMPLEMENTED").length;
 
   const filtered=DEMO_CONTROLS.filter(c=>(!tscFilter||c.tsc===tscFilter)&&(!statusFilter||c.status===statusFilter));
@@ -125,7 +125,7 @@ export default function SOC2Hub({token,tenantId}){
           {Object.entries(TSC).map(([key,tsc])=>{
             const tscControls=DEMO_CONTROLS.filter(c=>c.tsc===key);
             const done=tscControls.filter(c=>c.status==="IMPLEMENTED").length;
-            const pct=Math.round(done/tscControls.length*100);
+            const pct=tscControls.length>0?Math.round(done/tscControls.length*100):0;
             return(<div key={key} onClick={()=>{setTab("controls");setTscFilter(key);}} style={{background:"#fff",border:`1px solid ${tsc.color}20`,borderRadius:14,padding:"18px 16px",cursor:"pointer",transition:"all .2s",position:"relative",overflow:"hidden"}} onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.borderColor=`${tsc.color}40`;}} onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.borderColor=`${tsc.color}20`;}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${tsc.color},${tsc.color}50)`}}/>
               <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,fontWeight:800,color:tsc.color,marginBottom:4}}>{key}</div>

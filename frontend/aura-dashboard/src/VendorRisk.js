@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Building2, Plus, Search, RefreshCw, Send, Trash2, ChevronLeft, X, Save } from "lucide-react";
-const API="http://localhost:8001";
+const API="http://localhost:8000";
 const RISK_CFG={LOW:{c:"#10b981",bg:"rgba(16,185,129,0.1)"},MEDIUM:{c:"#f59e0b",bg:"rgba(245,158,11,0.1)"},HIGH:{c:"#f97316",bg:"rgba(249,115,22,0.1)"},CRITICAL:{c:"#ef4444",bg:"rgba(239,68,68,0.12)"}};
 const Q_CFG={NOT_SENT:{c:"#475569",l:"Not Sent"},SENT:{c:"#3b82f6",l:"Sent"},COMPLETED:{c:"#10b981",l:"Completed"},OVERDUE:{c:"#ef4444",l:"Overdue"}};
 const EMPTY={name:"",category:"SaaS",website:"",contact_email:"",risk_score:0,risk_level:"LOW",data_access:[],frameworks:[],notes:""};
@@ -52,7 +52,7 @@ export default function VendorRisk({token,tenantId}){
       const p=new URLSearchParams({tenant_id:tenantId||"demo"});
       if(filterRisk!=="All")p.set("risk_level",filterRisk);
       if(search)p.set("search",search);
-      const res=await fetch(`${API}/api/vendors?${p}`,{headers:{Authorization:`Bearer ${token}`}});
+      const res=await fetch(`${API}/api/vendors?tenant_id=${tenantId||'tenant_533ed68d0977'}&${p}`,{headers:{Authorization:`Bearer ${token}`}});
       const data=await res.json();
       const list=data.vendors||[];
       setVendors(list);
@@ -66,7 +66,7 @@ export default function VendorRisk({token,tenantId}){
   const save=async()=>{
     if(!form.name)return alert("Vendor name required");
     setSaving(true);
-    try{await fetch(`${API}/api/vendors?tenant_id=${tenantId||"demo"}`,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify(form)});setShowCreate(false);setForm(EMPTY);load();}
+    try{await fetch(`${API}/api/vendors?tenant_id=${tenantId||"tenant_533ed68d0977"}`,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify(form)});setShowCreate(false);setForm(EMPTY);load();}
     catch{alert("Save failed");}
     setSaving(false);
   };

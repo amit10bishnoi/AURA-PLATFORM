@@ -82,7 +82,7 @@ import {
 } from 'lucide-react';;;
 
 
-const API = "http://localhost:8001";
+const API = "http://localhost:8000";
 const PROXY_KEY = "aura-dev-key-change-in-production";
 
 function authHeaders(t, tid) {
@@ -2224,32 +2224,6 @@ function TeamManagement({token,tenantId,tenantName,onExpired}) {
     <div className="fade-in">
       {error&&<div className="notice notice-err"><AlertCircle size={15}/>{error}</div>}
       {success&&<div className="notice notice-ok"><Check size={15}/>{success}</div>}
-      <div className="card" style={{marginBottom:"20px"}}>
-        <div className="card-header"><span className="card-title">Invite Team Member</span></div>
-        <div className="card-body">
-          <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:"12px",alignItems:"flex-end"}}>
-            <div className="form-field" style={{margin:0}}><label>Email</label><input type="email" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="colleague@company.com"/></div>
-            <div className="form-field" style={{margin:0}}><label>Role</label><select value={inviteRole} onChange={e=>setInviteRole(e.target.value)}><option value="developer">Developer</option><option value="auditor">Auditor</option><option value="ciso">CISO</option></select></div>
-            <button className="btn btn-primary" onClick={sendInvite}><Send size={13}/> Invite</button>
-          </div>
-        </div>
-      </div>
-      <div className="card">
-        <div className="card-header"><span className="card-title">Team Members</span><span className="badge" style={{background:"var(--accentbg)",color:"var(--accent)",border:"1px solid rgba(139,92,246,.2)"}}>{users.length} members</span></div>
-        <div style={{padding:"0 22px"}}>
-          {loading&&<div className="empty-state"><RefreshCw size={24} className="spin" style={{opacity:.3,display:"block",margin:"0 auto 10px"}}/><span>Loading...</span></div>}
-          {users.map(u=>(
-            <div key={u.email} className="user-item">
-              <div style={{width:"38px",height:"38px",borderRadius:"50%",background:roleBgs[u.role]||"var(--accentbg)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"700",fontSize:"14px",color:roleColors[u.role]||"var(--accent)",flexShrink:0}}>{(u.name||u.email)[0].toUpperCase()}</div>
-              <div style={{flex:1}}><div style={{fontSize:"14px",fontWeight:"600",color:"var(--text)",marginBottom:"2px"}}>{u.name}</div><div style={{fontSize:"12px",color:"var(--text3)"}}>{u.email}</div></div>
-              <select value={u.role} onChange={e=>changeRole(u.email,e.target.value)} style={{background:roleBgs[u.role]||"var(--accentbg)",border:"1.5px solid",borderColor:roleColors[u.role]||"var(--accent)",borderRadius:"var(--radius)",padding:"5px 10px",color:roleColors[u.role]||"var(--accent)",fontSize:"12px",fontWeight:"700",cursor:"pointer",outline:"none"}}>
-                <option value="ciso">CISO</option><option value="developer">Developer</option><option value="auditor">Auditor</option>
-              </select>
-              <button className="btn btn-sm btn-danger btn-icon" onClick={()=>removeUser(u.email)}><Trash2 size={13}/></button>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -2266,7 +2240,7 @@ function CISOOverview({implemented,token,tenantId,tenantName,onExpired,userName}
 
   // Fetch live scores from continuous checks engine
   useEffect(()=>{
-    fetch(`http://localhost:8001/api/scores/live?tenant_id=${tenantId||"demo"}`,{
+    fetch(`http://localhost:8000/api/scores/live?tenant_id=${tenantId||"demo"}`,{
       headers:{Authorization:`Bearer ${token}`}
     }).then(r=>r.json()).then(d=>{
       if(d.frameworks){
@@ -2651,7 +2625,7 @@ function IntegrationsTab({token, tenantId, onExpired}) {
     setSavingCreds(true);
     try{
       // Save to backend .env via API
-      const res=await fetch(`http://localhost:8001/api/integrations/credentials`,{
+      const res=await fetch(`http://localhost:8000/api/integrations/credentials`,{
         method:"POST",
         headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
         body:JSON.stringify({provider:providerKey,credentials:creds})
@@ -2684,7 +2658,7 @@ function IntegrationsTab({token, tenantId, onExpired}) {
   async function pullOne(key){
     setLoading(l=>({...l,[key]:true}));
     try{
-      const res=await fetch(`http://localhost:8001/api/integrations/pull/${key}`,{method:"POST",headers:{Authorization:`Bearer ${token}`}});
+      const res=await fetch(`http://localhost:8000/api/integrations/pull/${key}`,{method:"POST",headers:{Authorization:`Bearer ${token}`}});
       const data=await res.json();
       setResults(r=>({...r,[key]:data}));
     }catch(e){setResults(r=>({...r,[key]:{error:e.message}}));}
@@ -2696,7 +2670,7 @@ function IntegrationsTab({token, tenantId, onExpired}) {
     const connectedKeys=Object.keys(connected);
     if(connectedKeys.length===0){
       // Pull all anyway for demo
-      try{const res=await fetch(`http://localhost:8001/api/integrations/pull-all`,{method:"POST",headers:{Authorization:`Bearer ${token}`}});const data=await res.json();setResults(data);}catch{}
+      try{const res=await fetch(`http://localhost:8000/api/integrations/pull-all`,{method:"POST",headers:{Authorization:`Bearer ${token}`}});const data=await res.json();setResults(data);}catch{}
     } else {
       await Promise.all(connectedKeys.map(k=>pullOne(k)));
     }
@@ -3231,7 +3205,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
   useEffect(()=>{
     const fetchScore=async()=>{
       try{
-        const res=await fetch(`http://localhost:8001/api/scores/live?tenant_id=${tenantId}`,{headers:{Authorization:`Bearer ${token}`}});
+        const res=await fetch(`http://localhost:8000/api/scores/live?tenant_id=${tenantId}`,{headers:{Authorization:`Bearer ${token}`}});
         if(res.ok){const d=await res.json();if(d.overall_score)setLiveScore({overall:d.overall_score,color:d.overall_color||"#f59e0b",label:d.overall_score>=80?"Compliant":d.overall_score>=50?"In Progress":"Building"});}
       }catch{}
     };
@@ -3358,7 +3332,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="soc2"&&"Trust Services Criteria · Your complete path to SOC 2 Type II"}
               </div>
             </div>
-            {activeTab==="overview"     &&role==="ciso"&&<CISOOverview implemented={implemented} token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired} userName={userName}/>}
+            {activeTab==="overview"&&<CISOOverview implemented={implemented} token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired} userName={userName}/>}
             {activeTab==="trends"                      &&<RiskTrendsTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
             {activeTab==="executive"                    &&<ExecutiveDashboard token={token} tenantId={tenantId} tenantName={tenantName} userName={userName}/>}
             {activeTab==="assessment"                   &&<DeveloperAssessment token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}

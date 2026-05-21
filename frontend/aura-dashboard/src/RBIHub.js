@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Shield, RefreshCw, AlertTriangle, Download } from "lucide-react";
-const API = "http://localhost:8001";
+const API = "http://localhost:8000";
 const STATUS = {
   IMPLEMENTED: { color:"#16a34a", bg:"rgba(22,163,74,.08)", label:"Implemented", icon:"✓" },
   IN_PROGRESS:  { color:"#d97706", bg:"rgba(217,119,6,.08)", label:"In Progress",  icon:"◔" },
@@ -37,9 +37,9 @@ export default function RBIHub({ token, tenantId }) {
     setLoading(true);
     try {
       const [cRes, rRes, ciRes] = await Promise.all([
-        fetch(`${API}/api/rbi/controls?tenant_id=${tenantId||"demo"}`, { headers:{ Authorization:`Bearer ${token}` } }),
-        fetch(`${API}/api/rbi/readiness?tenant_id=${tenantId||"demo"}`, { headers:{ Authorization:`Bearer ${token}` } }),
-        fetch(`${API}/api/rbi/cert-in?tenant_id=${tenantId||"demo"}`, { headers:{ Authorization:`Bearer ${token}` } }),
+        fetch(`${API}/api/rbi/controls?tenant_id=${tenantId||"tenant_533ed68d0977"}`, { headers:{ Authorization:`Bearer ${token}` } }),
+        fetch(`${API}/api/rbi/readiness?tenant_id=${tenantId||"tenant_533ed68d0977"}`, { headers:{ Authorization:`Bearer ${token}` } }),
+        fetch(`${API}/api/rbi/cert-in?tenant_id=${tenantId||"tenant_533ed68d0977"}`, { headers:{ Authorization:`Bearer ${token}` } }),
       ]);
       const cData = await cRes.json();
       const rData = await rRes.json();
@@ -148,13 +148,13 @@ export default function RBIHub({ token, tenantId }) {
             })}
           </div>
 
-          {readiness.critical_gaps?.length > 0 && (
+          {(Array.isArray(readiness.critical_gaps)?readiness.critical_gaps.length:readiness.critical_gaps||0) > 0 && (
             <div style={{ background:"rgba(225,29,72,.04)", border:"1px solid rgba(225,29,72,.15)", borderRadius:14, padding:20 }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
                 <AlertTriangle size={16} color="#e11d48"/>
                 <span style={{ fontFamily:"'Syne',sans-serif", fontSize:14, fontWeight:700, color:"#1a0a3a" }}>Critical RBI Gaps — Must Fix Immediately</span>
               </div>
-              {readiness.critical_gaps.map(gap => (
+              {(Array.isArray(readiness.critical_gaps)?readiness.critical_gaps:readiness.critical_gaps_list||[]).map(gap => (
                 <div key={gap.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", background:"#fff", borderRadius:8, marginBottom:8, border:"1px solid rgba(225,29,72,.1)" }}>
                   <div>
                     <div style={{ fontSize:12, fontWeight:600, color:"#1a0a3a" }}>{gap.name}</div>

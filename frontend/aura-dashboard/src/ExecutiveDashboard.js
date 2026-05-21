@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { TrendingUp, TrendingDown, Shield, AlertTriangle, CheckCircle, FileBarChart, Download, RefreshCw, BarChart2, Activity } from "lucide-react";
-const API = "http://localhost:8001";
+const API = "http://localhost:8000";
 
 const FW_COLOR = {SOC2:"#3b82f6",ISO27001:"#8b5cf6",RBI:"#f97316",DPDP:"#10b981"};
 const FW_META = {

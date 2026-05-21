@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, RefreshCw, Plus, X, Shield, TrendingUp, TrendingDown, Zap } from "lucide-react";
-const API = "http://localhost:8001";
+const API = "http://localhost:8000";
 const SEV = { CRITICAL:{c:"#ef4444",bg:"rgba(239,68,68,0.1)"}, HIGH:{c:"#f97316",bg:"rgba(249,115,22,0.1)"}, MEDIUM:{c:"#f59e0b",bg:"rgba(245,158,11,0.1)"}, LOW:{c:"#10b981",bg:"rgba(16,185,129,0.1)"} };
 const STATUS = { OPEN:{c:"#ef4444",l:"Open"}, IN_PROGRESS:{c:"#f59e0b",l:"In Progress"}, ACCEPTED:{c:"#8b5cf6",l:"Accepted"}, CLOSED:{c:"#10b981",l:"Closed"} };
 

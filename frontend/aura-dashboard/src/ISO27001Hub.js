@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Shield, CheckCircle, AlertTriangle, RefreshCw, Download, ChevronRight } from "lucide-react";
-const API = "http://localhost:8001";
+const API = "http://localhost:8000";
 
 const THEME_COLORS = { Organizational:"#7c3aed", People:"#0891b2", Physical:"#d97706", Technological:"#16a34a" };
 const STATUS_CFG = {
@@ -30,9 +30,9 @@ export default function ISO27001Hub({token,tenantId}){
     setLoading(true);
     try{
       const [cRes,rRes,tRes]=await Promise.all([
-        fetch(`${API}/api/iso27001/controls?tenant_id=${tenantId||"demo"}`,{headers:{Authorization:`Bearer ${token}`}}),
-        fetch(`${API}/api/iso27001/readiness?tenant_id=${tenantId||"demo"}`,{headers:{Authorization:`Bearer ${token}`}}),
-        fetch(`${API}/api/iso27001/timeline?tenant_id=${tenantId||"demo"}`,{headers:{Authorization:`Bearer ${token}`}}),
+        fetch(`${API}/api/iso27001/controls?tenant_id=${tenantId||"tenant_533ed68d0977"}`,{headers:{Authorization:`Bearer ${token}`}}),
+        fetch(`${API}/api/iso27001/readiness?tenant_id=${tenantId||"tenant_533ed68d0977"}`,{headers:{Authorization:`Bearer ${token}`}}),
+        fetch(`${API}/api/iso27001/timeline?tenant_id=${tenantId||"tenant_533ed68d0977"}`,{headers:{Authorization:`Bearer ${token}`}}),
       ]);
       const cData=await cRes.json();
       const rData=await rRes.json();
@@ -47,7 +47,7 @@ export default function ISO27001Hub({token,tenantId}){
 
   useEffect(()=>{fetch_();},[fetch_]);
 
-  const filtered=controls.filter(c=>(!themeFilter||c.theme===themeFilter)&&(!statusFilter||c.status===statusFilter));
+  const filtered=controls.filter(c=>(!themeFilter||c.theme===themeFilter)&&(!statusFilter||c.status===statusFilter||c.status===statusFilter.toLowerCase()));
   const themes=[...new Set(controls.map(c=>c.theme))];
 
   const tabBtn=(id,label)=>(<button onClick={()=>setTab(id)} style={{padding:"8px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",border:"1px solid",borderColor:tab===id?"rgba(124,58,237,.3)":"rgba(124,58,237,.1)",background:tab===id?"rgba(124,58,237,.1)":"#fff",color:tab===id?"#7c3aed":"#6b5b9e"}}>{label}</button>);
@@ -96,15 +96,15 @@ export default function ISO27001Hub({token,tenantId}){
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:20}}>
           {themes.map(theme=>{
             const tc=controls.filter(c=>c.theme===theme);
-            const done=tc.filter(c=>c.status==="IMPLEMENTED").length;
-            const pct=tc.length?Math.round(done/tc.length*100):0;
+            const impl=tc.filter(c=>c.status==="implemented"||c.status==="IMPLEMENTED").length;
+            const pct=tc.length>0?Math.round((impl/tc.length)*100):0;
             const color=THEME_COLORS[theme]||"#7c3aed";
             return(<div key={theme} onClick={()=>{setTab("controls");setThemeFilter(theme);}} style={{background:"#fff",border:`1px solid ${color}20`,borderRadius:14,padding:"18px 16px",cursor:"pointer",transition:"all .2s",position:"relative",overflow:"hidden"}} onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.borderColor=`${color}40`;}} onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.borderColor=`${color}20`;}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color},${color}50)`}}/>
-              <div style={{fontSize:22,marginBottom:8}}>{theme==="Organizational"?"🏢":theme==="People"?"👥":theme==="Physical"?"🏗️":"💻"}</div>
+              <div style={{fontSize:22,marginBottom:8}}>{theme==="Organisational"?"🏢":theme==="People"?"👥":theme==="Physical"?"🏗️":"💻"}</div>
               <div style={{fontFamily:"'Syne',sans-serif",fontSize:14,fontWeight:700,color:"#1a0a3a",marginBottom:2}}>{theme}</div>
-              <div style={{fontSize:11,color:"#a89dc8",marginBottom:10}}>{tc.length} controls</div>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:11,color:"#6b5b9e"}}>{done}/{tc.length}</span><span style={{fontSize:13,fontWeight:800,color}}>{pct}%</span></div>
+              <div style={{fontSize:11,color:"#a89dc8",marginBottom:10}}>{impl}/{tc.length} implemented</div>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:11,color:"#6b5b9e"}}>{impl}/{tc.length}</span><span style={{fontSize:13,fontWeight:800,color}}>{pct}%</span></div>
               <div style={{height:5,background:`${color}15`,borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",width:`${pct}%`,background:color,borderRadius:2,transition:"width 1s"}}/></div>
             </div>);
           })}
@@ -136,7 +136,7 @@ export default function ISO27001Hub({token,tenantId}){
     {tab==="controls"&&(
       <div>
         <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-          {["","Organizational","People","Physical","Technological"].map(t=>(<button key={t} onClick={()=>setThemeFilter(t)} style={{padding:"5px 12px",borderRadius:100,fontSize:11,fontWeight:600,cursor:"pointer",border:"1px solid",borderColor:themeFilter===t?"rgba(124,58,237,.4)":"rgba(124,58,237,.12)",background:themeFilter===t?"rgba(124,58,237,.1)":"#fff",color:themeFilter===t?"#7c3aed":"#6b5b9e"}}>{t||"All Themes"}</button>))}
+          {["","Organisational","People","Physical","Technological"].map(t=>(<button key={t} onClick={()=>setThemeFilter(t)} style={{padding:"5px 12px",borderRadius:100,fontSize:11,fontWeight:600,cursor:"pointer",border:"1px solid",borderColor:themeFilter===t?"rgba(124,58,237,.4)":"rgba(124,58,237,.12)",background:themeFilter===t?"rgba(124,58,237,.1)":"#fff",color:themeFilter===t?"#7c3aed":"#6b5b9e"}}>{t||"All Themes"}</button>))}
           <div style={{width:1,height:20,background:"rgba(124,58,237,.12)",margin:"0 4px"}}/>
           {["","IMPLEMENTED","IN_PROGRESS","NOT_STARTED"].map(s=>(<button key={s} onClick={()=>setStatusFilter(s)} style={{padding:"5px 12px",borderRadius:100,fontSize:11,fontWeight:600,cursor:"pointer",border:"1px solid",borderColor:statusFilter===s?"rgba(124,58,237,.4)":"rgba(124,58,237,.12)",background:statusFilter===s?"rgba(124,58,237,.1)":"#fff",color:statusFilter===s?"#7c3aed":"#6b5b9e"}}>{s?STATUS_CFG[s]?.label:"All Status"}</button>))}
           <span style={{marginLeft:"auto",fontSize:12,color:"#a89dc8",display:"flex",alignItems:"center"}}>{filtered.length} controls</span>
@@ -193,10 +193,10 @@ export default function ISO27001Hub({token,tenantId}){
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           {(readiness.mandatory_docs||[]).map((doc,i)=>(<div key={i} style={{background:"#fff",border:"1px solid rgba(124,58,237,.08)",borderRadius:12,padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <div style={{width:32,height:32,borderRadius:8,background:doc.status==="DONE"?"rgba(22,163,74,.1)":doc.status==="IN_PROGRESS"?"rgba(217,119,6,.1)":"rgba(225,29,72,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{doc.status==="DONE"?"✅":doc.status==="IN_PROGRESS"?"📝":"📄"}</div>
+              <div style={{width:32,height:32,borderRadius:8,background:doc.status==="DONE"?"rgba(22,163,74,.1)":doc.status==="in_progress"||doc.status==="IN_PROGRESS"?"rgba(217,119,6,.1)":"rgba(225,29,72,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{doc.status==="DONE"?"✅":doc.status==="in_progress"||doc.status==="IN_PROGRESS"?"📝":"📄"}</div>
               <div><div style={{fontSize:14,fontWeight:600,color:"#1a0a3a"}}>{doc.name}</div><div style={{fontSize:11,color:"#a89dc8"}}>Mandatory ISO 27001:2022 document</div></div>
             </div>
-            <span style={{background:doc.status==="DONE"?"rgba(22,163,74,.1)":doc.status==="IN_PROGRESS"?"rgba(217,119,6,.1)":"rgba(225,29,72,.06)",color:doc.status==="DONE"?"#16a34a":doc.status==="IN_PROGRESS"?"#d97706":"#e11d48",borderRadius:100,padding:"4px 12px",fontSize:11,fontWeight:700}}>{doc.status==="DONE"?"Complete":doc.status==="IN_PROGRESS"?"In Progress":"Missing"}</span>
+            <span style={{background:doc.status==="DONE"?"rgba(22,163,74,.1)":doc.status==="in_progress"||doc.status==="IN_PROGRESS"?"rgba(217,119,6,.1)":"rgba(225,29,72,.06)",color:doc.status==="DONE"?"#16a34a":doc.status==="in_progress"||doc.status==="IN_PROGRESS"?"#d97706":"#e11d48",borderRadius:100,padding:"4px 12px",fontSize:11,fontWeight:700}}>{doc.status==="DONE"?"Complete":doc.status==="in_progress"||doc.status==="IN_PROGRESS"?"In Progress":"Missing"}</span>
           </div>))}
         </div>
       </div>
@@ -206,17 +206,17 @@ export default function ISO27001Hub({token,tenantId}){
       <div>
         <div style={{background:"rgba(225,29,72,.04)",border:"1px solid rgba(225,29,72,.15)",borderRadius:12,padding:"14px 18px",marginBottom:20,display:"flex",gap:12,alignItems:"center"}}>
           <AlertTriangle size={18} color="#e11d48"/>
-          <div style={{fontSize:13,color:"#1a0a3a"}}><strong>{(readiness.critical_gaps||[]).length} critical controls</strong> not yet implemented. Fix these before your audit.</div>
+          <div style={{fontSize:13,color:"#1a0a3a"}}><strong>{(Array.isArray(readiness.critical_gaps)?readiness.critical_gaps.length:readiness.critical_gaps||0)} critical controls</strong> not yet implemented. Fix these before your audit.</div>
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {(readiness.critical_gaps||[]).map((gap,i)=>(<div key={gap.id} style={{background:"#fff",border:"1px solid rgba(225,29,72,.12)",borderRadius:12,padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          {(Array.isArray(readiness.critical_gaps)?readiness.critical_gaps:readiness.top_gaps||[]).map((gap,i)=>(<div key={gap.id} style={{background:"#fff",border:"1px solid rgba(225,29,72,.12)",borderRadius:12,padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
               <div style={{width:32,height:32,borderRadius:8,background:"rgba(225,29,72,.08)",display:"flex",alignItems:"center",justifyContent:"center",color:"#e11d48",fontSize:16}}>⚠️</div>
               <div><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}><span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#a89dc8"}}>{gap.id}</span><span style={{fontSize:14,fontWeight:600,color:"#1a0a3a"}}>{gap.name}</span></div><div style={{fontSize:12,color:"#a89dc8"}}>Owner: {gap.owner}</div></div>
             </div>
             <button onClick={()=>setTab("controls")} style={{padding:"7px 16px",background:"linear-gradient(135deg,#7c3aed,#db2777)",border:"none",borderRadius:8,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>Fix Now →</button>
           </div>))}
-          {(readiness.critical_gaps||[]).length===0&&<div style={{textAlign:"center",padding:60}}><div style={{fontSize:48,marginBottom:12}}>🎉</div><div style={{fontFamily:"'Syne',sans-serif",fontSize:18,fontWeight:700,color:"#1a0a3a"}}>No critical gaps!</div></div>}
+          {(Array.isArray(readiness.critical_gaps)?readiness.critical_gaps.length:readiness.critical_gaps||0)===0&&<div style={{textAlign:"center",padding:60}}><div style={{fontSize:48,marginBottom:12}}>🎉</div><div style={{fontFamily:"'Syne',sans-serif",fontSize:18,fontWeight:700,color:"#1a0a3a"}}>No critical gaps!</div></div>}
         </div>
       </div>
     )}

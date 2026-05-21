@@ -5,7 +5,7 @@ import {
   ChevronDown, Eye, Zap, Globe, Terminal, FileCheck, Users
 } from "lucide-react";
 
-const API = "http://localhost:8001";
+const API = "http://localhost:8000";
 
 const ACTION_ICONS = {
   CONTROL_UPDATED:       { icon: Shield,      color: "#60A5FA" },
@@ -71,7 +71,7 @@ export default function AuditLogs({ token, tenantId }) {
       if (framework !== "All") params.set("framework", framework);
       if (search)               params.set("search",   search);
 
-      const res  = await fetch(`${API}/api/audit-logs?${params}`, {
+      const res  = await fetch(`${API}/api/audit-logs?tenant_id=${tenantId||'tenant_533ed68d0977'}&${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();

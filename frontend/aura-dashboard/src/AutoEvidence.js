@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Zap, RefreshCw, CheckCircle, XCircle, AlertTriangle, Download, Play } from "lucide-react";
-const API="http://localhost:8001";
+const API="http://localhost:8000";
 const INT_COLORS={aws:"#FF9900",okta:"#00297A",github:"#E2E8F0",jira:"#0052CC",crowdstrike:"#E31B23",datadog:"#632CA6"};
 const STATUS_CFG={PASS:{color:"#34D399",icon:CheckCircle,label:"Pass"},FAIL:{color:"#F87171",icon:XCircle,label:"Fail"},WARNING:{color:"#FBBF24",icon:AlertTriangle,label:"Warning"}};
 function btn(bg,border){return{display:"flex",alignItems:"center",gap:6,padding:"9px 14px",background:bg,border:`1px solid ${border}`,borderRadius:8,color:"#94A3B8",fontSize:13,cursor:"pointer"};}

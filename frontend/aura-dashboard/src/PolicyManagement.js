@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { FileText, Plus, RefreshCw, X, CheckCircle, Clock, AlertCircle, Search, Download, BookOpen } from "lucide-react";
-const API = "http://localhost:8001";
+const API = "http://localhost:8000";
 
 const STATUS_CFG = {
   DRAFT:        {c:"#94a3b8",bg:"rgba(148,163,184,0.1)",l:"Draft",       i:<Clock size={12}/>},
@@ -141,7 +141,7 @@ export default function PolicyManagement({token, tenantId}) {
       if(filterCat!=="All") p.set("category",filterCat);
       if(filterStatus!=="All") p.set("status",filterStatus);
       if(search) p.set("search",search);
-      const res = await fetch(`${API}/api/policies?${p}`,{headers:{Authorization:`Bearer ${token}`}});
+      const res = await fetch(`${API}/api/policies?tenant_id=${tenantId||'tenant_533ed68d0977'}&${p}`,{headers:{Authorization:`Bearer ${token}`}});
       const d = await res.json();
       setPolicies(d.policies||[]);
     }catch{setPolicies([]);}
@@ -154,7 +154,7 @@ export default function PolicyManagement({token, tenantId}) {
     if(!form.name) return alert("Policy name required");
     setSaving(true);
     try{
-      await fetch(`${API}/api/policies?tenant_id=${tenantId||"demo"}`,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify(form)});
+      await fetch(`${API}/api/policies?tenant_id=${tenantId||"tenant_533ed68d0977"}`,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify(form)});
       setShowAdd(false);setForm(EMPTY);load();
     }catch{alert("Save failed");}
     setSaving(false);

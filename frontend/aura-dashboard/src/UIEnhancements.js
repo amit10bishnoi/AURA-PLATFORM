@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Sun, Moon, X, ChevronRight, Command, Shield, BarChart2, FileCheck, Users, Bell, Zap, Activity, FileText, Building2, Lock, Sparkles, ClipboardList, CheckSquare } from "lucide-react";
 
-const API = "http://localhost:8001";
+const API = "http://localhost:8000";
 
 /* ── Skeleton Loader ── */
 export function Skeleton({ width = "100%", height = 16, radius = 6, style = {} }) {

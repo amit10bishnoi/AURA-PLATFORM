@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Lock, RefreshCw, AlertTriangle, ChevronRight, Plus, Clock } from "lucide-react";
-const API = "http://localhost:8001";
+const API = "http://localhost:8000";
 const STATUS = { IMPLEMENTED:{color:"#16a34a",bg:"rgba(22,163,74,.08)",label:"Implemented",icon:"✓"}, IN_PROGRESS:{color:"#d97706",bg:"rgba(217,119,6,.08)",label:"In Progress",icon:"◔"}, NOT_STARTED:{color:"#e11d48",bg:"rgba(225,29,72,.08)",label:"Not Started",icon:"○"} };
 function ScoreRing({score,size=100}){const r=40,circ=2*Math.PI*r,offset=circ-(score/100)*circ,color=score>=60?"#d97706":score>=80?"#16a34a":"#e11d48";return(<svg width={size} height={size} viewBox="0 0 100 100"><circle cx="50" cy="50" r={r} fill="none" stroke="rgba(124,58,237,.1)" strokeWidth="8"/><circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="8" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" transform="rotate(-90 50 50)" style={{transition:"stroke-dashoffset 1.2s"}}/><text x="50" y="47" textAnchor="middle" fontSize="18" fontWeight="800" fontFamily="'Syne',sans-serif" fill={color}>{score}%</text><text x="50" y="60" textAnchor="middle" fontSize="7" fill="#a89dc8">DPDP READY</text></svg>);}
 export default function DPDPHub({token,tenantId}){
@@ -16,11 +16,11 @@ export default function DPDPHub({token,tenantId}){
     setLoading(true);
     try{
       const[oRes,rRes,cRes,dsrRes,dcRes]=await Promise.all([
-        fetch(`${API}/api/dpdp/obligations?tenant_id=${tenantId||"demo"}`,{headers:{Authorization:`Bearer ${token}`}}),
-        fetch(`${API}/api/dpdp/readiness?tenant_id=${tenantId||"demo"}`,{headers:{Authorization:`Bearer ${token}`}}),
-        fetch(`${API}/api/dpdp/consent?tenant_id=${tenantId||"demo"}`,{headers:{Authorization:`Bearer ${token}`}}),
-        fetch(`${API}/api/dpdp/dsr?tenant_id=${tenantId||"demo"}`,{headers:{Authorization:`Bearer ${token}`}}),
-        fetch(`${API}/api/dpdp/data-categories?tenant_id=${tenantId||"demo"}`,{headers:{Authorization:`Bearer ${token}`}}),
+        fetch(`${API}/api/dpdp/obligations?tenant_id=${tenantId||"tenant_533ed68d0977"}`,{headers:{Authorization:`Bearer ${token}`}}),
+        fetch(`${API}/api/dpdp/readiness?tenant_id=${tenantId||"tenant_533ed68d0977"}`,{headers:{Authorization:`Bearer ${token}`}}),
+        fetch(`${API}/api/dpdp/consent?tenant_id=${tenantId||"tenant_533ed68d0977"}`,{headers:{Authorization:`Bearer ${token}`}}),
+        fetch(`${API}/api/dpdp/dsr?tenant_id=${tenantId||"tenant_533ed68d0977"}`,{headers:{Authorization:`Bearer ${token}`}}),
+        fetch(`${API}/api/dpdp/data-categories?tenant_id=${tenantId||"tenant_533ed68d0977"}`,{headers:{Authorization:`Bearer ${token}`}}),
       ]);
       const oData=await oRes.json();const rData=await rRes.json();const cData=await cRes.json();const dsrData=await dsrRes.json();const dcData=await dcRes.json();
       setObligations(oData.obligations||[]);setSummary(oData.summary||{});setReadiness(rData);setConsent(cData);setDsr(dsrData);setDataCategories(dcData.categories||[]);
@@ -55,7 +55,7 @@ export default function DPDPHub({token,tenantId}){
         {[{label:"Implemented",value:summary.implemented||0,color:"#16a34a"},{label:"In Progress",value:summary.in_progress||0,color:"#d97706"},{label:"Not Started",value:summary.not_started||0,color:"#e11d48"},{label:"Max Penalty",value:"₹250Cr",color:"#e11d48"}].map(s=>(<div key={s.label} style={{textAlign:"center"}}><div style={{fontFamily:"'Syne',sans-serif",fontSize:28,fontWeight:800,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:11,color:"#a89dc8",textTransform:"uppercase",letterSpacing:".5px",marginTop:4}}>{s.label}</div></div>))}
       </div>
       {dsr&&<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>{[{label:"Pending DSRs",value:dsr.pending,color:"#d97706"},{label:"Overdue DSRs",value:dsr.overdue,color:"#e11d48"},{label:"SLA Window",value:"48 hrs",color:"#7c3aed"},{label:"Consent Withdrawals",value:consent?.total_withdrawals||0,color:"#ea580c"}].map(s=>(<div key={s.label} style={{background:"#fff",border:"1px solid rgba(124,58,237,.08)",borderRadius:12,padding:"16px 20px",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:3,background:s.color}}/><div style={{fontFamily:"'Syne',sans-serif",fontSize:28,fontWeight:800,color:s.color}}>{s.value}</div><div style={{fontSize:11,color:"#a89dc8",textTransform:"uppercase",letterSpacing:".5px"}}>{s.label}</div></div>))}</div>}
-      {readiness.critical_gaps?.length>0&&(<div style={{background:"rgba(225,29,72,.04)",border:"1px solid rgba(225,29,72,.15)",borderRadius:14,padding:20}}><div style={{fontFamily:"'Syne',sans-serif",fontSize:14,fontWeight:700,color:"#1a0a3a",marginBottom:14}}>🚨 Critical DPDP Gaps — High Penalty Risk</div>{readiness.critical_gaps.map(g=>(<div key={g.id} style={{background:"#fff",border:"1px solid rgba(225,29,72,.1)",borderRadius:8,padding:"12px 16px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{fontSize:12,fontWeight:600,color:"#1a0a3a",marginBottom:2}}>{g.obligation}</div><div style={{fontSize:10,color:"#a89dc8"}}>{g.id} · Penalty: {g.penalty}</div></div><button onClick={()=>setTab("obligations")} style={{padding:"4px 10px",background:"rgba(225,29,72,.08)",border:"1px solid rgba(225,29,72,.2)",borderRadius:6,color:"#e11d48",fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0,marginLeft:12}}>Fix →</button></div>))}
+      {readiness.critical_gaps?.length>0&&(<div style={{background:"rgba(225,29,72,.04)",border:"1px solid rgba(225,29,72,.15)",borderRadius:14,padding:20}}><div style={{fontFamily:"'Syne',sans-serif",fontSize:14,fontWeight:700,color:"#1a0a3a",marginBottom:14}}>🚨 Critical DPDP Gaps — High Penalty Risk</div>{(readiness.top_gaps||[]).map(g=>(<div key={g.id} style={{background:"#fff",border:"1px solid rgba(225,29,72,.1)",borderRadius:8,padding:"12px 16px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{fontSize:12,fontWeight:600,color:"#1a0a3a",marginBottom:2}}>{g.obligation}</div><div style={{fontSize:10,color:"#a89dc8"}}>{g.id} · Penalty: {g.penalty}</div></div><button onClick={()=>setTab("obligations")} style={{padding:"4px 10px",background:"rgba(225,29,72,.08)",border:"1px solid rgba(225,29,72,.2)",borderRadius:6,color:"#e11d48",fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0,marginLeft:12}}>Fix →</button></div>))}
       </div>)}
     </div>)}
     {tab==="obligations"&&(<div>

@@ -1,0 +1,562 @@
+/*
+ * AURA — Hybrid Theme: Dark Sidebar + Light Content
+ * Linear / Vercel / Notion inspired
+ * 
+ * Install:
+ *   cp ~/Downloads/aura-theme.css ~/Desktop/AURA-PLATFORM/frontend/aura-dashboard/src/aura-theme.css
+ * 
+ * Then in App.js add after other imports:
+ *   import './aura-theme.css';
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
+
+/* ══════════════════════════════════════════════
+   TOKENS
+   ══════════════════════════════════════════════ */
+:root {
+  /* Light content area */
+  --c-bg:        #F7F8FA;
+  --c-surface:   #FFFFFF;
+  --c-border:    #E4E7EC;
+  --c-border2:   #F0F2F5;
+  --c-text:      #0D0F12;
+  --c-text2:     #374151;
+  --c-text3:     #6B7280;
+  --c-text4:     #9CA3AF;
+
+  /* Dark sidebar */
+  --s-bg:        #111318;
+  --s-surface:   #191C23;
+  --s-border:    rgba(255,255,255,.06);
+  --s-text:      #9CA3AF;
+  --s-text-on:   #F9FAFB;
+  --s-item-on:   rgba(99,102,241,.18);
+
+  /* Accent */
+  --a-purple:    #6366F1;
+  --a-purple-l:  #EEEDFE;
+  --a-green:     #059669;
+  --a-green-l:   #ECFDF5;
+  --a-amber:     #D97706;
+  --a-amber-l:   #FFFBEB;
+  --a-red:       #DC2626;
+  --a-red-l:     #FEF2F2;
+
+  /* Shadows */
+  --sh-xs: 0 1px 2px rgba(0,0,0,.05);
+  --sh-sm: 0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --sh:    0 4px 16px rgba(0,0,0,.06),0 1px 4px rgba(0,0,0,.03);
+
+  /* Typography */
+  --font: 'Geist','DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --r:    8px;
+  --r-lg: 12px;
+}
+
+/* ══════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: var(--font) !important;
+  background: var(--c-bg) !important;
+  color: var(--c-text) !important;
+  -webkit-font-smoothing: antialiased !important;
+  line-height: 1.5 !important;
+}
+
+/* ══════════════════════════════════════════════
+   SIDEBAR — stays dark
+   ══════════════════════════════════════════════ */
+/* Target the sidebar wrapper */
+[class*="sidebar"],
+.sidebar,
+nav[class*="side"] {
+  background: var(--s-bg) !important;
+  border-right: 1px solid var(--s-border) !important;
+}
+
+/* Logo text in sidebar */
+[class*="sidebar"] [class*="logo"],
+[class*="sidebar"] [class*="brand"] {
+  color: var(--s-text-on) !important;
+}
+
+/* Nav section labels */
+[class*="sidebar"] [class*="section"],
+[class*="sidebar"] [class*="nav-section"],
+[class*="sidebar"] [class*="group-label"] {
+  color: #4B5563 !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: .07em !important;
+  text-transform: uppercase !important;
+}
+
+/* Nav items */
+[class*="sidebar"] a,
+[class*="sidebar"] [class*="nav-item"],
+[class*="sidebar"] li {
+  color: var(--s-text) !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  border-radius: var(--r) !important;
+  transition: all .12s !important;
+}
+
+[class*="sidebar"] a:hover,
+[class*="sidebar"] [class*="nav-item"]:hover {
+  background: rgba(255,255,255,.05) !important;
+  color: var(--s-text-on) !important;
+}
+
+[class*="sidebar"] [class*="active"],
+[class*="sidebar"] a[class*="active"] {
+  background: var(--s-item-on) !important;
+  color: #A5B4FC !important;
+  font-weight: 500 !important;
+}
+
+/* User/tenant pill at bottom of sidebar */
+[class*="sidebar"] [class*="tenant"],
+[class*="sidebar"] [class*="user-row"],
+[class*="sidebar"] [class*="account"] {
+  background: var(--s-surface) !important;
+  border-top: 1px solid var(--s-border) !important;
+  color: var(--s-text) !important;
+}
+
+/* ══════════════════════════════════════════════
+   TOPBAR — light
+   ══════════════════════════════════════════════ */
+[class*="topbar"],
+[class*="header"],
+header {
+  background: var(--c-surface) !important;
+  border-bottom: 1px solid var(--c-border) !important;
+  color: var(--c-text) !important;
+  box-shadow: none !important;
+}
+
+/* Breadcrumbs */
+[class*="breadcrumb"],
+[class*="page-header"] {
+  color: var(--c-text3) !important;
+  font-size: 13px !important;
+}
+
+/* Search bar */
+[class*="search"] input,
+input[type="search"] {
+  background: var(--c-bg) !important;
+  border: 1px solid var(--c-border) !important;
+  color: var(--c-text) !important;
+  border-radius: var(--r) !important;
+}
+
+/* Role badge / status pill in topbar */
+[class*="role-badge"],
+[class*="status-pill"] {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 3px 10px !important;
+  border-radius: 100px !important;
+}
+
+/* ══════════════════════════════════════════════
+   MAIN CONTENT AREA
+   ══════════════════════════════════════════════ */
+[class*="main-content"],
+[class*="content-area"],
+[class*="page-content"],
+.fade-in,
+main {
+  background: var(--c-bg) !important;
+  color: var(--c-text) !important;
+}
+
+/* Page titles */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font) !important;
+  color: var(--c-text) !important;
+  letter-spacing: -.3px !important;
+}
+
+p, span, div, li, td, th, label {
+  font-family: var(--font) !important;
+}
+
+/* ══════════════════════════════════════════════
+   CARDS — white with subtle border
+   ══════════════════════════════════════════════ */
+.card,
+[class*="card"],
+[class*="panel"],
+[class*="box"] {
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--sh-xs) !important;
+  color: var(--c-text) !important;
+}
+
+[class*="card"]:hover {
+  box-shadow: var(--sh-sm) !important;
+}
+
+[class*="card-header"] {
+  background: var(--c-surface) !important;
+  border-bottom: 1px solid var(--c-border) !important;
+  color: var(--c-text) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+/* KPI stat cards */
+[class*="stat"],
+[class*="metric"],
+[class*="kpi"] {
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: var(--r-lg) !important;
+  color: var(--c-text) !important;
+}
+
+/* ══════════════════════════════════════════════
+   BUTTONS
+   ══════════════════════════════════════════════ */
+button,
+.btn,
+[class*="btn-"] {
+  font-family: var(--font) !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  border-radius: var(--r) !important;
+  transition: all .13s ease !important;
+  cursor: pointer !important;
+}
+
+[class*="btn-primary"],
+[class*="btn_primary"] {
+  background: #111318 !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2) !important;
+}
+
+[class*="btn-primary"]:hover {
+  background: #1F2937 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+[class*="btn-ghost"],
+[class*="btn-secondary"],
+[class*="btn-outline"] {
+  background: var(--c-surface) !important;
+  color: var(--c-text2) !important;
+  border: 1px solid var(--c-border) !important;
+}
+
+[class*="btn-ghost"]:hover,
+[class*="btn-secondary"]:hover {
+  background: var(--c-bg) !important;
+  border-color: #9CA3AF !important;
+}
+
+/* Generate / AI buttons — keep purple */
+[class*="btn"][class*="ai"],
+[class*="btn"][class*="generate"],
+[class*="btn"][class*="summary"] {
+  background: var(--a-purple) !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+/* ══════════════════════════════════════════════
+   BADGES & STATUS TAGS
+   ══════════════════════════════════════════════ */
+[class*="badge"] {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 2px 8px !important;
+  border-radius: 5px !important;
+}
+
+/* ══════════════════════════════════════════════
+   TABLES
+   ══════════════════════════════════════════════ */
+table {
+  border-collapse: collapse !important;
+}
+
+th {
+  background: var(--c-bg) !important;
+  color: var(--c-text3) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .05em !important;
+  padding: 10px 16px !important;
+  border-bottom: 1px solid var(--c-border) !important;
+}
+
+td {
+  padding: 11px 16px !important;
+  border-bottom: 1px solid var(--c-border2) !important;
+  font-size: 13.5px !important;
+  color: var(--c-text2) !important;
+}
+
+tr:hover td {
+  background: #FAFBFC !important;
+}
+
+/* ══════════════════════════════════════════════
+   INPUTS & FORMS
+   ══════════════════════════════════════════════ */
+input,
+select,
+textarea {
+  font-family: var(--font) !important;
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-border) !important;
+  color: var(--c-text) !important;
+  border-radius: var(--r) !important;
+  font-size: 14px !important;
+  transition: border-color .15s, box-shadow .15s !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: var(--a-purple) !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.1) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--c-text4) !important;
+}
+
+label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--c-text2) !important;
+}
+
+/* ══════════════════════════════════════════════
+   CHARTS & PROGRESS
+   ══════════════════════════════════════════════ */
+/* Progress bar tracks */
+[class*="progress-track"],
+[class*="bar-bg"],
+[class*="track"] {
+  background: var(--c-border2) !important;
+}
+
+/* Recharts — make chart backgrounds white */
+.recharts-wrapper,
+.recharts-surface {
+  background: transparent !important;
+}
+
+.recharts-cartesian-grid line {
+  stroke: var(--c-border) !important;
+}
+
+.recharts-text {
+  fill: var(--c-text3) !important;
+  font-family: var(--font) !important;
+  font-size: 11px !important;
+}
+
+/* ══════════════════════════════════════════════
+   MODALS & DROPDOWNS
+   ══════════════════════════════════════════════ */
+[class*="modal"],
+[class*="dialog"],
+[class*="popup"] {
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,.12),0 4px 16px rgba(0,0,0,.06) !important;
+  color: var(--c-text) !important;
+}
+
+[class*="dropdown"] {
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.08) !important;
+}
+
+/* ══════════════════════════════════════════════
+   NOTICES & ALERTS
+   ══════════════════════════════════════════════ */
+[class*="notice-ok"],
+[class*="alert-success"] {
+  background: var(--a-green-l) !important;
+  border: 1px solid #A7F3D0 !important;
+  color: #065F46 !important;
+  border-radius: var(--r) !important;
+}
+
+[class*="notice-err"],
+[class*="alert-error"] {
+  background: var(--a-red-l) !important;
+  border: 1px solid #FECACA !important;
+  color: #991B1B !important;
+  border-radius: var(--r) !important;
+}
+
+/* ══════════════════════════════════════════════
+   EMPTY STATES
+   ══════════════════════════════════════════════ */
+[class*="empty"] {
+  color: var(--c-text4) !important;
+  font-size: 14px !important;
+}
+
+/* ══════════════════════════════════════════════
+   SCROLLBAR
+   ══════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+
+/* ══════════════════════════════════════════════
+   SPECIFIC AURA COMPONENT OVERRIDES
+   ══════════════════════════════════════════════ */
+
+/* Login page — keep as is (already looks good) */
+/* Override only the main app content */
+
+/* Framework hub pages — white background */
+[class*="ISO27001"],
+[class*="RBIHub"],
+[class*="DPDPHub"],
+[class*="SOC2Hub"] {
+  background: var(--c-bg) !important;
+}
+
+/* Risk register items */
+[class*="risk-item"],
+[class*="risk-row"] {
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: var(--r) !important;
+}
+
+/* Evidence items */
+[class*="evidence-item"],
+[class*="evidence-row"] {
+  border-bottom: 1px solid var(--c-border2) !important;
+}
+
+/* Vendor cards */
+[class*="vendor-card"],
+[class*="vendor-item"] {
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: var(--r-lg) !important;
+}
+
+/* Policy items */
+[class*="policy-card"],
+[class*="policy-item"] {
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-border) !important;
+}
+
+/* Audit log rows */
+[class*="log-row"],
+[class*="audit-row"] {
+  border-bottom: 1px solid var(--c-border2) !important;
+  color: var(--c-text2) !important;
+}
+
+/* Tab buttons */
+[class*="tab-btn"],
+[class*="tab-button"] {
+  background: var(--c-bg) !important;
+  border: 1px solid var(--c-border) !important;
+  color: var(--c-text3) !important;
+  font-size: 13px !important;
+  border-radius: var(--r) !important;
+}
+
+[class*="tab-btn"]:hover {
+  background: var(--c-surface) !important;
+  color: var(--c-text) !important;
+}
+
+/* Override any hardcoded dark bg on content panels */
+[style*="background:#0f172a"],
+[style*="background: #0f172a"],
+[style*="background:#0c0e14"],
+[style*="background: #0c0e14"],
+[style*="background:#111827"],
+[style*="background: #111827"],
+[style*="background:#1a0a3a"],
+[style*="background:#141b2d"] {
+  background: var(--c-bg) !important;
+  color: var(--c-text) !important;
+}
+
+/* Fix white text on light background */
+[style*="color:#fff"],
+[style*="color: #fff"],
+[style*="color:white"],
+[style*="color:#ffffff"],
+[style*="color:#FFFFFF"] {
+  color: var(--c-text) !important;
+}
+
+/* Exception: keep white text inside dark buttons and dark cards */
+button [style*="color:#fff"],
+.btn [style*="color:#fff"],
+[class*="btn-primary"] [style*="color:#fff"] {
+  color: #fff !important;
+}
+
+/* Fix dark card backgrounds in hub files */
+div[style*="background:#fff"],
+div[style*="background: #fff"],
+div[style*="background:white"] {
+  background: var(--c-surface) !important;
+}
+
+/* Ensure text in white cards is dark */
+div[style*="background:#fff"] *,
+div[style*="background:white"] * {
+  color: var(--c-text) !important;
+}
+
+/* Exception restore for colored elements */
+div[style*="background:#fff"] [style*="color:#059669"],
+div[style*="background:#fff"] [style*="color:#16a34a"] { color: #059669 !important; }
+div[style*="background:#fff"] [style*="color:#e11d48"],
+div[style*="background:#fff"] [style*="color:#dc2626"] { color: #dc2626 !important; }
+div[style*="background:#fff"] [style*="color:#d97706"],
+div[style*="background:#fff"] [style*="color:#f59e0b"] { color: #d97706 !important; }
+div[style*="background:#fff"] [style*="color:#7c3aed"],
+div[style*="background:#fff"] [style*="color:#6366f1"] { color: #6366f1 !important; }
+
+/* ══════════════════════════════════════════════
+   TYPOGRAPHY REFINEMENTS
+   ══════════════════════════════════════════════ */
+h1, h2 { font-weight: 600 !important; letter-spacing: -.4px !important; }
+h3, h4 { font-weight: 600 !important; letter-spacing: -.3px !important; }
+
+/* Muted text */
+[class*="text-muted"],
+[class*="text-secondary"],
+[class*="subtitle"],
+[class*="description"] {
+  color: var(--c-text3) !important;
+}

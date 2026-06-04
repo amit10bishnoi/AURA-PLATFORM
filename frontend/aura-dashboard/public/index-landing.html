@@ -1,226 +1,874 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="AURA — India's first AI-powered GRC platform."/>
-  <title>AURA — Security Compliance, Automated</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
-  <style>
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-    :root{--purple:#7c3aed;--pink:#db2777;--green:#16a34a;--text:#1a0a3a;--text2:#6b5b9e;--text3:#a89dc8;--border:rgba(124,58,237,0.12);}
-    html{scroll-behavior:smooth;}
-    body{font-family:'DM Sans',sans-serif;background:#fff;color:var(--text);-webkit-font-smoothing:antialiased;}
-    nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,0.9);backdrop-filter:blur(20px);border-bottom:1px solid rgba(124,58,237,0.08);padding:0 48px;height:64px;display:flex;align-items:center;justify-content:space-between;}
-    .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
-    .nav-logo-mark{width:36px;height:36px;background:linear-gradient(135deg,#7c3aed,#db2777);border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(124,58,237,0.35);}
-    .nav-logo-text{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);}
-    .nav-links{display:flex;align-items:center;gap:32px;}
-    .nav-links a{font-size:14px;font-weight:500;color:var(--text2);text-decoration:none;transition:color .15s;}
-    .nav-links a:hover{color:var(--purple);}
-    .nav-actions{display:flex;align-items:center;gap:12px;}
-    .btn-ghost{padding:8px 18px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:500;color:var(--text);background:none;cursor:pointer;text-decoration:none;transition:all .15s;}
-    .btn-ghost:hover{border-color:var(--purple);color:var(--purple);}
-    .btn-primary{padding:9px 22px;background:linear-gradient(135deg,#7c3aed,#db2777);border:none;border-radius:8px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(124,58,237,0.3);}
-    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,58,237,0.4);}
-    .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 48px 80px;background:linear-gradient(180deg,#faf9ff 0%,#ffffff 100%);position:relative;overflow:hidden;}
-    .hero::before{content:'';position:absolute;top:-20%;left:50%;transform:translateX(-50%);width:900px;height:600px;background:radial-gradient(ellipse,rgba(124,58,237,0.1) 0%,transparent 70%);pointer-events:none;}
-    .hero-badge{display:inline-flex;align-items:center;gap:8px;background:#ede9fe;border:1px solid rgba(124,58,237,0.2);border-radius:100px;padding:6px 16px;font-size:12px;font-weight:600;color:var(--purple);margin-bottom:32px;}
-    .hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
-    .hero h1{font-family:'Syne',sans-serif;font-size:clamp(48px,6vw,80px);font-weight:800;line-height:1.0;letter-spacing:-3px;color:var(--text);margin-bottom:24px;max-width:900px;}
-    .grad{background:linear-gradient(135deg,#7c3aed,#db2777);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-    .grad2{background:linear-gradient(135deg,#0891b2,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-    .hero-sub{font-size:18px;color:var(--text2);line-height:1.7;max-width:580px;margin:0 auto 40px;}
-    .hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:60px;}
-    .btn-cta{padding:12px 28px;background:linear-gradient(135deg,#7c3aed,#db2777);border:none;border-radius:8px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;box-shadow:0 6px 20px rgba(124,58,237,0.35);transition:all .2s;}
-    .btn-cta:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(124,58,237,0.45);}
-    .btn-demo{padding:11px 24px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
-    .btn-demo:hover{border-color:var(--purple);}
-    .hero-trust{display:flex;align-items:center;gap:24px;flex-wrap:wrap;justify-content:center;}
-    .trust-item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--text3);}
-    .check{color:var(--green);font-size:14px;}
-    .logos{padding:40px 48px;border-top:1px solid rgba(124,58,237,0.06);border-bottom:1px solid rgba(124,58,237,0.06);}
-    .logos-label{font-size:12px;font-weight:600;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;text-align:center;margin-bottom:24px;}
-    .logos-row{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;}
-    .logo-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;color:var(--text2);background:#faf9ff;}
-    .logo-icon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;}
-    section.features{padding:100px 48px;background:#faf9ff;}
-    section.frameworks{padding:100px 48px;background:#fff;}
-    .section-inner{max-width:1100px;margin:0 auto;}
-    .section-label{font-size:11px;font-weight:700;color:var(--purple);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px;}
-    .section-title{font-family:'Syne',sans-serif;font-size:clamp(32px,4vw,48px);font-weight:800;color:var(--text);letter-spacing:-1.5px;line-height:1.1;margin-bottom:16px;}
-    .section-sub{font-size:16px;color:var(--text2);line-height:1.7;max-width:560px;margin-bottom:60px;}
-    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
-    .feature-card{background:#fff;border:1px solid rgba(124,58,237,0.08);border-radius:16px;padding:28px;transition:all .25s;}
-    .feature-card:hover{border-color:rgba(124,58,237,0.2);box-shadow:0 8px 32px rgba(124,58,237,0.1);transform:translateY(-3px);}
-    .feature-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:20px;}
-    .feature-card h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;}
-    .feature-card p{font-size:13px;color:var(--text2);line-height:1.65;}
-    .frameworks-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px;}
-    .fw-card{background:#faf9ff;border:1px solid rgba(124,58,237,0.1);border-radius:14px;padding:24px;text-align:center;transition:all .2s;}
-    .fw-card:hover{border-color:rgba(124,58,237,0.25);box-shadow:0 4px 20px rgba(124,58,237,0.08);transform:translateY(-2px);}
-    .fw-name{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px;}
-    .fw-desc{font-size:12px;color:var(--text3);}
-    .fw-badge{display:inline-block;margin-top:12px;padding:3px 10px;background:#ede9fe;color:var(--purple);border-radius:100px;font-size:10px;font-weight:700;}
-    .fw-india{border-color:rgba(124,58,237,0.2);background:#ede9fe;}
-    .fw-india .fw-name{color:#7c3aed;}
-    .fw-india .fw-desc{color:#9333ea;}
-    .stats{padding:80px 48px;background:linear-gradient(135deg,#2d0a5a 0%,#1a0a3a 50%,#0a1628 100%);position:relative;overflow:hidden;}
-    .stats::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(124,58,237,0.3) 0%,transparent 60%),radial-gradient(ellipse at 70% 50%,rgba(219,39,119,0.2) 0%,transparent 60%);}
-    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;text-align:center;max-width:1100px;margin:0 auto;position:relative;z-index:1;}
-    .stat-num{font-family:'Syne',sans-serif;font-size:52px;font-weight:800;background:linear-gradient(135deg,#c084fc,#f9a8d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;margin-bottom:8px;}
-    .stat-lbl{font-size:14px;color:rgba(255,255,255,0.6);font-weight:500;}
-    .principles{padding:100px 48px;background:#faf9ff;}
-    .principles-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:48px;}
-    .pc{background:#fff;border:1px solid rgba(124,58,237,0.08);border-radius:16px;padding:32px;transition:all .2s;}
-    .pc:hover{border-color:rgba(124,58,237,0.18);box-shadow:0 6px 24px rgba(124,58,237,0.08);}
-    .pc-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:rgba(124,58,237,0.2);margin-bottom:14px;}
-    .pc h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;}
-    .pc p{font-size:14px;color:var(--text2);line-height:1.7;}
-    .pc-hl{background:linear-gradient(135deg,#2d0a5a,#7c3aed);border:none;}
-    .pc-hl .pc-num{color:rgba(255,255,255,0.2);}
-    .pc-hl h3{color:#fff;}
-    .pc-hl p{color:rgba(255,255,255,0.75);}
-    .cta-section{padding:100px 48px;background:#fff;text-align:center;}
-    .cta-card{max-width:700px;margin:0 auto;background:linear-gradient(135deg,#2d0a5a 0%,#7c3aed 50%,#db2777 100%);border-radius:24px;padding:64px;position:relative;overflow:hidden;}
-    .cta-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.1) 0%,transparent 60%);}
-    .cta-card h2{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:14px;position:relative;z-index:1;}
-    .cta-card p{font-size:16px;color:rgba(255,255,255,0.75);margin-bottom:32px;position:relative;z-index:1;}
-    .cta-actions{display:flex;gap:12px;justify-content:center;position:relative;z-index:1;}
-    .btn-white{padding:12px 28px;background:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;color:var(--purple);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
-    .btn-white:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.2);}
-    .btn-outline-w{padding:12px 28px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:8px;font-size:15px;font-weight:600;color:#fff;cursor:pointer;transition:all .2s;}
-    .btn-outline-w:hover{background:rgba(255,255,255,0.2);}
-    footer{padding:48px;background:#0a0812;}
-    .footer-inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;}
-    .footer-logo{display:flex;align-items:center;gap:8px;}
-    .footer-logo-mark{width:28px;height:28px;background:linear-gradient(135deg,#7c3aed,#db2777);border-radius:7px;display:flex;align-items:center;justify-content:center;}
-    .footer-logo-text{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;}
-    .footer-links{display:flex;gap:24px;}
-    .footer-links a{font-size:13px;color:rgba(255,255,255,0.5);text-decoration:none;}
-    .footer-links a:hover{color:#fff;}
-    .footer-copy{font-size:12px;color:rgba(255,255,255,0.3);}
-    @media(max-width:768px){nav{padding:0 20px;}.nav-links{display:none;}.hero,.features,.frameworks,.stats,.principles,.cta-section{padding:60px 20px;}.features-grid,.frameworks-grid,.stats-grid,.principles-grid{grid-template-columns:1fr;}.logos{padding:30px 20px;}.footer-inner{flex-direction:column;text-align:center;}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA — The AI That Keeps You Compliant</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#FFFFFF;
+  --dark:#F8F9FB;
+  --dark2:#F1F3F7;
+  --dark3:#E8EBF0;
+  --surface:rgba(0,0,0,.03);
+  --surface2:rgba(0,0,0,.05);
+  --border:rgba(0,0,0,.08);
+  --border2:rgba(0,0,0,.12);
+  --text:#0D0F12;
+  --text2:#4B5568;
+  --text3:#9CA3AF;
+  --purple:#7B6EF6;
+  --cursor:#0D0F12;
+  --purple2:#9C91F8;
+  --purple-glow:rgba(123,110,246,.3);
+  --violet:#B06BF8;
+  --blue:#4A9EF8;
+  --cyan:#38BDF8;
+  --green:#34D399;
+  --amber:#FBBF24;
+  --red:#F87171;
+  --pink:#F472B6;
+  --neon:rgba(123,110,246,.08);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Space Grotesk',system-ui,sans-serif;background:#FFFFFF;color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6;cursor:none}
+
+/* ── CUSTOM CURSOR ── */
+.cursor{position:fixed;width:12px;height:12px;background:#0D0F12;border-radius:50%;pointer-events:none;z-index:9999;transition:transform .1s,width .2s,height .2s,background .2s;mix-blend-mode:normal}
+.cursor-trail{position:fixed;width:32px;height:32px;border:1.5px solid rgba(13,15,18,.3);border-radius:50%;pointer-events:none;z-index:9998;transition:all .15s;mix-blend-mode:normal}
+body:hover .cursor{transform:scale(1)}
+a:hover~.cursor,.btn:hover~.cursor{transform:scale(2.5)}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;height:60px;display:flex;align-items:center;padding:0 32px;background:rgba(255,255,255,.92);backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid rgba(0,0,0,.08)}
+.nav-inner{max-width:1200px;margin:0 auto;width:100%;display:flex;align-items:center}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:40px}
+.nav-logo-orb{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#A89BFF,#7B6EF6,#5B4FD4);box-shadow:0 0 16px rgba(123,110,246,.5),0 0 32px rgba(123,110,246,.2);animation:orbPulse 3s ease-in-out infinite;position:relative;overflow:hidden}
+.nav-logo-orb::after{content:'';position:absolute;top:4px;left:6px;width:8px;height:5px;background:rgba(255,255,255,.4);border-radius:50%;filter:blur(1px)}
+.nav-logo-text{color:#0D0F12;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:#0D0F12;letter-spacing:.5px}
+@keyframes orbPulse{0%,100%{box-shadow:0 0 16px rgba(123,110,246,.5),0 0 32px rgba(123,110,246,.2)}50%{box-shadow:0 0 24px rgba(123,110,246,.7),0 0 48px rgba(123,110,246,.3)}}
+.nav-links{display:flex;gap:4px;flex:1}
+.nav-links a{font-size:13.5px;color:#4B5568;text-decoration:none;padding:5px 12px;border-radius:8px;transition:all .15s;font-weight:400}
+.nav-links a:hover{color:#0D0F12;background:rgba(0,0,0,.04)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-signin{font-size:13.5px;font-weight:500;color:#4B5568;text-decoration:none;padding:7px 14px;border-radius:8px;border:1px solid var(--border2);transition:all .15s}
+.nav-signin:hover{color:#0D0F12;border-color:rgba(255,255,255,.2)}
+.nav-cta{font-size:13.5px;font-weight:600;color:#fff;text-decoration:none;padding:8px 18px;border-radius:8px;background:linear-gradient(135deg,#7B6EF6,#9C91F8);transition:all .2s;box-shadow:0 4px 16px rgba(123,110,246,.3);letter-spacing:.2px}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(123,110,246,.4)}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 32px 40px}
+
+/* Mesh gradient background */
+.hero-bg{position:absolute;inset:0;background:
+  radial-gradient(ellipse 80% 60% at 50% -10%,rgba(123,110,246,.08) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 80% 60%,rgba(176,107,248,.06) 0%,transparent 50%),
+  radial-gradient(ellipse 40% 50% at 10% 80%,rgba(74,158,248,.05) 0%,transparent 50%),
+  radial-gradient(ellipse 60% 40% at 30% 20%,rgba(123,110,246,.06) 0%,transparent 50%);
+  pointer-events:none}
+
+/* Grid lines */
+.hero-grid{position:absolute;inset:0;background-image:
+  linear-gradient(rgba(123,110,246,.08) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(123,110,246,.08) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 100% 100% at 50% 0%,black 20%,transparent 80%);
+  pointer-events:none;animation:gridDrift 20s ease-in-out infinite}
+@keyframes gridDrift{0%,100%{background-position:0 0}50%{background-position:30px 30px}}
+
+/* Floating particles */
+.particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.particle{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--purple);opacity:0;animation:particleFloat linear infinite}
+@keyframes particleFloat{0%{opacity:0;transform:translateY(100vh) scale(0)}10%{opacity:.6}90%{opacity:.3}100%{opacity:0;transform:translateY(-20px) scale(1)}}
+
+/* Top glow line */
+.hero::before{content:'';position:absolute;top:0;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,rgba(123,110,246,.8),rgba(176,107,248,.8),transparent)}
+
+.hero-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;position:relative;z-index:1;width:100%}
+.hero-left{display:flex;flex-direction:column;gap:24px}
+
+/* Badge */
+.hero-badge{display:inline-flex;align-items:center;gap:10px;width:fit-content;background:rgba(123,110,246,.1);border:1px solid rgba(123,110,246,.25);padding:6px 16px 6px 8px;border-radius:100px;font-size:12.5px;font-weight:500;color:var(--purple2);letter-spacing:.2px}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--purple);animation:badgePulse 2s ease-in-out infinite;box-shadow:0 0 8px var(--purple)}
+@keyframes badgePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+
+/* Hero headline */
+.hero-h1{color:#0D0F12;font-family:'Space Grotesk',sans-serif;font-size:clamp(48px,5.5vw,76px);font-weight:700;line-height:1.0;letter-spacing:-.03em;color:#0D0F12}
+.hero-h1 .line-grad{display:block;background:linear-gradient(135deg,#A89BFF 0%,#7B6EF6 30%,#B06BF8 60%,#F472B6 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-h1 .line-dim{display:block;color:rgba(0,0,0,.3);font-weight:300;font-size:.85em;margin-top:4px}
+
+.hero-sub{font-size:17px;color:#4B5568;line-height:1.7;max-width:480px;font-weight:400}
+.hero-sub strong{color:#1C1F26;font-weight:500}
+
+/* CTA group */
+.hero-ctas{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.cta-glow{display:inline-flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:#fff;background:linear-gradient(135deg,#7B6EF6,#9C91F8);padding:14px 28px;border-radius:12px;text-decoration:none;transition:all .25s;letter-spacing:.2px;box-shadow:0 8px 32px rgba(123,110,246,.35),inset 0 1px 0 rgba(255,255,255,.15);position:relative;overflow:hidden}
+.cta-glow::before{content:'';position:absolute;top:-50%;left:-60%;width:40%;height:200%;background:rgba(255,255,255,.15);transform:skewX(-20deg);transition:left .4s}
+.cta-glow:hover::before{left:130%}
+.cta-glow:hover{transform:translateY(-2px);box-shadow:0 16px 48px rgba(123,110,246,.5)}
+.cta-ghost{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:500;color:#374151;padding:14px 24px;border-radius:12px;text-decoration:none;border:1px solid var(--border2);transition:all .2s}
+.cta-ghost:hover{color:#0D0F12;border-color:rgba(0,0,0,.2);background:rgba(0,0,0,.04)}
+
+/* Proof pills */
+.proof-row{display:flex;gap:8px;flex-wrap:wrap}
+.proof-pill{display:flex;align-items:center;gap:6px;font-size:12px;color:#6B7280;padding:4px 10px;border-radius:6px;background:var(--surface);border:1px solid var(--border)}
+.proof-green{color:var(--green);font-size:11px}
+
+/* ── AURA MASCOT ── */
+.mascot-wrap{display:flex;align-items:center;justify-content:center;position:relative;height:520px}
+
+/* Outer ambient glow */
+.mascot-glow{position:absolute;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(123,110,246,.2) 0%,rgba(123,110,246,.05) 40%,transparent 70%);animation:glowPulse 4s ease-in-out infinite;filter:blur(20px)}
+@keyframes glowPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.7}}
+
+/* Orbit rings */
+.orbit{position:absolute;border-radius:50%;border:1px solid}
+.orbit1{width:340px;height:340px;border-color:rgba(123,110,246,.15);animation:orbitSpin 30s linear infinite}
+.orbit2{width:280px;height:280px;border-color:rgba(176,107,248,.12);animation:orbitSpin 20s linear infinite reverse}
+.orbit3{width:380px;height:380px;border-color:rgba(123,110,246,.06);animation:orbitSpin 40s linear infinite}
+@keyframes orbitSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* Orbit dots */
+.orbit1::before{content:'';position:absolute;width:8px;height:8px;background:var(--purple);border-radius:50%;top:-4px;left:50%;transform:translateX(-50%);box-shadow:0 0 12px var(--purple),0 0 24px rgba(123,110,246,.5)}
+.orbit2::before{content:'';position:absolute;width:6px;height:6px;background:var(--violet);border-radius:50%;bottom:-3px;left:50%;transform:translateX(-50%);box-shadow:0 0 10px var(--violet)}
+.orbit3::before{content:'';position:absolute;width:5px;height:5px;background:var(--cyan);border-radius:50%;top:-2.5px;left:30%;box-shadow:0 0 8px var(--cyan)}
+
+/* AURA body */
+.aura-body{position:relative;z-index:10;width:180px;height:200px;animation:auraFloat 5s ease-in-out infinite}
+@keyframes auraFloat{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-14px) rotate(1deg)}75%{transform:translateY(-7px) rotate(-1deg)}}
+
+/* Main orb */
+.aura-orb{width:180px;height:180px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#C4BAFF,#8B7FF5,#6358D4,#3D3099);box-shadow:0 0 40px rgba(123,110,246,.6),0 0 80px rgba(123,110,246,.3),0 0 120px rgba(123,110,246,.1),inset 0 4px 20px rgba(255,255,255,.15);position:relative;overflow:hidden}
+
+/* Inner shine */
+.aura-orb::before{content:'';position:absolute;top:15px;left:25px;width:60px;height:35px;background:rgba(255,255,255,.25);border-radius:50%;filter:blur(8px);transform:rotate(-20deg)}
+
+/* Texture */
+.aura-orb::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 60% 70%,rgba(56,189,248,.2),transparent);animation:orbShimmer 6s ease-in-out infinite}
+@keyframes orbShimmer{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* Eyes */
+.aura-eyes{position:absolute;top:60px;left:50%;transform:translateX(-50%);display:flex;gap:28px;z-index:5}
+.aura-eye{width:28px;height:28px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.3);overflow:hidden;position:relative}
+.aura-eye::before{content:'';position:absolute;top:4px;left:6px;width:10px;height:6px;background:rgba(255,255,255,.6);border-radius:50%;filter:blur(2px)}
+.aura-pupil{width:14px;height:14px;background:radial-gradient(circle at 40% 40%,#2D1B8C,#1a0a5c);border-radius:50%;position:relative;animation:pupilMove 7s ease-in-out infinite}
+@keyframes pupilMove{0%,30%,60%,100%{transform:translate(0,0)}40%{transform:translate(3px,2px)}70%{transform:translate(-3px,1px)}80%{transform:translate(0,-2px)}}
+
+/* Blink */
+@keyframes blink{0%,90%,100%{transform:scaleY(1)}93%,97%{transform:scaleY(.05)}}
+.aura-eye{animation:blink 6s ease-in-out infinite}
+.aura-eye:nth-child(2){animation-delay:.08s}
+
+/* Mouth/expression */
+.aura-mouth{position:absolute;bottom:50px;left:50%;transform:translateX(-50%);width:36px;height:18px;border:3px solid rgba(255,255,255,.7);border-top:none;border-radius:0 0 24px 24px;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+
+/* Cheeks */
+.aura-cheeks{position:absolute;bottom:58px;left:50%;transform:translateX(-50%);display:flex;gap:52px}
+.aura-cheek{width:16px;height:10px;background:rgba(244,114,182,.35);border-radius:50%;filter:blur(3px)}
+
+/* AURA label */
+.aura-label{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);white-space:nowrap;text-align:center}
+.aura-label-text{color:#fff;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#0D0F12;letter-spacing:3px;text-shadow:0 0 20px rgba(123,110,246,.8)}
+.aura-label-sub{font-size:10px;color:var(--purple2);font-weight:500;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+
+/* Floating chat bubbles */
+.chat-bubble{position:absolute;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:10px 14px;font-size:12px;color:#1C1F26;white-space:nowrap;z-index:20;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.chat-bubble.cb1{top:60px;right:-20px;animation:cbFloat1 6s ease-in-out infinite;border-radius:16px 16px 4px 16px}
+.chat-bubble.cb2{bottom:120px;left:-30px;animation:cbFloat2 7s ease-in-out infinite 1s;border-radius:16px 16px 16px 4px}
+.chat-bubble.cb3{top:160px;left:-40px;animation:cbFloat3 5s ease-in-out infinite .5s;border-radius:16px 16px 16px 4px}
+@keyframes cbFloat1{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes cbFloat2{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+@keyframes cbFloat3{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.cb-icon{margin-right:6px}
+
+/* Status badges on orbit */
+.orbit-badge{position:absolute;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border:1px solid rgba(123,110,246,.15);border-radius:12px;padding:8px 12px;font-size:11px;z-index:15;animation:badgeOrbit 8s ease-in-out infinite}
+.ob1{top:20px;right:20px;animation-delay:0s}
+.ob2{bottom:80px;right:0px;animation-delay:2s}
+.ob3{bottom:40px;left:10px;animation-delay:4s}
+.ob4{top:80px;left:0px;animation-delay:6s}
+@keyframes badgeOrbit{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.ob-label{font-size:10px;color:#9CA3AF;margin-bottom:2px;font-weight:500}
+.ob-val{font-size:13px;font-weight:700;color:#0D0F12;letter-spacing:-.3px}
+
+/* ── STATS STRIP ── */
+.stats-strip{background:#F1F3F7;border-top:1px solid var(--border);border-bottom:1px solid rgba(0,0,0,.08);padding:40px 32px}
+.stats-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.stat-item{text-align:center;padding:0 20px;position:relative}
+.stat-item+.stat-item::before{content:'';position:absolute;left:0;top:10%;bottom:10%;width:1px;background:var(--border)}
+.stat-num{font-family:'Space Grotesk',sans-serif;font-size:46px;font-weight:700;line-height:1;margin-bottom:6px;letter-spacing:-.04em}
+.stat-num.purple{background:linear-gradient(135deg,#A89BFF,#7B6EF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-num.cyan{background:linear-gradient(135deg,#38BDF8,#7B6EF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-num.green{background:linear-gradient(135deg,#34D399,#7B6EF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-num.pink{background:linear-gradient(135deg,#F472B6,#7B6EF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:13px;color:#4B5568;line-height:1.4}
+.stat-label strong{color:#4B5568;font-weight:500;display:block}
+
+/* ── SECTION BASE ── */
+.section{padding:96px 32px;max-width:1120px;margin:0 auto}
+.section-eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--purple2);display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.section-eyebrow::before{content:'';width:20px;height:1.5px;background:linear-gradient(90deg,var(--purple),transparent)}
+.section-h{color:#0D0F12;font-family:'Space Grotesk',sans-serif;font-size:clamp(36px,4.5vw,58px);font-weight:700;line-height:1.05;letter-spacing:-.04em;margin-bottom:16px}
+.section-h .g{background:linear-gradient(135deg,#A89BFF,#7B6EF6,#B06BF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.section-sub{font-size:17px;color:#4B5568;max-width:520px;line-height:1.7;margin-bottom:56px}
+
+/* ── WHY COMPLIANCE IS BROKEN ── */
+.broken-section{background:#F1F3F7;border-top:1px solid var(--border);border-bottom:1px solid rgba(0,0,0,.08);padding:96px 32px}
+.broken-inner{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.broken-cards{display:flex;flex-direction:column;gap:12px}
+.broken-card{background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.12);border-radius:14px;padding:20px 24px;display:flex;align-items:flex-start;gap:16px;transition:all .2s}
+.broken-card:hover{border-color:rgba(248,113,113,.25);background:rgba(248,113,113,.08);transform:translateX(4px)}
+.broken-icon{font-size:24px;flex-shrink:0;margin-top:2px}
+.broken-card h4{font-size:15px;font-weight:600;color:#7F1D1D;margin-bottom:4px;letter-spacing:-.2px}
+.broken-card p{font-size:13.5px;color:#7F1D1D;line-height:1.5}
+.fixed-cards{display:flex;flex-direction:column;gap:12px}
+.fixed-card{background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.12);border-radius:14px;padding:20px 24px;display:flex;align-items:flex-start;gap:16px;transition:all .2s}
+.fixed-card:hover{border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.08);transform:translateX(-4px)}
+.fixed-card h4{font-size:15px;font-weight:600;color:#064E3B;margin-bottom:4px;letter-spacing:-.2px}
+.fixed-card p{font-size:13.5px;color:#064E3B;line-height:1.5}
+
+/* ── BENTO FEATURES ── */
+.bento-grid{display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:minmax(180px,auto);gap:14px}
+.bc{background:#F1F3F7;border:1px solid var(--border);border-radius:20px;padding:28px;transition:all .25s;position:relative;overflow:hidden;cursor:default}
+.bc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(123,110,246,.5),transparent);opacity:0;transition:opacity .25s}
+.bc:hover{border-color:rgba(123,110,246,.3);transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,.4),0 0 0 1px rgba(123,110,246,.1)}
+.bc:hover::before{opacity:1}
+.bc.span5{grid-column:span 5}
+.bc.span4{grid-column:span 4}
+.bc.span3{grid-column:span 3}
+.bc.span7{grid-column:span 7}
+.bc.span8{grid-column:span 8}
+.bc.span6{grid-column:span 6}
+.bc.tall{grid-row:span 2}
+.bc.dark{background:linear-gradient(145deg,#0D1117,#131929)}
+.bc.purple-tint{background:linear-gradient(145deg,rgba(123,110,246,.08),rgba(176,107,248,.04));border-color:rgba(123,110,246,.15)}
+.bc.purple-tint:hover{border-color:rgba(123,110,246,.4)}
+.bc-icon{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:20px;flex-shrink:0}
+.bc h3{color:#0D0F12;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;color:#0D0F12;margin-bottom:10px;letter-spacing:-.3px}
+.bc p{font-size:14px;color:#4B5568;line-height:1.65}
+.bc-tag{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:6px;margin-top:14px;font-family:'Space Mono',monospace}
+/* Mini visualization in bento */
+.bc-vis{margin-top:16px}
+.bc-bar{height:6px;border-radius:3px;margin-bottom:8px;position:relative;overflow:hidden}
+.bc-bar::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,.06)}
+.bc-bar-fill{height:100%;border-radius:3px;animation:fillUp 2s ease-out .5s both}
+@keyframes fillUp{from{width:0}to{width:var(--w)}}
+.bc-aura-mini{display:flex;align-items:center;gap:10px;background:rgba(123,110,246,.08);border:1px solid rgba(123,110,246,.15);border-radius:10px;padding:10px;margin-top:14px;font-size:12px;color:#374151}
+.bc-aura-mini-orb{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle,#A89BFF,#7B6EF6);flex-shrink:0;box-shadow:0 0 8px rgba(123,110,246,.4)}
+/* Code snippet look */
+.bc-code{margin-top:14px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text2);line-height:1.8}
+.bc-code .kw{color:#A89BFF}
+.bc-code .str{color:#34D399}
+.bc-code .num{color:#FBBF24}
+
+/* ── FRAMEWORKS ── */
+.fw-section{background:linear-gradient(180deg,#0D1117,#131929);padding:96px 32px;position:relative;overflow:hidden}
+.fw-section::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(123,110,246,.5),transparent)}
+.fw-inner{max-width:1120px;margin:0 auto;position:relative}
+.fw-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:20px;overflow:hidden;margin-top:48px}
+.fw-card{background:#F1F3F7;padding:32px 24px;transition:all .2s;position:relative;overflow:hidden}
+.fw-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;transition:opacity .2s;opacity:.7}
+.fw-card:nth-child(1)::after{background:linear-gradient(90deg,#818CF8,#6366F1)}
+.fw-card:nth-child(2)::after{background:linear-gradient(90deg,#C084FC,#A855F7)}
+.fw-card:nth-child(3)::after{background:linear-gradient(90deg,#FBBF24,#F59E0B)}
+.fw-card:nth-child(4)::after{background:linear-gradient(90deg,#F87171,#EF4444)}
+.fw-card:hover{background:#F8F9FB;color:#0D0F12}
+.fw-card:hover::after{opacity:1}
+.fw-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;margin-bottom:18px;display:inline-block;letter-spacing:.04em;text-transform:uppercase}
+.fw-name{color:#0D0F12;font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:#0D0F12;margin-bottom:7px;letter-spacing:-.3px}
+.fw-desc{font-size:13px;color:rgba(255,255,255,.6);line-height:1.6;margin-bottom:20px}
+.fw-progress{height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.fw-bar{height:100%;border-radius:2px;animation:fillUp 1.5s ease-out 1s both}
+.fw-meta{display:flex;justify-content:space-between;font-size:11.5px;color:#9CA3AF;font-weight:500}
+.fw-exclusive{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:700;color:#FBBF24;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);padding:2px 8px;border-radius:4px;margin-top:12px;text-transform:uppercase;letter-spacing:.04em}
+
+/* ── COMPARE ── */
+.compare-section{padding:96px 32px;background:#F8F9FB}
+.compare-inner{max-width:1120px;margin:0 auto}
+.compare-table{width:100%;border-collapse:separate;border-spacing:0;border-radius:16px;overflow:hidden;border:1px solid var(--border);margin-top:48px}
+.compare-table thead tr{background:rgba(123,110,246,.04)}
+.compare-table th{padding:16px 20px;font-size:13px;font-weight:600;color:var(--text2);text-align:left;border-bottom:1px solid rgba(0,0,0,.08)}
+.compare-table th.hl{background:linear-gradient(135deg,rgba(123,110,246,.2),rgba(176,107,248,.15));color:#0D0F12;text-align:center;font-family:'Space Grotesk',sans-serif;font-size:15px}
+.compare-table td{padding:14px 20px;font-size:14px;color:var(--text2);border-bottom:1px solid rgba(0,0,0,.08);background:#F1F3F7}
+.compare-table td.hl{background:rgba(123,110,246,.06);text-align:center;font-weight:600;color:var(--purple2)}
+.compare-table td.center{text-align:center}
+.compare-table tr:last-child td{border-bottom:none}
+.compare-table tr:hover td{background:rgba(0,0,0,.02)}
+.compare-table tr:hover td.hl{background:rgba(123,110,246,.1)}
+.tick{color:var(--green);font-size:16px}
+.cross{color:var(--text3);font-size:16px}
+.partial-badge{background:rgba(251,191,36,.1);color:var(--amber);font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;display:inline-block}
+.price-good{color:var(--green);font-weight:700;font-size:15px}
+.price-bad{color:var(--red);font-size:13px}
+
+/* ── PRICING ── */
+.pricing-section{padding:96px 32px;background:#FFFFFF;position:relative}
+.pricing-section::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(123,110,246,.3),transparent)}
+.pricing-inner{max-width:1120px;margin:0 auto}
+.pricing-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:48px;align-items:center}
+.p-card{border-radius:20px;padding:36px;border:1px solid var(--border);background:#F1F3F7;position:relative;transition:all .25s}
+.p-card:hover{border-color:rgba(123,110,246,.3);box-shadow:0 20px 60px rgba(0,0,0,.4);transform:translateY(-4px)}
+.p-card.featured{border-color:rgba(123,110,246,.4);background:linear-gradient(145deg,rgba(123,110,246,.12),rgba(176,107,248,.08));transform:scale(1.04);box-shadow:0 0 0 1px rgba(123,110,246,.3),0 32px 80px rgba(123,110,246,.2)}
+.p-card.featured:hover{transform:scale(1.05) translateY(-4px);box-shadow:0 0 0 1px rgba(123,110,246,.4),0 40px 100px rgba(123,110,246,.3)}
+.popular-tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#7B6EF6,#B06BF8);color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:100px;white-space:nowrap;letter-spacing:.04em;box-shadow:0 4px 16px rgba(123,110,246,.4)}
+.p-tier{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;color:#9CA3AF}
+.p-card.featured .p-tier{color:var(--purple2)}
+.p-price{color:#0D0F12;font-family:'Space Grotesk',sans-serif;font-size:52px;font-weight:700;color:#0D0F12;line-height:1;letter-spacing:-.04em;margin-bottom:4px}
+.p-card.featured .p-price{background:linear-gradient(135deg,#A89BFF,#7B6EF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.p-cycle{font-size:14px;color:#9CA3AF;margin-bottom:28px}
+.p-sep{height:1px;background:var(--border);margin-bottom:22px}
+.p-card.featured .p-sep{background:rgba(123,110,246,.2)}
+.p-list{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:30px}
+.p-list li{display:flex;align-items:center;gap:10px;font-size:14px;color:#4B5568}
+.p-card.featured .p-list li{color:#1C1F26}
+.p-check{color:var(--green);font-size:14px;flex-shrink:0}
+.p-btn{display:block;text-align:center;padding:13px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;transition:all .2s;font-family:'Space Grotesk',sans-serif;letter-spacing:.2px}
+.p-btn-border{border:1px solid rgba(0,0,0,.15);color:#374151;background:transparent}
+.p-btn-border:hover{border-color:rgba(0,0,0,.25);color:#0D0F12;background:#F1F3F7}
+.p-btn-glow{background:linear-gradient(135deg,#7B6EF6,#9C91F8);color:#fff;border:none;box-shadow:0 8px 24px rgba(123,110,246,.3)}
+.p-btn-glow:hover{box-shadow:0 12px 32px rgba(123,110,246,.5);transform:translateY(-1px)}
+.p-saving{font-size:12px;color:var(--green);text-align:center;margin-top:10px;font-weight:500}
+
+/* ── AURA CHAT / PERSONALITY SECTION ── */
+.chat-section{padding:96px 32px;background:#F1F3F7;border-top:1px solid var(--border)}
+.chat-inner{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.chat-mascot-wrap{display:flex;justify-content:center;align-items:center}
+.chat-aura{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#C4BAFF,#8B7FF5,#6358D4);box-shadow:0 0 40px rgba(123,110,246,.5),0 0 80px rgba(123,110,246,.2);animation:auraFloat 4s ease-in-out infinite;position:relative;flex-shrink:0}
+.chat-aura::before{content:'';position:absolute;top:20px;left:28px;width:35px;height:20px;background:rgba(255,255,255,.2);border-radius:50%;filter:blur(4px)}
+.chat-eyes{position:absolute;top:38px;left:50%;transform:translateX(-50%);display:flex;gap:20px}
+.chat-eye{width:18px;height:18px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;animation:blink 5s ease-in-out infinite}
+.chat-pupil{width:9px;height:9px;background:#1a0a5c;border-radius:50%;animation:pupilMove 6s ease-in-out infinite}
+.chat-mouth{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:24px;height:12px;border:2.5px solid rgba(255,255,255,.7);border-top:none;border-radius:0 0 16px 16px}
+.chat-messages{display:flex;flex-direction:column;gap:16px}
+.chat-row{display:flex;gap:12px;align-items:flex-start}
+.chat-row.user{flex-direction:row-reverse}
+.chat-avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0D0F12}
+.chat-avatar.aura-av{background:radial-gradient(circle,#A89BFF,#7B6EF6);box-shadow:0 0 12px rgba(123,110,246,.4)}
+.chat-avatar.user-av{background:linear-gradient(135deg,#374151,#1F2937)}
+.chat-msg{max-width:75%;padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.55}
+.chat-msg.aura-msg{background:rgba(123,110,246,.1);border:1px solid rgba(123,110,246,.2);color:#1C1F26;border-radius:4px 16px 16px 16px}
+.chat-msg.user-msg{background:#F1F3F7;border:1px solid var(--border);color:var(--text2);border-radius:16px 4px 16px 16px}
+.chat-msg strong{color:#0D0F12}
+.typing-indicator{display:flex;gap:4px;align-items:center;padding:12px 16px;background:rgba(123,110,246,.08);border:1px solid rgba(123,110,246,.15);border-radius:4px 16px 16px 16px}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:var(--purple2);animation:typingBounce .8s ease-in-out infinite}
+.typing-dot:nth-child(2){animation-delay:.15s}
+.typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes typingBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+/* ── FINAL CTA ── */
+.final-cta{margin:80px 32px;background:linear-gradient(135deg,#EEF2FF,#F5F0FF);border:1px solid rgba(123,110,246,.2);border-radius:24px;padding:88px 48px;text-align:center;position:relative;overflow:hidden}
+.final-cta::before{content:'';position:absolute;top:-60%;left:20%;right:20%;bottom:-20%;background:radial-gradient(ellipse,rgba(123,110,246,.2),transparent);pointer-events:none}
+.final-cta::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(123,110,246,.8),rgba(176,107,248,.6),transparent)}
+.final-cta-inner{position:relative;z-index:1}
+.final-cta h2{color:#1a0a3a;font-family:'Space Grotesk',sans-serif;font-size:clamp(36px,5vw,64px);font-weight:700;color:#0D0F12;line-height:1.05;letter-spacing:-.04em;margin-bottom:18px}
+.final-cta h2 span{background:linear-gradient(135deg,#A89BFF,#7B6EF6,#F472B6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.final-cta p{font-size:18px;color:#374151;margin-bottom:40px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.65}
+.final-btns{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-bottom:28px}
+.final-proof{font-size:13px;color:#6B7280;display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+.final-proof span{display:flex;align-items:center;gap:5px}
+
+/* ── FOOTER ── */
+footer{background:#F8F9FB;border-top:1px solid var(--border)}
+.footer-inner{max-width:1120px;margin:0 auto;padding:56px 32px 32px}
+.footer-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
+.footer-brand p{font-size:14px;color:#6B7280;line-height:1.65;margin-top:14px;max-width:260px}
+.footer-col h4{font-size:11px;font-weight:700;color:#0D0F12;letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.footer-col a{font-size:14px;color:#6B7280;text-decoration:none;transition:color .12s}
+.footer-col a:hover{color:#0D0F12}
+.footer-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:24px;border-top:1px solid var(--border);flex-wrap:wrap;gap:12px}
+.footer-copy{font-size:13px;color:#9CA3AF}
+.footer-right{display:flex;gap:14px;align-items:center}
+.footer-badge{font-size:12px;color:#6B7280;display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:#F8F9FB}
+::-webkit-scrollbar-thumb{background:rgba(123,110,246,.4);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--purple)}
+
+/* ── ANIM UTILS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+.hero-left>*{animation:fadeUp .6s ease both}
+.hero-left>*:nth-child(1){animation-delay:.05s}
+.hero-left>*:nth-child(2){animation-delay:.12s}
+.hero-left>*:nth-child(3){animation-delay:.2s}
+.hero-left>*:nth-child(4){animation-delay:.28s}
+.hero-left>*:nth-child(5){animation-delay:.36s}
+.mascot-wrap{animation:fadeUp .8s ease .4s both}
+
+.fw-section .section-h { color: #fff !important; }
+.fw-section .section-eyebrow { color: #818CF8 !important; }
+.fw-section .section-sub { color: rgba(255,255,255,.65) !important; }
+
+.fw-card .fw-name { color: #0D0F12 !important; }
+.fw-card .fw-desc { color: #4B5568 !important; }
+.fw-card .fw-meta { color: #9CA3AF !important; }
+</style>
 </head>
 <body>
+
+<!-- Custom Cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+
+<!-- NAV -->
 <nav>
-  <a class="nav-logo" href="#">
-    <div class="nav-logo-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v10l9 5 9-5V7L12 2z" stroke="white" stroke-width="2" stroke-linejoin="round"/><path d="M3 7l9 5 9-5M12 12v10" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg></div>
-    <span class="nav-logo-text">AURA</span>
-  </a>
-  <div class="nav-links">
-    <a href="#features">Platform</a><a href="#frameworks">Compliance</a><a href="#features">Integrations</a><a href="#stats">Pricing</a><a href="#">Demo</a>
-  </div>
-  <div class="nav-actions">
-    <a href="/index.html" class="btn-ghost">Sign in</a>
-    <a href="/index.html" class="btn-primary">Get started free →</a>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-orb"></div>
+      <span class="nav-logo-text">AURA</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Platform</a>
+      <a href="#frameworks">Compliance</a>
+      <a href="#aura-ai">Meet AURA</a>
+      <a href="#compare">Compare</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-right">
+      <a href="index.html" class="nav-signin">Sign in</a>
+      <a href="index.html" class="nav-cta">Get started free →</a>
+    </div>
   </div>
 </nav>
 
+<!-- HERO -->
 <section class="hero">
-  <div class="hero-badge"><span class="hero-badge-dot"></span>India's First AI-Powered GRC Platform</div>
-  <h1>Security compliance,<br/><span class="grad">automated</span> for <span class="grad2">India</span></h1>
-  <p class="hero-sub">The only AI-powered GRC platform built for Indian regulations — RBI, DPDP Act 2023, ISO 27001, and 5 more frameworks. 10× cheaper than global competitors.</p>
-  <div class="hero-actions">
-    <a href="/index.html" class="btn-cta">Start free trial →</a>
-    <button class="btn-demo">▶ Watch demo</button>
-  </div>
-  <div class="hero-trust">
-    <span class="trust-item"><span class="check">✓</span> SOC 2 · ISO 27001 · NIST CSF</span>
-    <span class="trust-item"><span class="check">✓</span> RBI · DPDP Act 2023</span>
-    <span class="trust-item"><span class="check">✓</span> 30 integrations · ML risk scoring</span>
-    <span class="trust-item"><span class="check">✓</span> Made in India 🇮🇳</span>
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="particles" id="particles"></div>
+
+  <div class="hero-inner">
+    <!-- Left -->
+    <div class="hero-left">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        India's First AI Compliance Platform
+      </div>
+      <h1 class="hero-h1">
+        Compliance that
+        <span class="line-grad">actually loves you back</span>
+        <span class="line-dim">for Indian startups</span>
+      </h1>
+      <p class="hero-sub">
+        Meet <strong>AURA</strong> — your AI compliance companion. Automates ISO 27001, SOC 2, RBI & DPDP Act. Fixes issues before you even notice them. <strong>10× cheaper</strong> than Vanta.
+      </p>
+      <div class="hero-ctas">
+        <a href="index.html" class="cta-glow">
+          Start free — AURA's waiting
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a href="index.html" class="cta-ghost">▶ Watch demo</a>
+      </div>
+      <div class="proof-row">
+        <div class="proof-pill"><span class="proof-green">✓</span> No credit card</div>
+        <div class="proof-pill"><span class="proof-green">✓</span> Live in 48h</div>
+        <div class="proof-pill"><span class="proof-green">✓</span> RBI + DPDP built-in</div>
+        <div class="proof-pill"><span class="proof-green">✓</span> Cancel anytime</div>
+      </div>
+    </div>
+
+    <!-- Right: AURA Character -->
+    <div class="mascot-wrap">
+      <!-- Ambient glow -->
+      <div class="mascot-glow"></div>
+
+      <!-- Orbit rings -->
+      <div class="orbit orbit1"></div>
+      <div class="orbit orbit2"></div>
+      <div class="orbit orbit3"></div>
+
+      <!-- AURA Body -->
+      <div class="aura-body">
+        <div class="aura-orb">
+          <!-- Eyes -->
+          <div class="aura-eyes">
+            <div class="aura-eye"><div class="aura-pupil"></div></div>
+            <div class="aura-eye"><div class="aura-pupil"></div></div>
+          </div>
+          <!-- Cheeks -->
+          <div class="aura-cheeks">
+            <div class="aura-cheek"></div>
+            <div class="aura-cheek"></div>
+          </div>
+          <!-- Mouth -->
+          <div class="aura-mouth"></div>
+        </div>
+        <!-- Name tag -->
+        <div class="aura-label">
+          <div class="aura-label-text">AURA</div>
+          <div class="aura-label-sub">AI Compliance</div>
+        </div>
+      </div>
+
+      <!-- Chat bubbles -->
+      <div class="chat-bubble cb1"><span class="cb-icon">🛡️</span> ISO 27001 — 83% ready!</div>
+      <div class="chat-bubble cb2"><span class="cb-icon">⚡</span> 3 controls just fixed</div>
+      <div class="chat-bubble cb3"><span class="cb-icon">📊</span> Risk score: 50/100</div>
+
+      <!-- Orbit badges -->
+      <div class="orbit-badge ob1"><div class="ob-label">SOC 2</div><div class="ob-val" style="color:#34D399">On Track</div></div>
+      <div class="orbit-badge ob2"><div class="ob-label">DPDP Act</div><div class="ob-val" style="color:#FBBF24">⚠ 22%</div></div>
+      <div class="orbit-badge ob3"><div class="ob-label">Exposure</div><div class="ob-val" style="color:#F87171">₹422Cr</div></div>
+      <div class="orbit-badge ob4"><div class="ob-label">Live Checks</div><div class="ob-val" style="color:#38BDF8">16/22 ✓</div></div>
+    </div>
   </div>
 </section>
 
-<div class="logos">
-  <div class="logos-label">Trusted by security teams across India</div>
-  <div class="logos-row">
-    <div class="logo-badge"><div class="logo-icon" style="background:#FF9900">A</div>AWS</div>
-    <div class="logo-badge"><div class="logo-icon" style="background:#00297A">O</div>Okta</div>
-    <div class="logo-badge"><div class="logo-icon" style="background:#0052CC">J</div>Jira</div>
-    <div class="logo-badge"><div class="logo-icon" style="background:#4285F4">G</div>Google</div>
-    <div class="logo-badge"><div class="logo-icon" style="background:#181717">GH</div>GitHub</div>
-    <div class="logo-badge"><div class="logo-icon" style="background:#632CA6">D</div>Datadog</div>
-    <div class="logo-badge"><div class="logo-icon" style="background:#0078D4">M</div>Microsoft</div>
+<!-- STATS -->
+<div class="stats-strip">
+  <div class="stats-inner">
+    <div class="stat-item"><div class="stat-num purple">4</div><div class="stat-label"><strong>Frameworks</strong>ISO, SOC 2, RBI, DPDP</div></div>
+    <div class="stat-item"><div class="stat-num cyan">19+</div><div class="stat-label"><strong>Integrations</strong>auto evidence pull</div></div>
+    <div class="stat-item"><div class="stat-num green">10×</div><div class="stat-label"><strong>Cheaper</strong>than Vanta or Drata</div></div>
+    <div class="stat-item"><div class="stat-num pink">48h</div><div class="stat-label"><strong>To go live</strong>not 6 months</div></div>
   </div>
 </div>
 
-<section class="features" id="features">
-  <div class="section-inner">
-    <div class="section-label">Platform</div>
-    <h2 class="section-title">Everything you need to achieve<br/>and maintain compliance</h2>
-    <p class="section-sub">AURA automates evidence collection, risk scoring, and audit preparation so your team can focus on building.</p>
-    <div class="features-grid">
-      <div class="feature-card"><div class="feature-icon" style="background:#ede9fe">🤖</div><h3>AI Risk Assistant</h3><p>Ask natural language questions about your compliance posture. Get prioritized remediation steps and risk explanations instantly.</p></div>
-      <div class="feature-card"><div class="feature-icon" style="background:#dcfce7">⚡</div><h3>Auto Evidence Collection</h3><p>Automatically pull compliance evidence from AWS, Okta, GitHub, Jira, and 26 more integrations. No manual uploads needed.</p></div>
-      <div class="feature-card"><div class="feature-icon" style="background:#fce7f3">📊</div><h3>Continuous Monitoring</h3><p>Real-time compliance checks running 24/7 across all your integrations. Get alerted the moment something drifts out of compliance.</p></div>
-      <div class="feature-card"><div class="feature-icon" style="background:#fff7ed">🏢</div><h3>Vendor Risk Management</h3><p>Assess and monitor third-party vendor risk with automated questionnaires, risk scoring, and continuous tracking.</p></div>
-      <div class="feature-card"><div class="feature-icon" style="background:#e0f2fe">🔍</div><h3>Auditor Portal</h3><p>Invite external auditors to a dedicated portal. Collaborate on evidence, respond to queries, and track audit progress in real time.</p></div>
-      <div class="feature-card"><div class="feature-icon" style="background:#fef9c3">📋</div><h3>Policy Management</h3><p>Create, version, and manage all compliance policies with approval workflows, review reminders, and framework linking.</p></div>
+<!-- WHY COMPLIANCE IS BROKEN -->
+<div class="broken-section" id="why">
+  <div class="broken-inner">
+    <div>
+      <div class="section-eyebrow">The Problem</div>
+      <h2 class="section-h" style="margin-bottom:8px">Founders hate<br><span class="g">compliance.</span></h2>
+      <p style="font-size:17px;color:#4B5568;margin-bottom:32px;line-height:1.7">And honestly? We don't blame them. Here's what compliance looks like today.</p>
+      <div class="broken-cards">
+        <div class="broken-card"><div class="broken-icon">😫</div><div><h4>Months of manual evidence collection</h4><p>Screenshots, ZIP files, 300-row spreadsheets. Your engineers hate you for it.</p></div></div>
+        <div class="broken-card"><div class="broken-icon">💸</div><div><h4>₹3–7 Lakhs/year for Vanta</h4><p>Global tools built for US companies. They don't even support RBI or DPDP Act.</p></div></div>
+        <div class="broken-card"><div class="broken-icon">🕳️</div><div><h4>No one knows what "compliant" means</h4><p>Your board asks about security risk. You can't answer in rupees. Awkward.</p></div></div>
+        <div class="broken-card"><div class="broken-icon">📧</div><div><h4>Auditors chase you for 3 months</h4><p>Email threads. Missing documents. Deadline extensions. Repeat next year.</p></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-eyebrow" style="color:#34D399">The AURA Fix</div>
+      <h2 class="section-h" style="margin-bottom:8px">AURA handles<br><span style="background:linear-gradient(135deg,#34D399,#38BDF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">all of it.</span></h2>
+      <p style="font-size:17px;color:#4B5568;margin-bottom:32px;line-height:1.7">Your AI compliance companion runs 24/7 so you don't have to think about it.</p>
+      <div class="fixed-cards">
+        <div class="fixed-card"><div class="broken-icon">🤖</div><div><h4>Evidence collected automatically every day</h4><p>19 integrations. AURA pulls from AWS, GitHub, Okta, and more. Zero manual work.</p></div></div>
+        <div class="fixed-card"><div class="broken-icon">₹</div><div><h4>₹15K–60K/month. 10× cheaper.</h4><p>And AURA is the only tool with RBI Cybersecurity + DPDP Act built in.</p></div></div>
+        <div class="fixed-card"><div class="broken-icon">📊</div><div><h4>Financial risk in ₹ for your board</h4><p>ML model calculates exact breach exposure. Board gets it. Everyone's happy.</p></div></div>
+        <div class="fixed-card"><div class="broken-icon">🎯</div><div><h4>Give auditor read-only access. Done.</h4><p>Auditor portal with all evidence, controls, and timestamps. No emails needed.</p></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES BENTO -->
+<section style="padding:96px 32px;background:#FFFFFF" id="features">
+  <div style="max-width:1120px;margin:0 auto">
+    <div class="section-eyebrow">Platform</div>
+    <h2 class="section-h">Built different.<br><span class="g">Actually works.</span></h2>
+    <p class="section-sub">AURA isn't another compliance checklist. It's a living, breathing AI companion that protects your company automatically.</p>
+    <div class="bento-grid">
+      <div class="bc span5 tall purple-tint">
+        <div class="bc-icon" style="background:rgba(123,110,246,.15)">🔄</div>
+        <h3>Auto Evidence, Forever</h3>
+        <p>Connect once. AURA pulls compliance evidence from 19 tools every single day — AWS, Azure, GitHub, Okta, Jira, Slack, Datadog, and more. When your auditor asks for proof — one click.</p>
+        <div class="bc-tag" style="background:rgba(123,110,246,.15);color:#A89BFF">// saves 4+ months/year</div>
+        <div class="bc-vis">
+          <div class="bc-bar" style="--w:85%"><div class="bc-bar-fill" style="width:85%;background:linear-gradient(90deg,#6366F1,#A89BFF)"></div></div>
+          <div class="bc-bar" style="--w:72%"><div class="bc-bar-fill" style="width:72%;background:rgba(123,110,246,.3)"></div></div>
+          <div class="bc-bar" style="--w:91%"><div class="bc-bar-fill" style="width:91%;background:rgba(123,110,246,.2)"></div></div>
+        </div>
+      </div>
+      <div class="bc span4">
+        <div class="bc-icon" style="background:rgba(52,211,153,.1)">🤖</div>
+        <h3>AI Remediation Steps</h3>
+        <p>Every failing control gets specific fix instructions. Exact CLI commands for your environment, not generic advice.</p>
+        <div class="bc-aura-mini">
+          <div class="bc-aura-mini-orb"></div>
+          "Run: aws iam enable-mfa --user-name admin — this fixes CC6.1 in 2 mins"
+        </div>
+      </div>
+      <div class="bc span3">
+        <div class="bc-icon" style="background:rgba(251,191,36,.1)">📊</div>
+        <h3>Risk in ₹</h3>
+        <p>FAIR-based ML model. Board gets rupees, not jargon.</p>
+        <div style="margin-top:16px;font-family:'Space Mono',monospace;font-size:28px;font-weight:700;color:var(--amber)">₹422Cr</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">breach exposure calculated</div>
+      </div>
+      <div class="bc span7">
+        <div class="bc-icon" style="background:rgba(56,189,248,.1)">🌐</div>
+        <h3>Public Trust Center</h3>
+        <p>One live compliance URL for customers. Replaces 200-question security questionnaires. Share instead of filling out Excel for hours.</p>
+        <div class="bc-code">
+          <span class="kw">GET</span> aura-platform.app/trust/<span class="str">democorp</span><br>
+          → status: <span class="str">"compliant"</span>, frameworks: [<span class="str">"ISO27001"</span>, <span class="str">"SOC2"</span>]<br>
+          → last_verified: <span class="num">2026-05-21T11:00:00Z</span>
+        </div>
+      </div>
+      <div class="bc span4">
+        <div class="bc-icon" style="background:rgba(244,114,182,.1)">🔍</div>
+        <h3>Auditor Portal</h3>
+        <p>Secure read-only access for your external auditor. All evidence timestamped, organized, ready. No ZIP files ever.</p>
+        <div class="bc-tag" style="background:rgba(52,211,153,.1);color:#34D399">Audit-ready in weeks, not months</div>
+      </div>
+      <div class="bc span4">
+        <div class="bc-icon" style="background:rgba(99,102,241,.1)">👥</div>
+        <h3>Multi-Role Access</h3>
+        <p>CISO, Developer, Auditor — each sees exactly what they need. RBAC built-in from day one.</p>
+        <div class="bc-tag" style="background:rgba(99,102,241,.1);color:#818CF8">3 roles · granular permissions</div>
+      </div>
+      <div class="bc span4">
+        <div class="bc-icon" style="background:rgba(248,113,113,.1)">⚡</div>
+        <h3>Live Compliance Checks</h3>
+        <p>22 automated checks running against your real AWS, GitHub & Okta. Know exactly what's passing and what's failing.</p>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center"><span style="font-size:22px;font-weight:700;color:#34D399;font-family:'Space Grotesk',sans-serif">16</span><span style="color:var(--text3);font-size:12px">passing</span><span style="font-size:22px;font-weight:700;color:#F87171;font-family:'Space Grotesk',sans-serif;margin-left:8px">6</span><span style="color:var(--text3);font-size:12px">failing</span></div>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="frameworks" id="frameworks">
-  <div class="section-inner">
-    <div class="section-label">Compliance</div>
-    <h2 class="section-title">8 frameworks. One platform.</h2>
-    <p class="section-sub">From global standards to India-specific regulations, AURA has you covered with pre-built control libraries.</p>
-    <div class="frameworks-grid">
-      <div class="fw-card"><div class="fw-name">SOC 2</div><div class="fw-desc">Type I & II readiness</div><div class="fw-badge">89 controls</div></div>
-      <div class="fw-card"><div class="fw-name">ISO 27001</div><div class="fw-desc">Certification support</div><div class="fw-badge">114 controls</div></div>
-      <div class="fw-card"><div class="fw-name">HIPAA</div><div class="fw-desc">Healthcare compliance</div><div class="fw-badge">45 controls</div></div>
-      <div class="fw-card"><div class="fw-name">GDPR</div><div class="fw-desc">EU data protection</div><div class="fw-badge">32 controls</div></div>
-      <div class="fw-card"><div class="fw-name">PCI DSS</div><div class="fw-desc">Payment card security</div><div class="fw-badge">78 controls</div></div>
-      <div class="fw-card"><div class="fw-name">NIST CSF</div><div class="fw-desc">Cybersecurity framework</div><div class="fw-badge">108 controls</div></div>
-      <div class="fw-card fw-india"><div class="fw-name">DPDP Act</div><div class="fw-desc">India's data protection law</div><div class="fw-badge">India-first</div></div>
-      <div class="fw-card fw-india"><div class="fw-name">RBI</div><div class="fw-desc">Banking regulations</div><div class="fw-badge">India-first</div></div>
+<!-- MEET AURA -->
+<section class="chat-section" id="aura-ai">
+  <div class="chat-inner">
+    <div>
+      <div class="section-eyebrow">Meet AURA</div>
+      <h2 class="section-h" style="margin-bottom:16px">Your AI compliance<br><span class="g">companion</span></h2>
+      <p style="font-size:17px;color:#4B5568;line-height:1.7;margin-bottom:24px">AURA isn't just software. It's a personality. Smart, calm, protective, and witty — like Jarvis for your compliance team. It watches over your security 24/7, fixes things before you even notice, and explains everything in plain English.</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:#4B5568"><span style="color:var(--purple2);font-size:18px">🧠</span> Learns your stack and adapts remediation advice</div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:#4B5568"><span style="color:var(--green);font-size:18px">🛡️</span> Monitors 22 live checks around the clock</div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:#4B5568"><span style="color:var(--cyan);font-size:18px">💬</span> Explains every control in plain founder-friendly English</div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:#4B5568"><span style="color:var(--amber);font-size:18px">⚡</span> Fixes issues with exact CLI commands, not generic advice</div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:32px">
+        <div class="chat-aura" style="width:64px;height:64px;flex-shrink:0">
+          <div class="chat-eyes" style="top:20px">
+            <div class="chat-eye" style="width:14px;height:14px"><div class="chat-pupil" style="width:7px;height:7px"></div></div>
+            <div class="chat-eye" style="width:14px;height:14px"><div class="chat-pupil" style="width:7px;height:7px"></div></div>
+          </div>
+          <div class="chat-mouth" style="bottom:18px;width:18px;height:9px"></div>
+        </div>
+        <div style="font-size:13px;color:var(--purple2);font-weight:600;margin-bottom:8px;letter-spacing:.05em">AURA AI</div>
+      </div>
+      <div class="chat-messages">
+        <div class="chat-row">
+          <div class="chat-avatar aura-av">A</div>
+          <div class="chat-msg aura-msg">Hey 👋 I just scanned your AWS account. <strong>Good news</strong> — MFA is enabled on 87% of accounts. But I found 3 admins without it. Want me to generate the fix steps?</div>
+        </div>
+        <div class="chat-row user">
+          <div class="chat-avatar user-av">F</div>
+          <div class="chat-msg user-msg">Yes please! Also, how's our SOC 2 readiness?</div>
+        </div>
+        <div class="chat-row">
+          <div class="chat-avatar aura-av">A</div>
+          <div class="chat-msg aura-msg">SOC 2 is at <strong>75% audit-ready</strong> 🎯 You're about 4 weeks away if we fix the 3 remaining Common Criteria gaps. I've already queued the remediation tasks. Your auditor can log in anytime.</div>
+        </div>
+        <div class="chat-row user">
+          <div class="chat-avatar user-av">F</div>
+          <div class="chat-msg user-msg">What about DPDP Act? Our investor asked about it.</div>
+        </div>
+        <div class="chat-row">
+          <div class="chat-avatar aura-av">A</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="chat-msg aura-msg">DPDP is at 22% — needs attention before enforcement. I've mapped all 20 obligations and flagged consent management as <strong>critical</strong>. ₹250Cr max penalty if we miss this. I'll create a 12-week action plan?</div>
+            <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="stats">
-  <div class="stats-grid">
-    <div><div class="stat-num">199+</div><div class="stat-lbl">Pre-built controls</div></div>
-    <div><div class="stat-num">30+</div><div class="stat-lbl">Native integrations</div></div>
-    <div><div class="stat-num">10×</div><div class="stat-lbl">Cheaper than Vanta</div></div>
-    <div><div class="stat-num">6wk</div><div class="stat-lbl">To audit-ready</div></div>
-  </div>
-</section>
-
-<section class="principles">
-  <div class="section-inner">
-    <div class="section-label">Our Approach</div>
-    <h2 class="section-title">Security principles we<br/>build compliance on</h2>
-    <div class="principles-grid">
-      <div class="pc"><div class="pc-num">01.</div><h3>Least Privilege Access</h3><p>Access should be limited to only those with a legitimate business need and granted based on the principle of least privilege.</p></div>
-      <div class="pc"><div class="pc-num">02.</div><h3>Defense in Depth</h3><p>Security controls should be implemented and layered according to the principle of defense-in-depth across all systems.</p></div>
-      <div class="pc pc-hl"><div class="pc-num">03.</div><h3>Consistent Controls</h3><p>Security controls should be applied consistently across all areas of the enterprise — no exceptions, no blind spots.</p></div>
-      <div class="pc"><div class="pc-num">04.</div><h3>Continuous Improvement</h3><p>The implementation of controls should be iterative, continuously maturing across the dimensions of improved effectiveness.</p></div>
+<!-- FRAMEWORKS -->
+<section class="fw-section" id="frameworks">
+  <div class="fw-inner">
+    <div class="section-eyebrow">Frameworks</div>
+    <h2 class="section-h">4 frameworks.<br><span class="g">One AURA.</span></h2>
+    <p class="section-sub">The only platform supporting Indian regulations alongside global standards. Vanta doesn't. Drata doesn't. Only AURA.</p>
+    <div class="fw-cards">
+      <div class="fw-card">
+        <div class="fw-badge" style="background:rgba(129,140,248,.15);color:#818CF8">ISO 27001:2022</div>
+        <div class="fw-name">Information Security</div>
+        <div class="fw-desc">The global gold standard. 93 controls across 4 themes. AURA maps every gap automatically.</div>
+        <div class="fw-progress"><div class="fw-bar" style="width:83%;background:linear-gradient(90deg,#6366F1,#818CF8)"></div></div>
+        <div class="fw-meta"><span>93 controls</span><span style="color:#818CF8;font-weight:600">83% avg</span></div>
+      </div>
+      <div class="fw-card">
+        <div class="fw-badge" style="background:rgba(192,132,252,.12);color:#C084FC">SOC 2 Type II</div>
+        <div class="fw-name">Trust Services Criteria</div>
+        <div class="fw-desc">Required to close US enterprise deals. 5 TSC categories tracked from your live infrastructure.</div>
+        <div class="fw-progress"><div class="fw-bar" style="width:75%;background:linear-gradient(90deg,#A855F7,#C084FC)"></div></div>
+        <div class="fw-meta"><span>40 controls · AICPA</span><span style="color:#C084FC;font-weight:600">75% avg</span></div>
+      </div>
+      <div class="fw-card">
+        <div class="fw-badge" style="background:rgba(251,191,36,.08);color:#FBBF24">RBI Cybersecurity</div>
+        <div class="fw-name">Indian Banking Regulation</div>
+        <div class="fw-desc">Annual RBI audit for banks & NBFCs. No global tool supports this. AURA is the only option.</div>
+        <div class="fw-progress"><div class="fw-bar" style="width:61%;background:linear-gradient(90deg,#D97706,#FBBF24)"></div></div>
+        <div class="fw-meta"><span>27 controls + CERT-In</span><span style="color:#FBBF24;font-weight:600">61% avg</span></div>
+        <div class="fw-exclusive">★ India exclusive</div>
+      </div>
+      <div class="fw-card">
+        <div class="fw-badge" style="background:rgba(248,113,113,.08);color:#F87171">DPDP Act 2023</div>
+        <div class="fw-name">India Data Protection</div>
+        <div class="fw-desc">Enforcement begins 2026. ₹250Cr max penalty. Most companies at 22% readiness. Start now.</div>
+        <div class="fw-progress"><div class="fw-bar" style="width:22%;background:linear-gradient(90deg,#DC2626,#F87171)"></div></div>
+        <div class="fw-meta"><span>20 obligations</span><span style="color:#F87171;font-weight:600">Most at risk</span></div>
+        <div class="fw-exclusive">★ India exclusive</div>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="cta-section">
-  <div class="cta-card">
-    <h2>Ready to automate your compliance?</h2>
-    <p>Join 500+ security teams using AURA to achieve compliance faster.</p>
-    <div class="cta-actions">
-      <a href="/index.html" class="btn-white">Start free trial →</a>
-      <button class="btn-outline-w">Talk to sales</button>
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="pricing-inner">
+    <div class="section-eyebrow">Pricing</div>
+    <h2 class="section-h">Startup-friendly.<br><span class="g">No BS pricing.</span></h2>
+    <p class="section-sub">Pay for what you need. Indian frameworks included. Cancel anytime. No annual lock-in tricks.</p>
+    <div class="pricing-cards">
+      <div class="p-card">
+        <div class="p-tier">Startup</div>
+        <div class="p-price">₹15K</div>
+        <div class="p-cycle">per month</div>
+        <div class="p-sep"></div>
+        <ul class="p-list">
+          <li><span class="p-check">✓</span> ISO 27001 + SOC 2</li>
+          <li><span class="p-check">✓</span> Up to 5 users</li>
+          <li><span class="p-check">✓</span> 10 integrations</li>
+          <li><span class="p-check">✓</span> Trust Center page</li>
+          <li><span class="p-check">✓</span> Basic AURA AI</li>
+        </ul>
+        <a href="index.html" class="p-btn p-btn-border">Get started →</a>
+      </div>
+      <div class="p-card featured">
+        <div class="popular-tag">⭐ Most Popular</div>
+        <div class="p-tier">Growth</div>
+        <div class="p-price">₹30K</div>
+        <div class="p-cycle">per month</div>
+        <div class="p-sep"></div>
+        <ul class="p-list">
+          <li><span class="p-check">✓</span> All 4 frameworks</li>
+          <li><span class="p-check">✓</span> Up to 25 users</li>
+          <li><span class="p-check">✓</span> All 19 integrations</li>
+          <li><span class="p-check">✓</span> Full AURA AI companion</li>
+          <li><span class="p-check">✓</span> ML risk scoring in ₹</li>
+          <li><span class="p-check">✓</span> Auditor portal</li>
+          <li><span class="p-check">✓</span> Priority support</li>
+        </ul>
+        <a href="index.html" class="p-btn p-btn-glow">Start free trial →</a>
+        <div class="p-saving">Saves ₹3.6L/year vs Vanta</div>
+      </div>
+      <div class="p-card">
+        <div class="p-tier">Enterprise</div>
+        <div class="p-price">₹60K</div>
+        <div class="p-cycle">per month</div>
+        <div class="p-sep"></div>
+        <ul class="p-list">
+          <li><span class="p-check">✓</span> Unlimited users</li>
+          <li><span class="p-check">✓</span> Custom frameworks</li>
+          <li><span class="p-check">✓</span> On-premise deploy</li>
+          <li><span class="p-check">✓</span> Dedicated SLA</li>
+          <li><span class="p-check">✓</span> White-label option</li>
+          <li><span class="p-check">✓</span> Dedicated CSM</li>
+        </ul>
+        <a href="mailto:amitbishnoi0044@gmail.com" class="p-btn p-btn-border">Contact founder →</a>
+      </div>
     </div>
   </div>
 </section>
 
+<!-- FINAL CTA -->
+<div class="final-cta">
+  <div class="final-cta-inner">
+    <h2>AURA is ready.<br><span>Are you?</span></h2>
+    <p>Start your free trial. AURA will scan your infrastructure, map your compliance gaps, and have your first remediation plan ready before you finish your coffee.</p>
+    <div class="final-btns">
+      <a href="index.html" class="cta-glow">Start free — AURA's waiting →</a>
+      <a href="mailto:amitbishnoi0044@gmail.com" class="cta-ghost">Talk to the founder</a>
+    </div>
+    <div class="final-proof">
+      <span><span style="color:var(--green)">✓</span> No credit card</span>
+      <span><span style="color:var(--green)">✓</span> Live in 48 hours</span>
+      <span><span style="color:var(--green)">✓</span> Cancel anytime</span>
+      <span>🇮🇳 Made in India</span>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
 <footer>
   <div class="footer-inner">
-    <div class="footer-logo"><div class="footer-logo-mark"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v10l9 5 9-5V7L12 2z" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg></div><span class="footer-logo-text">AURA</span></div>
-    <div class="footer-links"><a href="#">Platform</a><a href="#">Compliance</a><a href="#">Integrations</a><a href="#">Privacy</a></div>
-    <div class="footer-copy">© 2025 AURA Technologies. Made in India 🇮🇳</div>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+          <div class="nav-logo-orb" style="width:26px;height:26px"></div>
+          <span style="font-weight:700;font-size:17px;color:#0D0F12;letter-spacing:.3px">AURA</span>
+        </a>
+        <p>India's first AI-powered GRC platform. Built at Rashtriya Raksha University, Gandhinagar by Amit Singh Bishnoi.</p>
+      </div>
+      <div class="footer-col"><h4>Platform</h4><ul><li><a href="#features">Features</a></li><li><a href="#frameworks">Frameworks</a></li><li><a href="#pricing">Pricing</a></li><li><a href="index.html">Dashboard</a></li></ul></div>
+      <div class="footer-col"><h4>Compliance</h4><ul><li><a href="#">ISO 27001</a></li><li><a href="#">SOC 2 Type II</a></li><li><a href="#">RBI Cybersecurity</a></li><li><a href="#">DPDP Act 2023</a></li></ul></div>
+      <div class="footer-col"><h4>Company</h4><ul><li><a href="mailto:amitbishnoi0044@gmail.com">Contact</a></li><li><a href="https://github.com/amit10bishnoi/AURA-PLATFORM">GitHub</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-copy">© 2026 AURA Platform · All rights reserved</span>
+      <div class="footer-right">
+        <span class="footer-badge">🇮🇳 RRU Gandhinagar</span>
+        <span class="footer-badge" style="color:var(--purple2);border-color:rgba(123,110,246,.2)">Amit Singh Bishnoi</span>
+      </div>
+    </div>
   </div>
 </footer>
+
+<script>
+// Custom cursor
+const cursor = document.getElementById('cursor');
+const trail = document.getElementById('cursorTrail');
+let tx = 0, ty = 0, cx = 0, cy = 0;
+document.addEventListener('mousemove', e => {
+  tx = e.clientX; ty = e.clientY;
+  cursor.style.left = tx - 6 + 'px';
+  cursor.style.top = ty - 6 + 'px';
+});
+setInterval(() => {
+  cx += (tx - cx) * 0.15;
+  cy += (ty - cy) * 0.15;
+  trail.style.left = cx - 16 + 'px';
+  trail.style.top = cy - 16 + 'px';
+}, 16);
+document.querySelectorAll('a,button,.bc,.p-card').forEach(el => {
+  el.addEventListener('mouseenter', () => { cursor.style.transform = 'scale(2.5)'; cursor.style.background = '#7B6EF6'; trail.style.transform = 'scale(1.5)'; });
+  el.addEventListener('mouseleave', () => { cursor.style.transform = 'scale(1)'; cursor.style.background = '#0D0F12'; trail.style.transform = 'scale(1)'; });
+});
+
+// Particles
+const container = document.getElementById('particles');
+for (let i = 0; i < 20; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.style.cssText = `left:${Math.random()*100}%;animation-duration:${8+Math.random()*12}s;animation-delay:${Math.random()*8}s;opacity:0;background:${Math.random()>.5?'var(--purple)':'var(--cyan)'}`;
+  container.appendChild(p);
+}
+
+// Scroll reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) { e.target.style.animation = 'fadeUp .6s ease forwards'; e.target.style.opacity = '1'; } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.bc,.fw-card,.broken-card,.fixed-card,.p-card,.stat-item').forEach(el => {
+  el.style.opacity = '0';
+  observer.observe(el);
+});
+
+// AURA eyes follow cursor
+document.addEventListener('mousemove', e => {
+  document.querySelectorAll('.aura-pupil,.chat-pupil').forEach(pupil => {
+    const eye = pupil.parentElement;
+    const rect = eye.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top + rect.height/2;
+    const angle = Math.atan2(e.clientY - cy, e.clientX - cx);
+    const dist = Math.min(3, Math.hypot(e.clientX - cx, e.clientY - cy) * 0.05);
+    pupil.style.transform = `translate(${Math.cos(angle)*dist}px,${Math.sin(angle)*dist}px)`;
+  });
+});
+</script>
 </body>
 </html>

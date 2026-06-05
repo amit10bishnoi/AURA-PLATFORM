@@ -9,6 +9,7 @@ import TestEngine from "./TestEngine";
 import SOC2Hub from "./SOC2Hub";
 import ISO27001Hub from "./ISO27001Hub";
 import RBIHub from "./RBIHub";
+import AutomationHub from "./AutomationHub";
 import DPDPHub from "./DPDPHub";
 import RiskRegister from "./RiskRegister";
 import { CommandPalette, ThemeToggle, OnboardingBanner, SkeletonStatGrid, EmptyState } from "./UIEnhancements";
@@ -256,6 +257,7 @@ const NAV_ITEMS = [
   // Overview
   {id:"overview",      label:"Dashboard",        icon:LayoutDashboard, roles:["ciso","auditor","developer"], section:"Overview"},
   {id:"ai-assistant",  label:"AI Copilot",        icon:Sparkles,        roles:["ciso","auditor","developer"], section:"Overview"},
+  {id:"automation",    label:"Automation Hub",    icon:Zap,             roles:["ciso","developer"],           section:"Overview"},
   // Compliance
   {id:"iso27001",      label:"ISO 27001",         icon:Shield,          roles:["ciso","auditor","developer"], section:"Compliance"},
   {id:"soc2",          label:"SOC 2 Type II",     icon:Award,           roles:["ciso","auditor","developer"], section:"Compliance"},
@@ -3649,6 +3651,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="rbi"&&<RBIHub token={token} tenantId={tenantId}/>}
             {activeTab==="dpdp"&&<DPDPHub token={token} tenantId={tenantId}/>}
             {activeTab==="risk-register"&&<RiskRegister token={token} tenantId={tenantId}/>}
+            {activeTab==="automation"&&<AutomationHub token={token} tenantId={tenantId}/>}
             {activeTab==="iso27001"&&<ISO27001Hub token={token} tenantId={tenantId}/>}
             {activeTab==="monitoring"&&<ContinuousMonitoring token={token} tenantId={tenantId}/>}
             {activeTab==="msp-portal"&&<MSPPortal token={token} tenantId={tenantId}/>}

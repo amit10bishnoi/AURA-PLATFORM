@@ -19,6 +19,7 @@ from routers.integrations_routes import router as integrations_router
 from routers.auto_assessment_routes import router as auto_router
 from services.scheduler_service import start_scheduler, stop_scheduler
 from routers.priority2_routes import router as p2_router
+from routes_automation import router as automation_router
 
 
 @asynccontextmanager
@@ -74,6 +75,7 @@ app.include_router(report_router)
 app.include_router(compliance_router)
 app.include_router(integrations_router)
 app.include_router(auto_router)
+app.include_router(automation_router)
 from routers.advanced_routes import router as advanced_router
 app.include_router(advanced_router)
 # from routers.extra_compliance_routes import extra_router  # Merged into unified_compliance_routes

@@ -7,6 +7,7 @@ import PolicyManagement from "./PolicyManagement";
 import AIAssistant from "./AIAssistant";
 import TestEngine from "./TestEngine";
 import SOC2Hub from "./SOC2Hub";
+import LandingPage from "./LandingPage";
 import ISO27001Hub from "./ISO27001Hub";
 import RBIHub from "./RBIHub";
 import AutomationHub from "./AutomationHub";
@@ -3667,6 +3668,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
 
 export default function App() {
   const [session,setSession]=useState(null);
+  const [showLogin,setShowLogin]=useState(false);
 
   if (window.location.pathname.startsWith("/trust/")) {
     const tid=window.location.pathname.split("/trust/")[1]?.split("/")[0]||"";
@@ -3678,5 +3680,7 @@ export default function App() {
   }
   return session
     ?<Dashboard token={session.token} userName={session.userName} role={session.role} tenantId={session.tenantId} tenantName={session.tenantName} onLogout={()=>setSession(null)}/>
-    :<Login onLogin={handleLogin}/>;
+    : showLogin
+  ? <Login onLogin={handleLogin}/>
+  : <LandingPage onEnter={()=>setShowLogin(true)}/>;
 }

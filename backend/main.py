@@ -51,8 +51,10 @@ ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3000",
-    "https://aura-platform.up.railway.app",  # production
-    "https://aura.io",                        # future domain
+    "https://aura-platform.up.railway.app",
+    "https://aura-platform-swart.vercel.app",   # live frontend (Vercel)
+    "https://auragrc.in",                        # custom domain
+    "https://www.auragrc.in",                    # custom domain (www)
 ]
 app.add_middleware(
     CORSMiddleware,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Building2, Plus, Search, RefreshCw, Send, Trash2, ChevronLeft, X, Save } from "lucide-react";
-const API="http://localhost:8000";
+const API="https://web-production-320c3.up.railway.app";
 const RISK_CFG={LOW:{c:"#10b981",bg:"rgba(16,185,129,0.1)"},MEDIUM:{c:"#f59e0b",bg:"rgba(245,158,11,0.1)"},HIGH:{c:"#f97316",bg:"rgba(249,115,22,0.1)"},CRITICAL:{c:"#ef4444",bg:"rgba(239,68,68,0.12)"}};
 const Q_CFG={NOT_SENT:{c:"#475569",l:"Not Sent"},SENT:{c:"#3b82f6",l:"Sent"},COMPLETED:{c:"#10b981",l:"Completed"},OVERDUE:{c:"#ef4444",l:"Overdue"}};
 const EMPTY={name:"",category:"SaaS",website:"",contact_email:"",risk_score:0,risk_level:"LOW",data_access:[],frameworks:[],notes:""};

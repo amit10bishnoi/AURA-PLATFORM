@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const API = "http://localhost:8000";
+const API = "https://web-production-320c3.up.railway.app";
 
 function TrustCenter() {
   const tenantId = window.location.pathname.split("/trust/")[1]?.split("/")[0] || "";

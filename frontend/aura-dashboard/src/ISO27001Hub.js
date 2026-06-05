@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Shield, CheckCircle, AlertTriangle, RefreshCw, Download, ChevronRight } from "lucide-react";
-const API = "http://localhost:8000";
+const API = "https://web-production-320c3.up.railway.app";
 
 const THEME_COLORS = { Organizational:"#7c3aed", People:"#0891b2", Physical:"#d97706", Technological:"#16a34a" };
 const STATUS_CFG = {

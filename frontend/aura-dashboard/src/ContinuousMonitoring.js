@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Activity, RefreshCw, CheckCircle, XCircle, AlertTriangle, Bell, Clock, Play, Shield } from "lucide-react";
-const API = "http://localhost:8000";
+const API = "https://web-production-320c3.up.railway.app";
 
 const SEV_COLOR = { CRITICAL:"#ef4444", HIGH:"#f97316", MEDIUM:"#f59e0b", LOW:"#10b981" };
 const FW_COLOR = { SOC2:"#3b82f6", ISO27001:"#8b5cf6", RBI:"#f97316", DPDP:"#10b981" };

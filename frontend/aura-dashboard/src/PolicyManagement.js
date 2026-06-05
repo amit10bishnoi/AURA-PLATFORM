@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { FileText, Plus, RefreshCw, X, CheckCircle, Clock, AlertCircle, Search, Download, BookOpen } from "lucide-react";
-const API = "http://localhost:8000";
+const API = "https://web-production-320c3.up.railway.app";
 
 const STATUS_CFG = {
   DRAFT:        {c:"#94a3b8",bg:"rgba(148,163,184,0.1)",l:"Draft",       i:<Clock size={12}/>},

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Building2, Plus, RefreshCw, X, Globe, Users, TrendingUp, DollarSign, Settings, ChevronLeft, Check, Palette } from "lucide-react";
-const API = "http://localhost:8000";
+const API = "https://web-production-320c3.up.railway.app";
 
 const sty = {
   hdr:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:24},

@@ -4,7 +4,7 @@ import {
   Inbox, Database, CircleCheck, CircleDot, Circle,
 } from "lucide-react";
 
-const API = "http://localhost:8000";
+const API = "https://web-production-320c3.up.railway.app";
 
 /* ─── Theme tokens (aligned with App.js + SOC2Hub + RBIHub) ─────────────── */
 const T = {

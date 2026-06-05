@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Sparkles, Send, RefreshCw, ChevronRight, AlertTriangle, CheckCircle } from "lucide-react";
-const API="http://localhost:8000";
+const API="https://web-production-320c3.up.railway.app";
 const CAT_COLORS={"Risk Analysis":"#F87171","Remediation Guide":"#34D399","Compliance Insights":"#60A5FA","Vendor Risk":"#FBBF24","Evidence":"#A78BFA","General Insights":"#94A3B8"};
 function TypingDots(){return(<div style={{display:"flex",gap:4,alignItems:"center",padding:"12px 16px"}}>{[0,1,2].map(i=>(<div key={i} style={{width:6,height:6,borderRadius:"50%",background:"#475569",animation:`bounce 1.2s ease-in-out ${i*0.2}s infinite`}}/>))}<style>{`@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}`}</style></div>);}
 export default function AIAssistant({token,tenantId,onNavigate}){

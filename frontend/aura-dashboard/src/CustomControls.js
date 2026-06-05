@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Shield, Plus, RefreshCw, X, Edit, Trash2, CheckCircle, Clock, AlertCircle, Search, ChevronDown } from "lucide-react";
-const API = "http://localhost:8000";
+const API = "https://web-production-320c3.up.railway.app";
 
 const STATUS_CFG = {
   IMPLEMENTED:  {c:"#10b981",bg:"rgba(16,185,129,0.1)",l:"Implemented"},

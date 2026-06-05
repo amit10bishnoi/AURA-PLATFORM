@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FileCheck, Upload, Search, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle, FileText, Plus, Send, Bell, Users, AlertTriangle } from "lucide-react";
-const API = "http://localhost:8000";
+const API = "https://web-production-320c3.up.railway.app";
 
 const STATUS_CFG = {
   APPROVED:       {c:"#10b981", bg:"rgba(16,185,129,0.1)",  l:"Approved",       i:<CheckCircle size={11}/>},

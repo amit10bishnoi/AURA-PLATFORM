@@ -83,7 +83,7 @@ import {
 } from 'lucide-react';;;
 
 
-const API = "http://localhost:8000";
+const API = "https://web-production-320c3.up.railway.app";
 const PROXY_KEY = "aura-dev-key-change-in-production";
 
 function authHeaders(t, tid) {
@@ -2533,7 +2533,7 @@ function CISOOverview({implemented,token,tenantId,tenantName,onExpired,userName}
 
   // Fetch live scores from continuous checks engine
   useEffect(()=>{
-    fetch(`http://localhost:8000/api/scores/live?tenant_id=${tenantId||"demo"}`,{
+    fetch(`https://web-production-320c3.up.railway.app/api/scores/live?tenant_id=${tenantId||"demo"}`,{
       headers:{Authorization:`Bearer ${token}`}
     }).then(r=>r.json()).then(d=>{
       if(d.frameworks){
@@ -2918,7 +2918,7 @@ function IntegrationsTab({token, tenantId, onExpired}) {
     setSavingCreds(true);
     try{
       // Save to backend .env via API
-      const res=await fetch(`http://localhost:8000/api/integrations/credentials`,{
+      const res=await fetch(`https://web-production-320c3.up.railway.app/api/integrations/credentials`,{
         method:"POST",
         headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
         body:JSON.stringify({provider:providerKey,credentials:creds})
@@ -2951,7 +2951,7 @@ function IntegrationsTab({token, tenantId, onExpired}) {
   async function pullOne(key){
     setLoading(l=>({...l,[key]:true}));
     try{
-      const res=await fetch(`http://localhost:8000/api/integrations/pull/${key}`,{method:"POST",headers:{Authorization:`Bearer ${token}`}});
+      const res=await fetch(`https://web-production-320c3.up.railway.app/api/integrations/pull/${key}`,{method:"POST",headers:{Authorization:`Bearer ${token}`}});
       const data=await res.json();
       setResults(r=>({...r,[key]:data}));
     }catch(e){setResults(r=>({...r,[key]:{error:e.message}}));}
@@ -2963,7 +2963,7 @@ function IntegrationsTab({token, tenantId, onExpired}) {
     const connectedKeys=Object.keys(connected);
     if(connectedKeys.length===0){
       // Pull all anyway for demo
-      try{const res=await fetch(`http://localhost:8000/api/integrations/pull-all`,{method:"POST",headers:{Authorization:`Bearer ${token}`}});const data=await res.json();setResults(data);}catch{}
+      try{const res=await fetch(`https://web-production-320c3.up.railway.app/api/integrations/pull-all`,{method:"POST",headers:{Authorization:`Bearer ${token}`}});const data=await res.json();setResults(data);}catch{}
     } else {
       await Promise.all(connectedKeys.map(k=>pullOne(k)));
     }
@@ -3498,7 +3498,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
   useEffect(()=>{
     const fetchScore=async()=>{
       try{
-        const res=await fetch(`http://localhost:8000/api/scores/live?tenant_id=${tenantId}`,{headers:{Authorization:`Bearer ${token}`}});
+        const res=await fetch(`https://web-production-320c3.up.railway.app/api/scores/live?tenant_id=${tenantId}`,{headers:{Authorization:`Bearer ${token}`}});
         if(res.ok){const d=await res.json();if(d.overall_score)setLiveScore({overall:d.overall_score,color:d.overall_color||"#f59e0b",label:d.overall_score>=80?"Compliant":d.overall_score>=50?"In Progress":"Building"});}
       }catch{}
     };

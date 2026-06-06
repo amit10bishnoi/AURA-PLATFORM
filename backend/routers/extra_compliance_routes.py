@@ -1,32 +1,31 @@
 """
-Addition to compliance_routes.py — add these endpoints
-
-Wire by adding to your existing compliance_routes.py imports:
-  from extra_frameworks import score_extra_framework, EXTRA_FRAMEWORK_META
+extra_compliance_routes.py — MongoDB edition
+Assessment lookups use Motor; scoring logic (extra_frameworks) unchanged.
 """
-
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List
-from database import get_db
+
+from database import get_collection
 from dependencies import get_current_user
-from models import Assessment
 from extra_frameworks import score_extra_framework, EXTRA_FRAMEWORK_META
 
-# Add this to your existing compliance router
+extra_router = APIRouter(prefix="/api/extra-compliance", tags=["extra-compliance"])
+
+
+def _assessments():
+    return get_collection("assessments")
 
 
 @extra_router.get("/frameworks", summary="List all 5 extra compliance frameworks")
 def list_extra_frameworks(_=Depends(get_current_user)):
     return [
         {
-            "key":      k,
-            "label":    v["label"],
+            "key":       k,
+            "label":     v["label"],
             "full_name": v["full_name"],
-            "region":   v["region"],
-            "for":      v["for"],
-            "color":    v["color"],
-            "controls": len(v["controls"]),
+            "region":    v["region"],
+            "for":       v["for"],
+            "color":     v["color"],
+            "controls":  len(v["controls"]),
         }
         for k, v in EXTRA_FRAMEWORK_META.items()
     ]
@@ -36,18 +35,13 @@ def list_extra_frameworks(_=Depends(get_current_user)):
     "/assessments/{assessment_id}",
     summary="Score assessment against all 5 extra frameworks",
 )
-def score_all_extra(
+async def score_all_extra(
     assessment_id: str,
-    db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    assessment = (
-        db.query(Assessment)
-        .filter(
-            Assessment.id == assessment_id,
-            Assessment.tenant_id == current_user.tenant_id,
-        )
-        .first()
+    assessment = await _assessments().find_one(
+        {"$or": [{"_id": assessment_id}, {"id": assessment_id}],
+         "tenant_id": current_user.tenant_id}
     )
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
@@ -58,29 +52,22 @@ def score_all_extra(
         results.append(result)
 
     return {
-        "assessment_id": assessment_id,
-        "org_name":      assessment.org_name,
-        "frameworks":    results,
+        "assessment_id":    assessment_id,
+        "org_name":         assessment.get("org_name", ""),
+        "frameworks":       results,
         "total_frameworks": len(results),
     }
 
 
-@extra_router.get(
-    "/assessments/{assessment_id}/{framework}",
-)
-def score_one_framework(
+@extra_router.get("/assessments/{assessment_id}/{framework}")
+async def score_one_framework(
     assessment_id: str,
-    framework: str,
-    db: Session = Depends(get_db),
+    framework:     str,
     current_user=Depends(get_current_user),
 ):
-    assessment = (
-        db.query(Assessment)
-        .filter(
-            Assessment.id == assessment_id,
-            Assessment.tenant_id == current_user.tenant_id,
-        )
-        .first()
+    assessment = await _assessments().find_one(
+        {"$or": [{"_id": assessment_id}, {"id": assessment_id}],
+         "tenant_id": current_user.tenant_id}
     )
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")

@@ -1,112 +1,110 @@
+"""
+Task routes — fully migrated to MongoDB/Motor
+"""
 from datetime import datetime
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from database import get_db
-from models import Task
-from schemas import TaskCreate, TaskUpdate, TaskResponse, MessageResponse
-from dependencies import get_current_user, CurrentUser
+from typing import Optional, List
 
-router = APIRouter(prefix="/tasks", tags=["Tasks"])
+from fastapi import APIRouter, HTTPException, Depends, Query
+from pydantic import BaseModel
 
+from database import tasks, ist_now, gen_uuid
+from routers.auth_routes import get_current_user, get_current_tenant_id
 
-def _to_response(t: Task) -> TaskResponse:
-    return TaskResponse(
-        id=t.id,
-        tenant_id=t.tenant_id,
-        title=t.title,
-        description=t.description,
-        status=t.status,
-        priority=t.priority,
-        assignee=t.assignee_email,
-        due=t.due_date.strftime("%Y-%m-%d") if t.due_date else None,
-        source=t.source,
-        created_at=t.created_at,
-        updated_at=t.updated_at,
-    )
+router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 
-@router.get("", response_model=List[TaskResponse])
-async def list_tasks(current_user: CurrentUser = Depends(get_current_user),
-                     db: Session = Depends(get_db)):
-    tasks = db.query(Task).filter(
-        Task.tenant_id == current_user.tenant_id
-    ).order_by(Task.created_at.desc()).all()
-    return [_to_response(t) for t in tasks]
+class TaskCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    status: str = "open"
+    priority: str = "MEDIUM"
+    assignee_email: Optional[str] = None
+    due_date: Optional[str] = None
+    source: str = "manual"
 
 
-@router.post("", response_model=TaskResponse)
-async def create_task(data: TaskCreate,
-                      current_user: CurrentUser = Depends(get_current_user),
-                      db: Session = Depends(get_db)):
-    if current_user.role == "auditor":
-        raise HTTPException(status_code=403, detail="Auditors cannot create tasks")
-
-    due = None
-    if data.due:
-        try: due = datetime.strptime(data.due, "%Y-%m-%d")
-        except: pass
-
-    t = Task(
-        tenant_id=current_user.tenant_id,
-        title=data.title,
-        description=data.description,
-        priority=data.priority,
-        status="open",
-        assignee_email=data.assignee,
-        due_date=due,
-        source="manual",
-        created_by=current_user.id,
-    )
-    db.add(t)
-    db.commit()
-    db.refresh(t)
-    return _to_response(t)
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    assignee_email: Optional[str] = None
+    due_date: Optional[str] = None
 
 
-@router.put("/{task_id}", response_model=TaskResponse)
-async def update_task(task_id: str, data: TaskUpdate,
-                      current_user: CurrentUser = Depends(get_current_user),
-                      db: Session = Depends(get_db)):
-    if current_user.role == "auditor":
-        raise HTTPException(status_code=403, detail="Auditors cannot modify tasks")
+def _clean(doc: dict) -> dict:
+    doc["id"] = str(doc.get("_id", doc.get("id", "")))
+    doc.pop("_id", None)
+    return doc
 
-    t = db.query(Task).filter(
-        Task.id == task_id,
-        Task.tenant_id == current_user.tenant_id
-    ).first()
-    if not t:
+
+@router.get("")
+async def list_tasks(
+    status: Optional[str] = Query(None),
+    priority: Optional[str] = Query(None),
+    tenant_id: str = Depends(get_current_tenant_id),
+):
+    q: dict = {"tenant_id": tenant_id}
+    if status:
+        q["status"] = status
+    if priority:
+        q["priority"] = priority
+    docs = await tasks().find(q).sort("created_at", -1).to_list(length=500)
+    return [_clean(d) for d in docs]
+
+
+@router.post("")
+async def create_task(
+    body: TaskCreate,
+    tenant_id: str = Depends(get_current_tenant_id),
+    current_user: dict = Depends(get_current_user),
+):
+    uid = gen_uuid()
+    doc = {
+        "_id": uid,
+        "id": uid,
+        "tenant_id": tenant_id,
+        "created_by": current_user["_id"],
+        **body.model_dump(),
+        "created_at": ist_now(),
+        "updated_at": ist_now(),
+    }
+    await tasks().insert_one(doc)
+    return _clean(doc)
+
+
+@router.get("/{task_id}")
+async def get_task(task_id: str, tenant_id: str = Depends(get_current_tenant_id)):
+    doc = await tasks().find_one({"_id": task_id, "tenant_id": tenant_id})
+    if not doc:
         raise HTTPException(status_code=404, detail="Task not found")
-
-    if data.title is not None:    t.title = data.title
-    if data.description is not None: t.description = data.description
-    if data.status is not None:
-        t.status = data.status
-        if data.status == "done": t.completed_at = datetime.utcnow()
-    if data.priority is not None: t.priority = data.priority
-    if data.assignee is not None: t.assignee_email = data.assignee
-    if data.due is not None:
-        try: t.due_date = datetime.strptime(data.due, "%Y-%m-%d")
-        except: pass
-    t.updated_at = datetime.utcnow()
-    db.commit()
-    db.refresh(t)
-    return _to_response(t)
+    return _clean(doc)
 
 
-@router.delete("/{task_id}", response_model=MessageResponse)
-async def delete_task(task_id: str,
-                      current_user: CurrentUser = Depends(get_current_user),
-                      db: Session = Depends(get_db)):
-    if current_user.role == "auditor":
-        raise HTTPException(status_code=403, detail="Auditors cannot delete tasks")
-
-    t = db.query(Task).filter(
-        Task.id == task_id,
-        Task.tenant_id == current_user.tenant_id
-    ).first()
-    if not t:
+@router.put("/{task_id}")
+async def update_task(
+    task_id: str,
+    body: TaskUpdate,
+    tenant_id: str = Depends(get_current_tenant_id),
+):
+    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    updates["updated_at"] = ist_now()
+    if updates.get("status") == "done":
+        updates["completed_at"] = ist_now()
+    result = await tasks().update_one(
+        {"_id": task_id, "tenant_id": tenant_id}, {"$set": updates}
+    )
+    if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Task not found")
-    db.delete(t)
-    db.commit()
-    return MessageResponse(message="Task deleted")
+    doc = await tasks().find_one({"_id": task_id})
+    return _clean(doc)
+
+
+@router.delete("/{task_id}")
+async def delete_task(task_id: str, tenant_id: str = Depends(get_current_tenant_id)):
+    result = await tasks().delete_one({"_id": task_id, "tenant_id": tenant_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {"deleted": True, "id": task_id}

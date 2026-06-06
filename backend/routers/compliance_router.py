@@ -1,241 +1,193 @@
 """
-compliance_router.py
-─────────────────────
-FastAPI router exposing 3 compliance endpoints.
-
-Place this file in your backend root (same folder as main.py).
-
-Then in main.py add:
-    from compliance_router import router as compliance_router
-    app.include_router(compliance_router, prefix="/api")
+compliance_router.py — MongoDB edition
+ComplianceResult is stored as a sub-document in the assessments collection
+(field: compliance_results — a dict keyed by framework name).
+No separate collection needed; upsert logic preserved.
 """
-
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 
-from database import get_db
-from dependencies import get_current_user          # your existing auth dependency
-from models import Assessment, ComplianceResult     # ComplianceResult added in previous step
-from backend.routers.compliance_frameworks import (
-    build_assessment_dict,
-    score_all_frameworks,
-    score_framework,
-    FRAMEWORKS,
-)
+from database import get_collection, ist_now
+from dependencies import get_current_user
+
+try:
+    from compliance_frameworks import build_assessment_dict, score_all_frameworks, score_framework, FRAMEWORKS
+except ImportError:
+    # Graceful degradation if compliance_frameworks not present
+    def build_assessment_dict(a): return dict(a)
+    def score_all_frameworks(a): return []
+    def score_framework(fw, a): return {}
+    FRAMEWORKS = {}
 
 router = APIRouter(tags=["Compliance"])
 
 
-# ─────────────────────────────────────────────
-# Pydantic Schemas
-# ─────────────────────────────────────────────
+def _assessments():
+    return get_collection("assessments")
+
+
+# ── Pydantic Schemas ──────────────────────────────────────────────────────────
 
 class ControlDetail(BaseModel):
-    id: str
-    name: str
-    description: str
-    status: str                    # "pass" | "fail" | "partial"
+    id:             str
+    name:           str
+    description:    str
+    status:         str
     passing_fields: List[str]
     failing_fields: List[str]
-    weight: float
-    earned: float
+    weight:         float
+    earned:         float
 
 
 class FrameworkResult(BaseModel):
-    framework: str
-    score: float
-    controls: List[ControlDetail]
+    framework:  str
+    score:      float
+    controls:   List[ControlDetail]
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
 
 class ComplianceSummaryItem(BaseModel):
-    assessment_id: int
-    framework: str
-    score: float
-    updated_at: Optional[datetime] = None
+    assessment_id: str
+    framework:     str
+    score:         float
+    updated_at:    Optional[datetime] = None
 
 
-# ─────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _get_assessment_or_404(
-    assessment_id: int,
-    tenant_id: int,
-    db: Session,
-) -> Assessment:
-    assessment = (
-        db.query(Assessment)
-        .filter(
-            Assessment.id == assessment_id,
-            Assessment.tenant_id == tenant_id,   # enforce tenant isolation
-        )
-        .first()
+async def _get_assessment_or_404(assessment_id: str, tenant_id: str) -> dict:
+    doc = await _assessments().find_one(
+        {"$or": [{"_id": assessment_id}, {"id": assessment_id}],
+         "tenant_id": tenant_id}
     )
-    if not assessment:
+    if not doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Assessment {assessment_id} not found.",
         )
-    return assessment
+    return doc
 
 
-def _run_and_save(
-    assessment: Assessment,
-    db: Session,
-    framework: Optional[str] = None,
-) -> List[ComplianceResult]:
-    """
-    Score the assessment (one framework or all) and upsert into compliance_results.
-    Returns the list of saved ComplianceResult ORM objects.
-    """
+async def _run_and_save(
+    assessment: dict,
+    framework:  Optional[str] = None,
+) -> List[dict]:
     assessment_dict = build_assessment_dict(assessment)
+    assessment_id   = str(assessment.get("_id", assessment.get("id", "")))
 
     if framework:
         results_data = [score_framework(framework, assessment_dict)]
     else:
-        results_data = score_all_frameworks(assessment_dict)
+        results_data = list(score_all_frameworks(assessment_dict))
 
+    now = ist_now()
     saved = []
-    for result in results_data:
-        # Upsert: update existing row or create a new one
-        existing = (
-            db.query(ComplianceResult)
-            .filter(
-                ComplianceResult.assessment_id == assessment.id,
-                ComplianceResult.framework == result["framework"],
-            )
-            .first()
-        )
-        if existing:
-            existing.score = result["score"]
-            existing.controls_detail = result["controls"]
-            existing.updated_at = datetime.utcnow()
-            saved.append(existing)
-        else:
-            new_result = ComplianceResult(
-                assessment_id=assessment.id,
-                framework=result["framework"],
-                score=result["score"],
-                controls_detail=result["controls"],
-            )
-            db.add(new_result)
-            saved.append(new_result)
+    set_ops: dict = {}
 
-    db.commit()
-    for obj in saved:
-        db.refresh(obj)
+    for result in results_data:
+        fw  = result.get("framework", "unknown")
+        key = f"compliance_results.{fw}"
+        entry = {
+            "framework":       fw,
+            "score":           result.get("score", 0),
+            "controls_detail": result.get("controls", []),
+            "updated_at":      now,
+        }
+        existing = assessment.get("compliance_results", {}).get(fw)
+        if not existing:
+            entry["created_at"] = now
+        else:
+            entry["created_at"] = existing.get("created_at", now)
+        set_ops[key] = entry
+        saved.append(entry)
+
+    if set_ops:
+        await _assessments().update_one(
+            {"$or": [{"_id": assessment_id}, {"id": assessment_id}]},
+            {"$set": set_ops},
+        )
+
     return saved
 
 
-def _orm_to_schema(cr: ComplianceResult) -> FrameworkResult:
+def _to_schema(entry: dict) -> FrameworkResult:
+    controls_raw = entry.get("controls_detail") or []
+    controls = []
+    for c in controls_raw:
+        try:
+            controls.append(ControlDetail(**c))
+        except Exception:
+            pass
     return FrameworkResult(
-        framework=cr.framework,
-        score=cr.score,
-        controls=[ControlDetail(**c) for c in (cr.controls_detail or [])],
-        created_at=cr.created_at,
-        updated_at=cr.updated_at,
+        framework=entry.get("framework", ""),
+        score=entry.get("score", 0),
+        controls=controls,
+        created_at=entry.get("created_at"),
+        updated_at=entry.get("updated_at"),
     )
 
 
-# ─────────────────────────────────────────────
-# Endpoints
-# ─────────────────────────────────────────────
+# ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post(
     "/assessments/{assessment_id}/compliance",
     response_model=List[FrameworkResult],
     summary="Run compliance mapping for an assessment",
-    description=(
-        "Scores the assessment against SOC2, ISO 27001, and NIST CSF. "
-        "Results are saved/updated in the database and returned. "
-        "Optionally pass ?framework=SOC2 to score a single framework."
-    ),
 )
-def run_compliance_mapping(
-    assessment_id: int,
-    framework: Optional[str] = None,
-    db: Session = Depends(get_db),
+async def run_compliance_mapping(
+    assessment_id: str,
+    framework:     Optional[str] = None,
     current_user=Depends(get_current_user),
 ) -> List[FrameworkResult]:
-    if framework and framework not in FRAMEWORKS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unknown framework '{framework}'. Valid: {list(FRAMEWORKS.keys())}",
-        )
+    if framework and FRAMEWORKS and framework not in FRAMEWORKS:
+        raise HTTPException(400, f"Unknown framework '{framework}'. Valid: {list(FRAMEWORKS.keys())}")
 
-    assessment = _get_assessment_or_404(assessment_id, current_user.tenant_id, db)
-    saved = _run_and_save(assessment, db, framework=framework)
-    return [_orm_to_schema(cr) for cr in saved]
+    assessment = await _get_assessment_or_404(assessment_id, current_user.tenant_id)
+    saved = await _run_and_save(assessment, framework=framework)
+    return [_to_schema(e) for e in saved]
 
 
 @router.get(
     "/assessments/{assessment_id}/compliance",
     response_model=List[FrameworkResult],
     summary="Get saved compliance results for an assessment",
-    description=(
-        "Returns previously saved compliance results. "
-        "If no results exist yet, automatically runs the scoring and returns fresh results."
-    ),
 )
-def get_compliance_results(
-    assessment_id: int,
-    db: Session = Depends(get_db),
+async def get_compliance_results(
+    assessment_id: str,
     current_user=Depends(get_current_user),
 ) -> List[FrameworkResult]:
-    assessment = _get_assessment_or_404(assessment_id, current_user.tenant_id, db)
+    assessment = await _get_assessment_or_404(assessment_id, current_user.tenant_id)
+    existing   = assessment.get("compliance_results", {})
 
-    existing = (
-        db.query(ComplianceResult)
-        .filter(ComplianceResult.assessment_id == assessment_id)
-        .all()
-    )
-
-    # Auto-run if no results exist yet
     if not existing:
-        existing = _run_and_save(assessment, db)
+        saved = await _run_and_save(assessment)
+        return [_to_schema(e) for e in saved]
 
-    return [_orm_to_schema(cr) for cr in existing]
+    return [_to_schema(v) for v in existing.values()]
 
 
 @router.get(
     "/compliance/summary",
     response_model=List[ComplianceSummaryItem],
     summary="Tenant-wide compliance summary",
-    description=(
-        "Returns the latest compliance scores for all assessments "
-        "belonging to the current user's tenant — one row per (assessment, framework) pair."
-    ),
 )
-def get_compliance_summary(
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
-) -> List[ComplianceSummaryItem]:
-    # Fetch all assessments for this tenant
-    assessment_ids = (
-        db.query(Assessment.id)
-        .filter(Assessment.tenant_id == current_user.tenant_id)
-        .subquery()
-    )
+async def get_compliance_summary(current_user=Depends(get_current_user)) -> List[ComplianceSummaryItem]:
+    docs = await _assessments().find(
+        {"tenant_id": current_user.tenant_id}
+    ).sort("created_at", -1).to_list(50)
 
-    rows = (
-        db.query(ComplianceResult)
-        .filter(ComplianceResult.assessment_id.in_(assessment_ids))
-        .order_by(ComplianceResult.assessment_id, ComplianceResult.framework)
-        .all()
-    )
-
-    return [
-        ComplianceSummaryItem(
-            assessment_id=row.assessment_id,
-            framework=row.framework,
-            score=row.score,
-            updated_at=row.updated_at,
-        )
-        for row in rows
-    ]
+    out = []
+    for doc in docs:
+        aid = str(doc.get("_id", doc.get("id", "")))
+        for fw, entry in (doc.get("compliance_results") or {}).items():
+            out.append(ComplianceSummaryItem(
+                assessment_id=aid,
+                framework=fw,
+                score=entry.get("score", 0),
+                updated_at=entry.get("updated_at"),
+            ))
+    return out

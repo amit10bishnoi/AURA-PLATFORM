@@ -1,7 +1,7 @@
 import TrustCenter from './TrustCenter';
 import ExecutiveDashboard from './ExecutiveDashboard';
 import CustomControls from './CustomControls';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { Terminal, useState, useEffect, useCallback, useRef } from 'react';
 import MSPPortal from './MSPPortal';
 import PolicyManagement from "./PolicyManagement";
 import AIAssistant from "./AIAssistant";
@@ -13,11 +13,12 @@ import RBIHub from "./RBIHub";
 import AutomationHub from "./AutomationHub";
 import DPDPHub from "./DPDPHub";
 import RiskRegister from "./RiskRegister";
-import { CommandPalette, ThemeToggle, OnboardingBanner, SkeletonStatGrid, EmptyState } from "./UIEnhancements";
+import { Terminal, CommandPalette, ThemeToggle, OnboardingBanner, SkeletonStatGrid, EmptyState } from "./UIEnhancements";
 import QuestionnaireBuilder from "./QuestionnaireBuilder";
 import SSOSettings from "./SSOSettings";
 import AutoEvidence from "./AutoEvidence";
 import AuditorPortal from "./AuditorPortal";
+import SSHIntegration from "./SSHIntegration";
 import ContinuousMonitoring from "./ContinuousMonitoring";
 import VendorRisk from "./VendorRisk";
 import UserManagement from "./UserManagement";
@@ -26,7 +27,7 @@ import Reports from "./Reports";
 import AuditLogs from './AuditLogs';
 import EvidenceCollection from './EvidenceCollection';
 
-import {
+import { Terminal,
   Activity,
   AlertCircle,
   AlertOctagon,
@@ -292,6 +293,7 @@ const NAV_ITEMS = [
   {id:"questionnaires",label:"Questionnaires",    icon:ClipboardList,   roles:["ciso","auditor","developer"], section:"Trust"},
   {id:"monitoring",    label:"Monitoring",        icon:Activity,        roles:["ciso","developer"],           section:"Trust"},
   {id:"msp-portal",   label:"MSP Portal",        icon:Building2,       roles:["ciso"],                       section:"Trust"},
+  {id:"ssh",          label:"SSH Servers",       icon:Terminal,        roles:["ciso","developer"],               section:"Operations"},,
 ];
 
 const ALL_FRAMEWORK_CONTROLS = [
@@ -3655,7 +3657,8 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="automation"&&<AutomationHub token={token} tenantId={tenantId}/>}
             {activeTab==="iso27001"&&<ISO27001Hub token={token} tenantId={tenantId}/>}
             {activeTab==="monitoring"&&<ContinuousMonitoring token={token} tenantId={tenantId}/>}
-            {activeTab==="msp-portal"&&<MSPPortal token={token} tenantId={tenantId}/>}
+            {activeTab==="msp-portal"&&<MSPPortal token={token} tenantId={tenantId}"/>}
+            {activeTab==="ssh"&&<SSHIntegration token={token}/>}
             {activeTab==="ai-assistant"&&<AIAssistant token={token} tenantId={tenantId} onNavigate={setActiveTab}/>}
             {activeTab==="questionnaires"&&<QuestionnaireBuilder token={token} tenantId={tenantId}/>}
             {activeTab==="sso"&&<SSOSettings token={token} tenantId={tenantId}/>}

@@ -1,199 +1,90 @@
-import json
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from database import get_db
-from models import Assessment, Task
-from schemas import AssessmentCreate, AssessmentResponse, AssessmentListItem
-from dependencies import get_current_user, require_role, CurrentUser
-from services.assessment_service import (calculate_risk_score, estimate_financial_exposure,
-                                          generate_recommendations, create_remediation_tasks,
-                                          generate_ai_remediation)
+"""
+assessment_routes.py — MongoDB edition
+"""
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
+from datetime import datetime, timedelta
+from typing import Optional
 
-router = APIRouter(tags=["Assessments"])
+from database import col, ist_now, gen_uuid
+from dependencies import get_current_user
 
+router = APIRouter(prefix="/api", tags=["Assessment"])
 
-@router.post("/assess", response_model=AssessmentResponse)
-async def create_assessment(
-    data: AssessmentCreate,
-    current_user: CurrentUser = Depends(require_role("developer")),
-    db: Session = Depends(get_db),
-):
-    """Run a risk assessment. Only developers can do this."""
-    risk_score, risk_level = calculate_risk_score(
-        employees=data.employees,
-        has_mfa=data.has_mfa,
-        mfa_coverage=data.mfa_coverage,
-        patch_days=data.patch_days,
-        training_percent=data.training_percent,
-        has_irp=data.has_irp,
-        vulnerabilities=data.vulnerabilities,
-        vuln_critical=data.vuln_critical or 0,
-        vuln_high=data.vuln_high or 0,
-        vuln_medium=data.vuln_medium or 0,
-        vuln_low=data.vuln_low or 0,
+def _assessments(): return col("assessments")
+
+class AssessmentCreate(BaseModel):
+    org_name: str
+    industry: str = "Technology"
+    employees: int = 100
+    has_mfa: bool = False
+    mfa_coverage: int = 0
+    patch_days: int = 30
+    training_percent: int = 0
+    has_irp: bool = False
+    vulnerabilities: int = 0
+    vuln_critical: int = 0
+    vuln_high: int = 0
+    vuln_medium: int = 0
+    vuln_low: int = 0
+
+def _compute_risk(a: dict) -> tuple:
+    score = 50
+    mfa_cov = a.get("mfa_coverage", 0)
+    if not a.get("has_mfa"): score += 15
+    elif mfa_cov < 50: score += 10
+    elif mfa_cov >= 90: score -= 5
+    patch_days = a.get("patch_days", 30)
+    if patch_days > 60: score += 15
+    elif patch_days > 30: score += 8
+    score += min(a.get("vuln_critical", 0) * 5, 20)
+    score += min(a.get("vuln_high", 0) * 2, 10)
+    if not a.get("has_irp"): score += 10
+    if a.get("training_percent", 0) < 50: score += 8
+    score = max(0, min(100, score))
+    if score >= 75: level = "CRITICAL"
+    elif score >= 50: level = "HIGH"
+    elif score >= 25: level = "MEDIUM"
+    else: level = "LOW"
+    return round(score, 1), level
+
+def _clean(doc):
+    doc = dict(doc)
+    doc["id"] = str(doc.get("_id", doc.get("id","")))
+    doc.pop("_id", None)
+    for f in ["created_at","updated_at"]:
+        if isinstance(doc.get(f), datetime):
+            doc[f] = doc[f].isoformat()
+    return doc
+
+@router.post("/assess")
+async def create_assessment(body: AssessmentCreate, current_user=Depends(get_current_user)):
+    data = body.dict()
+    risk_score, risk_level = _compute_risk(data)
+    uid = gen_uuid()
+    doc = {"_id":uid,"id":uid,"tenant_id":current_user.tenant_id,"created_by":current_user.id,"risk_score":risk_score,"risk_level":risk_level,"financial_exposure":float(data.get("employees",100)*9200),"created_at":ist_now(),"updated_at":ist_now(),**data}
+    await _assessments().insert_one(doc)
+    return {"id":uid,"risk_score":risk_score,"risk_level":risk_level,"financial_exposure":doc["financial_exposure"]}
+
+@router.get("/assessments")
+async def list_assessments(current_user=Depends(get_current_user)):
+    docs = await _assessments().find({"tenant_id":current_user.tenant_id}).sort("created_at",-1).limit(20).to_list(20)
+    return [_clean(d) for d in docs]
+
+@router.get("/assessments/{assessment_id}")
+async def get_assessment(assessment_id:str, current_user=Depends(get_current_user)):
+    doc = await _assessments().find_one(
+        {"$or":[{"_id":assessment_id},{"id":assessment_id}],"tenant_id":current_user.tenant_id}
     )
-    financial_exposure = estimate_financial_exposure(risk_score, data.employees, data.industry)
-    recommendations = generate_recommendations(
-        has_mfa=data.has_mfa,
-        mfa_coverage=data.mfa_coverage,
-        patch_days=data.patch_days,
-        training_percent=data.training_percent,
-        has_irp=data.has_irp,
-        vulnerabilities=data.vulnerabilities,
-        vuln_critical=data.vuln_critical or 0,
-        vuln_high=data.vuln_high or 0,
+    if not doc:
+        raise HTTPException(404,"Assessment not found")
+    return _clean(doc)
+
+@router.delete("/assessments/{assessment_id}")
+async def delete_assessment(assessment_id:str, current_user=Depends(get_current_user)):
+    result = await _assessments().delete_one(
+        {"$or":[{"_id":assessment_id},{"id":assessment_id}],"tenant_id":current_user.tenant_id}
     )
-
-    assessment = Assessment(
-        tenant_id=current_user.tenant_id,
-        created_by=current_user.id,
-        org_name=data.org_name,
-        industry=data.industry,
-        employees=data.employees,
-        has_mfa=data.has_mfa,
-        mfa_coverage=data.mfa_coverage,
-        patch_days=data.patch_days,
-        training_percent=data.training_percent,
-        has_irp=data.has_irp,
-        vulnerabilities=data.vulnerabilities,
-        vuln_critical=data.vuln_critical or 0,
-        vuln_high=data.vuln_high or 0,
-        vuln_medium=data.vuln_medium or 0,
-        vuln_low=data.vuln_low or 0,
-        vuln_source=data.vuln_source,
-        risk_score=risk_score,
-        risk_level=risk_level,
-        financial_exposure=financial_exposure,
-        recommendations=json.dumps(recommendations),
-        model_version="rule-based-v2",
-    )
-    db.add(assessment)
-    db.commit()
-    db.refresh(assessment)
-
-    create_remediation_tasks(db, current_user.tenant_id, assessment.id,
-                             recommendations, current_user.id)
-
-    return AssessmentResponse(
-        id=assessment.id,
-        tenant_id=assessment.tenant_id,
-        org_name=assessment.org_name,
-        industry=assessment.industry,
-        employees=assessment.employees,
-        has_mfa=assessment.has_mfa,
-        mfa_coverage=assessment.mfa_coverage,
-        patch_days=assessment.patch_days,
-        training_percent=assessment.training_percent,
-        has_irp=assessment.has_irp,
-        vulnerabilities=assessment.vulnerabilities,
-        risk_score=assessment.risk_score,
-        risk_level=assessment.risk_level,
-        financial_exposure=assessment.financial_exposure,
-        recommendations=recommendations,
-        model_version=assessment.model_version,
-        created_at=assessment.created_at,
-    )
-
-
-@router.post("/assess/ai-remediation")
-async def ai_remediation(
-    assessment_id: str,
-    current_user: CurrentUser = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Generate AI-powered remediation tasks for an existing assessment."""
-    a = db.query(Assessment).filter(
-        Assessment.id == assessment_id,
-        Assessment.tenant_id == current_user.tenant_id,
-    ).first()
-    if not a:
-        raise HTTPException(status_code=404, detail="Assessment not found")
-
-    ai_tasks = await generate_ai_remediation(
-        org_name=a.org_name,
-        industry=a.industry or "General",
-        risk_score=a.risk_score,
-        risk_level=a.risk_level,
-        financial_exposure=a.financial_exposure,
-        has_mfa=a.has_mfa,
-        mfa_coverage=a.mfa_coverage,
-        patch_days=a.patch_days,
-        training_percent=a.training_percent,
-        has_irp=a.has_irp,
-        vulnerabilities=a.vulnerabilities,
-        vuln_critical=a.vuln_critical,
-        vuln_high=a.vuln_high,
-        vuln_medium=a.vuln_medium,
-    )
-
-    if not ai_tasks:
-        raise HTTPException(
-            status_code=503,
-            detail="AI service unavailable. Check ANTHROPIC_API_KEY is set correctly."
-        )
-
-    for t in ai_tasks:
-        task = Task(
-            tenant_id=current_user.tenant_id,
-            title=t.get("title", "AI Remediation Task")[:200],
-            description=f"{t.get('description', '')} | Impact: {t.get('impact', '')} | Est. effort: {t.get('effort_days', 7)} days",
-            priority=t.get("priority", "MEDIUM"),
-            status="open",
-            source="ai-assessment",
-            source_assessment_id=assessment_id,
-            created_by=current_user.id,
-        )
-        db.add(task)
-    db.commit()
-
-    return {
-        "assessment_id": assessment_id,
-        "ai_tasks_generated": len(ai_tasks),
-        "tasks": ai_tasks,
-        "message": f"✅ {len(ai_tasks)} AI remediation tasks added to your board.",
-    }
-
-
-@router.get("/assessments", response_model=List[AssessmentListItem])
-async def list_assessments(
-    current_user: CurrentUser = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """List all assessments for this tenant only."""
-    rows = db.query(Assessment).filter(
-        Assessment.tenant_id == current_user.tenant_id
-    ).order_by(Assessment.created_at.asc()).all()
-    return [AssessmentListItem(
-        id=r.id, org_name=r.org_name, industry=r.industry,
-        risk_score=r.risk_score, risk_level=r.risk_level,
-        financial_exposure=r.financial_exposure, created_at=r.created_at,
-    ) for r in rows]
-
-
-@router.get("/assessments/{assessment_id}", response_model=AssessmentResponse)
-async def get_assessment(
-    assessment_id: str,
-    current_user: CurrentUser = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    a = db.query(Assessment).filter(
-        Assessment.id == assessment_id,
-        Assessment.tenant_id == current_user.tenant_id,
-    ).first()
-    if not a:
-        raise HTTPException(status_code=404, detail="Assessment not found")
-
-    recs = []
-    if a.recommendations:
-        try: recs = json.loads(a.recommendations)
-        except: pass
-
-    return AssessmentResponse(
-        id=a.id, tenant_id=a.tenant_id, org_name=a.org_name, industry=a.industry,
-        employees=a.employees, has_mfa=a.has_mfa, mfa_coverage=a.mfa_coverage,
-        patch_days=a.patch_days, training_percent=a.training_percent, has_irp=a.has_irp,
-        vulnerabilities=a.vulnerabilities, risk_score=a.risk_score, risk_level=a.risk_level,
-        financial_exposure=a.financial_exposure, recommendations=recs,
-        model_version=a.model_version, created_at=a.created_at,
-    )
+    if result.deleted_count == 0:
+        raise HTTPException(404,"Not found")
+    return {"message":"Deleted"}

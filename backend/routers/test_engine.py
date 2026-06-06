@@ -62,6 +62,7 @@ async def run_real_aws(creds):
             mfa = summary.get("AccountMFAEnabled",0)==1
             results.append({"id":"aws_iam_root_mfa","name":"Root Account MFA Enabled","category":"Identity & Access","framework":"SOC2","control":"CC6.1","status":"PASS" if mfa else "FAIL","details":"MFA enabled" if mfa else "CRITICAL: Root MFA not enabled","remediation":None if mfa else "Enable MFA on root account immediately","severity":"CRITICAL","evidence":{"root_mfa":mfa}})
         except Exception as e:
+            pass
             results.append({"id":"aws_iam_root_mfa","name":"Root Account MFA","status":"ERROR","details":str(e),"category":"Identity & Access","framework":"SOC2","control":"CC6.1","severity":"CRITICAL"})
 
         try:
@@ -98,6 +99,7 @@ async def run_real_aws(creds):
             results.append({"id":"aws_s3_public","name":"S3 Public Access Blocked","category":"Data Security","framework":"SOC2","control":"CC6.6","status":"PASS" if not pub else "FAIL","details":f"{len(pub)} public buckets" if pub else f"All {len(buckets)} buckets block public access","remediation":None if not pub else f"Block public access on: {','.join(pub[:3])}","severity":"CRITICAL","evidence":{"public":pub,"total":len(buckets)}})
             results.append({"id":"aws_s3_encryption","name":"S3 Encryption at Rest","category":"Data Security","framework":"SOC2","control":"CC6.7","status":"PASS" if not unenc else "FAIL","details":f"{len(unenc)} unencrypted buckets" if unenc else "All buckets encrypted","remediation":None if not unenc else f"Enable SSE on: {','.join(unenc[:3])}","severity":"HIGH","evidence":{"unencrypted":unenc}})
         except Exception as e:
+            pass
             results.append({"id":"aws_s3_general","name":"S3 Checks","status":"ERROR","details":str(e),"category":"Data Security","framework":"SOC2","control":"CC6.6","severity":"CRITICAL"})
 
         # CloudTrail
@@ -131,6 +133,7 @@ async def run_real_aws(creds):
             results.append({"id":"aws_ec2_ssh","name":"No Open SSH (0.0.0.0/0:22)","category":"Network Security","framework":"SOC2","control":"CC6.6","status":"PASS" if not ssh else "FAIL","details":f"{len(ssh)} SGs allow SSH from anywhere" if ssh else "No open SSH ports","remediation":None if not ssh else f"Restrict port 22 in: {','.join(ssh[:3])}","severity":"CRITICAL","evidence":{"open_ssh":ssh}})
             results.append({"id":"aws_ec2_rdp","name":"No Open RDP (0.0.0.0/0:3389)","category":"Network Security","framework":"SOC2","control":"CC6.6","status":"PASS" if not rdp else "FAIL","details":f"{len(rdp)} SGs allow RDP from anywhere" if rdp else "No open RDP ports","remediation":None if not rdp else f"Restrict port 3389 in: {','.join(rdp[:3])}","severity":"CRITICAL","evidence":{"open_rdp":rdp}})
         except Exception as e:
+            pass
             results.append({"id":"aws_ec2_sg","name":"EC2 Security Groups","status":"ERROR","details":str(e),"category":"Network Security","framework":"SOC2","control":"CC6.6","severity":"CRITICAL"})
 
         # RDS
@@ -141,6 +144,7 @@ async def run_real_aws(creds):
             pub=[i["DBInstanceIdentifier"] for i in instances if i.get("PubliclyAccessible")]
             results.append({"id":"aws_rds_public","name":"RDS Not Publicly Accessible","category":"Data Security","framework":"SOC2","control":"CC6.6","status":"PASS" if not pub else "FAIL","details":f"{len(pub)} public instances" if pub else "No public RDS instances","remediation":None if not pub else f"Disable public access on: {','.join(pub[:3])}","severity":"CRITICAL","evidence":{"public":pub}})
         except Exception as e:
+            pass
 
         return results
     except Exception as e:

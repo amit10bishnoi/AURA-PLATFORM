@@ -1,179 +1,102 @@
+"""
+evidence_routes.py — MongoDB edition
+"""
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
-from sqlalchemy.orm import Session
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
-import os, shutil, json
+import os, shutil, random
+
+from database import col, ist_now, gen_uuid
+from dependencies import get_current_user
 
 router = APIRouter(prefix="/api/evidence", tags=["evidence"])
-Base  = declarative_base()
-UPLOAD_DIR = "uploads/evidence"
+
+UPLOAD_DIR = "/tmp/aura_uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# ── Model ──────────────────────────────────────────────────────────────────────
-class Evidence(Base):
-    __tablename__ = "evidence"
-    id           = Column(Integer, primary_key=True, index=True)
-    tenant_id    = Column(String, index=True)
-    name         = Column(String)
-    file_path    = Column(String, nullable=True)
-    file_size_kb = Column(Integer, nullable=True)
-    file_type    = Column(String, nullable=True)
-    framework    = Column(String)
-    control_id   = Column(String, nullable=True)
-    control_name = Column(String, nullable=True)
-    category     = Column(String)   # Policy | Report | Screenshot | Config | Other
-    status       = Column(String, default="PENDING_REVIEW")  # PENDING_REVIEW | APPROVED | REJECTED | EXPIRED
-    description  = Column(Text, nullable=True)
-    uploaded_by  = Column(String)
-    reviewed_by  = Column(String, nullable=True)
-    expires_at   = Column(DateTime, nullable=True)
-    created_at   = Column(DateTime, default=datetime.utcnow)
-    updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+def _evidence(): return col("evidence")
 
-# ── DB dependency ──────────────────────────────────────────────────────────────
-def get_db():
-    from database import SessionLocal
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# ── Demo seed data ─────────────────────────────────────────────────────────────
 DEMO_EVIDENCE = [
-    {"name":"Penetration Test Report 2025","framework":"SOC2","control_id":"CC7.1","control_name":"System Operations","category":"Report","status":"APPROVED","file_type":"pdf","file_size_kb":1820,"description":"Annual pentest by SecureWorks","uploaded_by":"Amit Shah","reviewed_by":"Priya Nair"},
-    {"name":"Access Control Policy v3.2","framework":"SOC2","control_id":"CC6.1","control_name":"Logical Access","category":"Policy","status":"APPROVED","file_type":"pdf","file_size_kb":245,"description":"Updated IAM policy document","uploaded_by":"Priya Nair","reviewed_by":"Amit Shah"},
-    {"name":"MFA Screenshot — Admin Portal","framework":"SOC2","control_id":"CC6.1","control_name":"Logical Access","category":"Screenshot","status":"APPROVED","file_type":"png","file_size_kb":85,"description":"Screenshot showing MFA enforcement","uploaded_by":"Amit Shah","reviewed_by":"Priya Nair"},
-    {"name":"Incident Response Plan v2","framework":"SOC2","control_id":"CC7.4","control_name":"Incident Response","category":"Policy","status":"APPROVED","file_type":"pdf","file_size_kb":189,"description":"Updated IR playbook","uploaded_by":"Priya Nair","reviewed_by":"Amit Shah"},
-    {"name":"AWS Config Rules Export","framework":"SOC2","control_id":"CC6.6","control_name":"Cloud Security","category":"Config","status":"REJECTED","file_type":"json","file_size_kb":55,"description":"Outdated — needs refresh","uploaded_by":"Riya Mehta","reviewed_by":"Amit Shah"},
+    {"name":"Penetration Test Report 2025","framework":"SOC2","category":"Security Testing","control_id":"CC7.1","control_name":"System Monitoring","uploaded_by":"Priya Nair","status":"APPROVED","file_type":"pdf","file_size_kb":1820,"description":"Annual external penetration test conducted by PenTest Partners."},
+    {"name":"MFA Enrollment Screenshot","framework":"SOC2","category":"Access Control","control_id":"CC6.1","control_name":"Logical Access","uploaded_by":"Amit Shah","status":"APPROVED","file_type":"png","file_size_kb":245,"description":"Screenshot showing MFA enabled for all admin accounts."},
+    {"name":"ISO 27001 Certificate","framework":"ISO27001","category":"Certification","control_id":"A.5.1","control_name":"Information Security Policies","uploaded_by":"Riya Mehta","status":"APPROVED","file_type":"pdf","file_size_kb":512,"description":"ISO 27001:2022 certification from BSI."},
+    {"name":"Employee Security Training Completion","framework":"SOC2","category":"Training","control_id":"CC1.4","control_name":"Security Awareness","uploaded_by":"HR Team","status":"PENDING","file_type":"xlsx","file_size_kb":88,"description":"Q1 2025 security awareness training completion records."},
+    {"name":"Vendor Risk Assessment — Okta","framework":"ISO27001","category":"Vendor Management","control_id":"A.15.1","control_name":"Supplier Relationships","uploaded_by":"Compliance Team","status":"APPROVED","file_type":"pdf","file_size_kb":340,"description":"Annual vendor risk assessment for Okta identity provider."},
 ]
 
-def _fmt_evidence(e, idx=0):
-    from datetime import timedelta
-    import random
-    now = datetime.utcnow()
-    base = {
-        "id": idx+1,
-        "name": e["name"], "framework": e["framework"],
-        "control_id": e.get("control_id"), "control_name": e.get("control_name"),
-        "category": e["category"], "status": e["status"],
-        "file_type": e.get("file_type"), "file_size_kb": e.get("file_size_kb"),
-        "description": e.get("description"), "uploaded_by": e["uploaded_by"],
-        "reviewed_by": e.get("reviewed_by"),
-        "created_at": (now - timedelta(days=idx*4+random.randint(0,3))).isoformat(),
-        "updated_at": (now - timedelta(days=idx+random.randint(0,2))).isoformat(),
-        "expires_at": (now + timedelta(days=365-idx*10)).isoformat() if e["status"]=="APPROVED" else None,
-    }
-    return base
+def _clean(doc):
+    doc = dict(doc)
+    doc["id"] = str(doc.get("_id", doc.get("id","")))
+    doc.pop("_id", None)
+    for f in ["created_at","updated_at","expiry_date"]:
+        if isinstance(doc.get(f), datetime):
+            doc[f] = doc[f].isoformat()
+    return doc
 
-# ── Routes ─────────────────────────────────────────────────────────────────────
+def _fmt_demo(e, i=0):
+    now = datetime.utcnow()
+    return {**e,"id":str(i+1),"created_at":(now-timedelta(days=i*10+5)).isoformat(),"updated_at":(now-timedelta(days=i*2)).isoformat(),"expiry_date":(now+timedelta(days=365-i*30)).isoformat(),"file_path":None}
+
 @router.get("")
-def get_evidence(
-    tenant_id: str = Query(...),
-    framework: Optional[str] = Query(None),
-    status:    Optional[str] = Query(None),
-    category:  Optional[str] = Query(None),
-    search:    Optional[str] = Query(None),
-    db: Session = Depends(get_db),
-):
-    try:
-        q = db.query(Evidence).filter(Evidence.tenant_id == tenant_id)
-        if framework: q = q.filter(Evidence.framework == framework)
-        if status:    q = q.filter(Evidence.status == status)
-        if category:  q = q.filter(Evidence.category == category)
-        if search:
-            s = f"%{search}%"
-            q = q.filter(Evidence.name.ilike(s) | Evidence.control_name.ilike(s))
-        items = q.order_by(Evidence.created_at.desc()).all()
-        return {"evidence": [
-            {"id":e.id,"name":e.name,"framework":e.framework,"control_id":e.control_id,
-             "control_name":e.control_name,"category":e.category,"status":e.status,
-             "file_type":e.file_type,"file_size_kb":e.file_size_kb,
-             "description":e.description,"uploaded_by":e.uploaded_by,
-             "reviewed_by":e.reviewed_by,
-             "created_at":e.created_at.isoformat(),
-             "expires_at":e.expires_at.isoformat() if e.expires_at else None}
-            for e in items
-        ], "total": len(items)}
-    except Exception:
+async def get_evidence(tenant_id:str=Query(...),framework:Optional[str]=Query(None),status:Optional[str]=Query(None),search:Optional[str]=Query(None),_=Depends(get_current_user)):
+    filt = {"tenant_id":tenant_id}
+    if framework: filt["framework"] = framework
+    if status: filt["status"] = status
+    if search: filt["$or"] = [{"name":{"$regex":search,"$options":"i"}},{"control_name":{"$regex":search,"$options":"i"}}]
+    docs = await _evidence().find(filt).sort("created_at",-1).to_list(500)
+    if not docs:
         filtered = DEMO_EVIDENCE[:]
         if framework: filtered = [e for e in filtered if e["framework"]==framework]
-        if status:    filtered = [e for e in filtered if e["status"]==status]
-        if category:  filtered = [e for e in filtered if e["category"]==category]
+        if status: filtered = [e for e in filtered if e["status"]==status]
         if search:
             s = search.lower()
-            filtered = [e for e in filtered if s in e["name"].lower() or s in (e.get("control_name") or "").lower()]
-        return {"evidence": [_fmt_evidence(e, i) for i,e in enumerate(filtered)], "total": len(filtered)}
-
+            filtered = [e for e in filtered if s in e["name"].lower() or s in e.get("control_name","").lower()]
+        return {"evidence":[_fmt_demo(e,i) for i,e in enumerate(filtered)],"total":len(filtered)}
+    return {"evidence":[_clean(d) for d in docs],"total":len(docs)}
 
 @router.post("")
 async def upload_evidence(
-    tenant_id:    str = Form(...),
-    name:         str = Form(...),
-    framework:    str = Form(...),
-    category:     str = Form(...),
-    uploaded_by:  str = Form(...),
-    control_id:   str = Form(None),
-    control_name: str = Form(None),
-    description:  str = Form(None),
-    file: UploadFile = File(None),
-    db: Session = Depends(get_db),
+    tenant_id:str=Form(...),
+    name:str=Form(...),
+    framework:str=Form(...),
+    category:str=Form("General"),
+    uploaded_by:str=Form(...),
+    control_id:Optional[str]=Form(None),
+    control_name:Optional[str]=Form(None),
+    description:Optional[str]=Form(None),
+    file:Optional[UploadFile]=File(None),
+    _=Depends(get_current_user),
 ):
     file_path, file_size_kb, file_type = None, None, None
     if file:
         dest = os.path.join(UPLOAD_DIR, f"{tenant_id}_{datetime.utcnow().timestamp()}_{file.filename}")
-        with open(dest, "wb") as f:
-            shutil.copyfileobj(file.file, f)
-        file_path    = dest
+        with open(dest,"wb") as f_out:
+            shutil.copyfileobj(file.file, f_out)
+        file_path = dest
         file_size_kb = os.path.getsize(dest) // 1024
-        file_type    = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else "unknown"
-    try:
-        entry = Evidence(
-            tenant_id=tenant_id, name=name, framework=framework,
-            category=category, uploaded_by=uploaded_by,
-            control_id=control_id, control_name=control_name,
-            description=description, file_path=file_path,
-            file_size_kb=file_size_kb, file_type=file_type,
-        )
-        db.add(entry); db.commit(); db.refresh(entry)
-        return {"message": "Evidence uploaded", "id": entry.id}
-    except Exception as e:
-        return {"message": "Demo mode — evidence recorded", "id": 999}
-
+        file_type = file.filename.rsplit(".",1)[-1].lower() if "." in file.filename else "unknown"
+    uid = gen_uuid()
+    doc = {"_id":uid,"id":uid,"tenant_id":tenant_id,"name":name,"framework":framework,"category":category,"uploaded_by":uploaded_by,"control_id":control_id,"control_name":control_name,"description":description,"file_path":file_path,"file_size_kb":file_size_kb,"file_type":file_type,"status":"PENDING","created_at":ist_now(),"updated_at":ist_now()}
+    await _evidence().insert_one(doc)
+    return {"message":"Evidence uploaded","id":uid}
 
 @router.patch("/{evidence_id}/status")
-def update_status(
-    evidence_id: int,
-    status:      str = Query(...),
-    reviewed_by: str = Query(...),
-    db: Session = Depends(get_db),
-):
-    try:
-        e = db.query(Evidence).filter(Evidence.id == evidence_id).first()
-        if not e:
-            raise HTTPException(404, "Evidence not found")
-        e.status = status; e.reviewed_by = reviewed_by
-        db.commit()
-        return {"message": "Status updated"}
-    except HTTPException:
-        raise
-    except Exception:
-        return {"message": "Demo mode — status updated"}
-
+async def update_status(evidence_id:str,status:str=Query(...),reviewed_by:str=Query(...),_=Depends(get_current_user)):
+    result = await _evidence().update_one(
+        {"$or":[{"_id":evidence_id},{"id":evidence_id}]},
+        {"$set":{"status":status,"reviewed_by":reviewed_by,"updated_at":ist_now()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(404,"Evidence not found")
+    return {"message":"Status updated"}
 
 @router.delete("/{evidence_id}")
-def delete_evidence(evidence_id: int, db: Session = Depends(get_db)):
-    try:
-        e = db.query(Evidence).filter(Evidence.id == evidence_id).first()
-        if not e:
-            raise HTTPException(404, "Not found")
-        if e.file_path and os.path.exists(e.file_path):
-            os.remove(e.file_path)
-        db.delete(e); db.commit()
-        return {"message": "Deleted"}
-    except HTTPException:
-        raise
-    except Exception:
-        return {"message": "Demo mode — deleted"}
+async def delete_evidence(evidence_id:str,_=Depends(get_current_user)):
+    doc = await _evidence().find_one({"$or":[{"_id":evidence_id},{"id":evidence_id}]})
+    if not doc:
+        raise HTTPException(404,"Not found")
+    fp = doc.get("file_path")
+    if fp and os.path.exists(fp):
+        os.remove(fp)
+    await _evidence().delete_one({"$or":[{"_id":evidence_id},{"id":evidence_id}]})
+    return {"message":"Deleted"}

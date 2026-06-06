@@ -44,6 +44,10 @@ def get_db():
 def col(name: str):
     return _db[name]
 
+def get_collection(name: str):
+    """Alias for col() — used by migrated routes."""
+    return _db[name]
+
 
 def tenants():    return _db["tenants"]
 def users():      return _db["users"]

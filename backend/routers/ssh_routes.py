@@ -15,7 +15,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from auth_routes import get_current_user
+from routers.auth_routes import get_current_user
 from database import col
 
 log = logging.getLogger("aura.ssh")

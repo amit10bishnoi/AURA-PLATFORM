@@ -111,13 +111,13 @@ function fmtDateTime(iso) {
 
 const realServer = {
   async login(email, password) {
-    const res = await fetch(`${API}/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password})});
+    const res = await fetch(`${API}/api/auth/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password})});
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail||"Login failed.");
     return {token:data.access_token,name:data.name,role:data.role||"developer",tenantId:data.tenant_id||"",tenantName:data.tenant_name||"Default"};
   },
   async register(payload) {
-    const res = await fetch(`${API}/register`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const res = await fetch(`${API}/api/auth/register`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail||"Registration failed.");
     return data;
@@ -160,7 +160,7 @@ const realServer = {
     return res.json();
   },
   async inviteUser(token, tenantId, tenantName, email, role) {
-    const res = await fetch(`${API}/register`,{method:"POST",headers:authHeaders(token,tenantId),body:JSON.stringify({email,role,name:email.split("@")[0],password:"ChangeMe123!",tenant_id:tenantId,join_existing_tenant:true})});
+    const res = await fetch(`${API}/api/auth/register`,{method:"POST",headers:authHeaders(token,tenantId),body:JSON.stringify({email,role,name:email.split("@")[0],password:"ChangeMe123!",tenant_id:tenantId,join_existing_tenant:true})});
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail||"Invite failed.");
     return {message:`Account created for ${email}. Temp password: ChangeMe123!`};
@@ -176,7 +176,7 @@ const realServer = {
     return res.json();
   },
   async validateToken(token, tenantId) {
-    try { const res = await fetch(`${API}/me`,{headers:authHeaders(token,tenantId)}); return res.ok?await res.json():null; } catch { return null; }
+    try { const res = await fetch(`${API}/api/auth/me`,{headers:authHeaders(token,tenantId)}); return res.ok?await res.json():null; } catch { return null; }
   },
   async health(token, tenantId) {
     const res = await fetch(`${API}/api/health`,{headers:proxyHeaders(token,tenantId)});

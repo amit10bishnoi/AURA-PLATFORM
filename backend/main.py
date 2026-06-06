@@ -124,9 +124,11 @@ _try_router("routers.test_engine",              "router", "Test Engine routes")
 # AI routers
 try:
     from routers.ai_assistant_routes import ai_router, q_router, sso_router
+    from routers.ssh_routes import router as ssh_router
     app.include_router(ai_router)
     app.include_router(q_router)
     app.include_router(sso_router)
+    app.include_router(ssh_router)
     print("✅ AI Assistant routes loaded")
 except Exception as e:
     print(f"⚠️  AI Assistant routes skipped: {e}")

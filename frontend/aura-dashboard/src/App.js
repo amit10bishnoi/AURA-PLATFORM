@@ -293,7 +293,7 @@ const NAV_ITEMS = [
   {id:"questionnaires",label:"Questionnaires",    icon:ClipboardList,   roles:["ciso","auditor","developer"], section:"Trust"},
   {id:"monitoring",    label:"Monitoring",        icon:Activity,        roles:["ciso","developer"],           section:"Trust"},
   {id:"msp-portal",   label:"MSP Portal",        icon:Building2,       roles:["ciso"],                       section:"Trust"},
-  {id:"ssh",          label:"SSH Servers",       icon:Terminal,        roles:["ciso","developer"],               section:"Operations"},,
+  {id:"ssh",          label:"SSH Servers",       icon:Terminal,        roles:["ciso","developer"],               section:"Operations"},
 ];
 
 const ALL_FRAMEWORK_CONTROLS = [

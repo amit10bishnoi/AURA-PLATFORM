@@ -1,7 +1,7 @@
 import TrustCenter from './TrustCenter';
 import ExecutiveDashboard from './ExecutiveDashboard';
 import CustomControls from './CustomControls';
-import { Terminal, useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import MSPPortal from './MSPPortal';
 import PolicyManagement from "./PolicyManagement";
 import AIAssistant from "./AIAssistant";
@@ -13,7 +13,7 @@ import RBIHub from "./RBIHub";
 import AutomationHub from "./AutomationHub";
 import DPDPHub from "./DPDPHub";
 import RiskRegister from "./RiskRegister";
-import { Terminal, CommandPalette, ThemeToggle, OnboardingBanner, SkeletonStatGrid, EmptyState } from "./UIEnhancements";
+import { CommandPalette, ThemeToggle, OnboardingBanner, SkeletonStatGrid, EmptyState } from "./UIEnhancements";
 import QuestionnaireBuilder from "./QuestionnaireBuilder";
 import SSOSettings from "./SSOSettings";
 import AutoEvidence from "./AutoEvidence";

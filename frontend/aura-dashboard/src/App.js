@@ -8,6 +8,7 @@ import AIAssistant from "./AIAssistant";
 import TestEngine from "./TestEngine";
 import SOC2Hub from "./SOC2Hub";
 import DarkOverview from './DarkOverview';
+import ComplianceHub from './ComplianceHub';
 import DarkSidebar  from './DarkSidebar';
 import LandingPage from "./LandingPage";
 import ISO27001Hub from "./ISO27001Hub";
@@ -3630,7 +3631,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="trustcenter"                  &&<TrustCenterTab token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
             {activeTab==="integrations"                 &&<IntegrationsTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
             {activeTab==="audit-logs"&&<AuditLogs token={token} tenantId={tenantId}/>}
-            {activeTab==="evidence"&&<EvidenceCollection token={token} tenantId={tenantId}/>}
+            {activeTab==="evidence"&&<div style={{background:"#f8f9fa",minHeight:"100vh",flex:1,overflow:"auto"}}><EvidenceCollection token={token} tenantId={tenantId}/></div>}
             {activeTab==="policies"&&<PolicyManagement token={token} tenantId={tenantId}/>}
             {activeTab==="vendors"&&<VendorRisk token={token} tenantId={tenantId}/>}
             {activeTab==="team-mgmt"&&<UserManagement token={token} tenantId={tenantId}/>}
@@ -3639,12 +3640,12 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="auto-evidence"&&<AutoEvidence token={token} tenantId={tenantId}/>}
             {activeTab==="auditor"&&<AuditorPortal token={token} tenantId={tenantId}/>}
             {activeTab==="test-engine"&&<TestEngine token={token} tenantId={tenantId}/>}
-            {activeTab==="soc2"&&<SOC2Hub token={token} tenantId={tenantId}/>}
-            {activeTab==="rbi"&&<RBIHub token={token} tenantId={tenantId}/>}
-            {activeTab==="dpdp"&&<DPDPHub token={token} tenantId={tenantId}/>}
-            {activeTab==="risk-register"&&<RiskRegister token={token} tenantId={tenantId}/>}
-            {activeTab==="automation"&&<AutomationHub token={token} tenantId={tenantId}/>}
-            {activeTab==="iso27001"&&<ISO27001Hub token={token} tenantId={tenantId}/>}
+            {activeTab==="soc2"&&<div style={{background:"#f8f9fa",minHeight:"100vh",flex:1,overflow:"auto"}}><SOC2Hub token={token} tenantId={tenantId}/></div>}
+            {activeTab==="rbi"&&<div style={{background:"#f8f9fa",minHeight:"100vh",flex:1,overflow:"auto"}}><RBIHub token={token} tenantId={tenantId}/></div>}
+            {activeTab==="dpdp"&&<div style={{background:"#f8f9fa",minHeight:"100vh",flex:1,overflow:"auto"}}><DPDPHub token={token} tenantId={tenantId}/></div>}
+            {activeTab==="risk-register"&&<div style={{background:"#f8f9fa",minHeight:"100vh",flex:1,overflow:"auto"}}><RiskRegister token={token} tenantId={tenantId}/></div>}
+            {activeTab==="automation"&&<div style={{background:"#f8f9fa",minHeight:"100vh",flex:1,overflow:"auto"}}><AutomationHub token={token} tenantId={tenantId}/></div>}
+            {activeTab==="iso27001"&&<div style={{background:"#f8f9fa",minHeight:"100vh",flex:1,overflow:"auto"}}><ISO27001Hub token={token} tenantId={tenantId}/></div>}
             {activeTab==="monitoring"&&<ContinuousMonitoring token={token} tenantId={tenantId}/>}
             {activeTab==="msp-portal"&&<MSPPortal token={token} tenantId={tenantId}/>}
             {activeTab==="ssh"&&<SSHIntegration token={token}/>}

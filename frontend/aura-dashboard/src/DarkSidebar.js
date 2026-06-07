@@ -9,7 +9,7 @@ const SECTIONS = [
     { id:'overview',     label:'Overview',      Icon:LayoutDashboard },
   ]},
   { title:'Compliance', items:[
-    { id:'compliance',   label:'Compliance Hub', Icon:ShieldCheck },
+    { id:'soc2',         label:'Compliance Hub', Icon:ShieldCheck },
   ]},
   { title:'Risk', items:[
     { id:'risk-register',label:'Risk Register',  Icon:AlertTriangle },
@@ -20,7 +20,7 @@ const SECTIONS = [
     { id:'ssh',          label:'SSH Manager',    Icon:Terminal  },
   ]},
   { title:'Trust', items:[
-    { id:'trust-center', label:'Trust Center',   Icon:Globe     },
+    { id:'trustcenter', label:'Trust Center',   Icon:Globe     },
     { id:'ai-assistant', label:'AI Assistant',   Icon:Sparkles  },
   ]},
 ];
@@ -29,8 +29,8 @@ const FW_ITEMS = [
   { id:'iso27001',  label:'ISO 27001',  color:'#a78bfa' },
   { id:'soc2',      label:'SOC 2',      color:'#34D399' },
   { id:'rbi',       label:'RBI Cyber',  color:'#60A5FA' },
-  { id:'dpdp',      label:'CERT-In',    color:'#FBBF24' },
-  { id:'certin',    label:'DPDP Act',   color:'#F472B6' },
+  { id:'certin',    label:'CERT-In',    color:'#FBBF24' },
+  { id:'dpdp',      label:'DPDP Act',   color:'#F472B6' },
 ];
 
 export default function DarkSidebar({ activeTab, onTabChange, tenantId, userEmail }) {

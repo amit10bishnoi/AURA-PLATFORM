@@ -410,7 +410,22 @@ const ALL_FRAMEWORK_CONTROLS = [
   {id:"P8.1",  framework:"SOC2", control:"Privacy monitoring & enforcement",                  riskreduction:10},
 ];
 
-const G = `
+const G = `/* ── DARK MODE OVERRIDES ──────────────────────────────────────── */
+body,html{background:#080812!important;margin:0;padding:0;}
+.shell{background:#080812!important;flex-direction:row!important;}
+.sidebar{display:none!important;}
+.main-area{background:#080812!important;margin-left:0!important;}
+.topbar{background:#0D0D1C!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;border-top:none!important;}
+.topbar-title{color:#ECEEFF!important;font-family:'Syne',sans-serif!important;font-size:15px!important;font-weight:600!important;}
+.topbar-search{background:rgba(255,255,255,0.04)!important;border:1px solid rgba(255,255,255,0.07)!important;}
+.topbar-search input{color:#ECEEFF!important;background:transparent!important;}
+.topbar-search input::placeholder{color:#3A3A58!important;}
+.score-badge{background:rgba(255,255,255,0.04)!important;border-color:rgba(255,255,255,0.1)!important;}
+.cyber-bg{display:none!important;}
+.icon-btn{background:rgba(255,255,255,0.04)!important;border:1px solid rgba(255,255,255,0.07)!important;color:#8888AA!important;}
+.icon-btn:hover{border-color:#7c3aed!important;color:#a78bfa!important;}
+/* ── END DARK MODE OVERRIDES ─────────────────────────────────── */
+
 /* ── Page structure ─────────────────────────────────────────────── */
 .page-crumb{
   display:flex;align-items:center;gap:6px;
@@ -522,7 +537,7 @@ html,body,#root{height:100%;font-family:'Plus Jakarta Sans','DM Sans',sans-serif
 select option{background:var(--surface);color:var(--text);}
 
 /* Shell layout */
-.shell{display:flex;min-height:100vh;background:var(--bg);}
+.shell{display:flex;min-height:100vh;background:#080812;}
 
 /* Sidebar */
 .sidebar{
@@ -616,11 +631,11 @@ select option{background:var(--surface);color:var(--text);}
 }
 
 /* Main area */
-.main-area{flex:1;margin-left:0;display:flex;flex-direction:column;min-height:100vh;min-width:0;overflow-x:hidden;background:#080812!important;}
+.main-area{flex:1;display:flex;flex-direction:column;min-height:100vh;min-width:0;overflow-x:hidden;background:#080812;}
 
 /* Topbar */
 .topbar{
-  background:#0D0D1C!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;
+  background:#0D0D1C;border-bottom:1px solid rgba(255,255,255,0.06);
   height:var(--topbar-h);
   background:rgba(7,11,20,0.9);
   backdrop-filter:blur(20px);

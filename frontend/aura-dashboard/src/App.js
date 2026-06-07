@@ -3625,7 +3625,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="assessment"                   &&<DeveloperAssessment token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
             {activeTab==="checklist"                    &&<ControlChecklist implemented={implemented} onToggle={toggleControl} role={role}/>}
             {activeTab==="custom-controls"             &&<CustomControls token={token} tenantId={tenantId}/>}
-            {activeTab==="compliance"                   &&<ComplianceTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
+            {activeTab==="compliance" && <ComplianceHub token={token} tenantId={tenantId}/>}
             {activeTab==="audit"                        &&<AuditTrail token={token} tenantId={tenantId} role={role} onExpired={handleExpired}/>}
             {activeTab==="remediation"                  &&<RemediationBoard token={token} tenantId={tenantId} role={role} onExpired={handleExpired}/>}
             {activeTab==="team-mgmt"&&role==="ciso"&&<TeamManagement token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}

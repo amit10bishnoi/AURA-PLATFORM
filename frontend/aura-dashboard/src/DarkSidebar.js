@@ -9,7 +9,7 @@ const SECTIONS = [
     { id:'overview',     label:'Overview',      Icon:LayoutDashboard },
   ]},
   { title:'Compliance', items:[
-    { id:'soc2',         label:'Compliance Hub', Icon:ShieldCheck },
+    { id:'compliance',   label:'Compliance Hub', Icon:ShieldCheck },
   ]},
   { title:'Risk', items:[
     { id:'risk-register',label:'Risk Register',  Icon:AlertTriangle },

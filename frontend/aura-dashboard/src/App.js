@@ -7,6 +7,8 @@ import PolicyManagement from "./PolicyManagement";
 import AIAssistant from "./AIAssistant";
 import TestEngine from "./TestEngine";
 import SOC2Hub from "./SOC2Hub";
+import DarkOverview from './DarkOverview';
+import DarkSidebar  from './DarkSidebar';
 import LandingPage from "./LandingPage";
 import ISO27001Hub from "./ISO27001Hub";
 import RBIHub from "./RBIHub";
@@ -3523,37 +3525,9 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
   return (
     <>
       <style>{G}</style>
-      <div className="shell"><div className="cyber-bg"/>
+      <div className="shell" style={{background:"#080812"}}><div className="cyber-bg"/>
         {sessionExpired&&<div className="session-toast"><AlertOctagon size={15}/> Session expired — redirecting...</div>}
-        <div className="sidebar">
-          <div className="sidebar-logo">
-            <div className="sidebar-logo-mark"><Shield size={16} color="#fff"/></div>
-            <div className="sidebar-logo-text">AURA</div>
-          </div>
-          {(()=>{
-            const sections=[...new Set(visibleNav.map(t=>t.section||"General"))];
-            return sections.map(section=>(
-              <div key={section}>
-                <div className="nav-section-label">{section}</div>
-                {visibleNav.filter(t=>(t.section||"General")===section).map(item=>{
-                  const Icon=item.icon;
-                  return(<button key={item.id} className={`nav-item${activeTab===item.id?" active":""}`} onClick={()=>setActiveTab(item.id)}><Icon size={15}/><span>{item.label}</span></button>);
-                })}
-              </div>
-            ));
-          })()}
-          
-          <div className="sidebar-footer">
-            <div className="tenant-pill"><Building2 size={11}/><span>{tenantName||"Workspace"}</span></div>
-            <div className="user-pill">
-              <div className="user-avatar">{(userName||"U")[0].toUpperCase()}</div>
-              <div style={{flex:1,minWidth:0}}>
-                <div className="user-name">{userName||"User"}</div>
-                <div className="user-role">{role||"member"}</div>
-              </div>
-              <button style={{background:"none",border:"none",cursor:"pointer",color:"rgba(148,163,184,0.4)",padding:"4px",display:"flex",alignItems:"center"}} onClick={onLogout} title="Logout"><LogOut size={14}/></button>
-            </div>
-          </div>        </div>
+        <DarkSidebar activeTab={activeTab} onTabChange={setActiveTab} tenantId={tenantId} userEmail={userName} role={role}/>
         <div className="main-area">
           <div className="topbar">
             <div className="topbar-title">{currentNav?.label||"Dashboard"}</div>
@@ -3627,7 +3601,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
                 {activeTab==="soc2"&&"Trust Services Criteria · Your complete path to SOC 2 Type II"}
               </div>
             </div>
-            {activeTab==="overview"&&<CISOOverview implemented={implemented} token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired} userName={userName}/>}
+             {activeTab==="overview" && <DarkOverview token={token} tenantId={tenantId}/>}
             {activeTab==="trends"                      &&<RiskTrendsTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
             {activeTab==="executive"                    &&<ExecutiveDashboard token={token} tenantId={tenantId} tenantName={tenantName} userName={userName}/>}
             {activeTab==="assessment"                   &&<DeveloperAssessment token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}

@@ -3528,9 +3528,9 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
       <div className="shell" style={{background:"#080812"}}><div className="cyber-bg"/>
         {sessionExpired&&<div className="session-toast"><AlertOctagon size={15}/> Session expired — redirecting...</div>}
         <DarkSidebar activeTab={activeTab} onTabChange={setActiveTab} tenantId={tenantId} userEmail={userName} role={role}/>
-        <div className="main-area">
-          <div className="topbar">
-            <div className="topbar-title">{currentNav?.label||"Dashboard"}</div>
+        <div className="main-area" style={{background:"#080812"}}>
+          <div className="topbar" style={{background:"#0D0D1C",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>                    
+            <div className="topbar-title" style={{color:"#ECEEFF",fontFamily:"'Syne',sans-serif"}}>{currentNav?.label||"Dashboard"}</div>
             <div className="topbar-search">
               <Search size={13} color="rgba(148,163,184,0.4)"/>
               <input placeholder="Ask AURA AI…"/>

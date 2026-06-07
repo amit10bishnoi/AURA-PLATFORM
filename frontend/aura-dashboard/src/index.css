@@ -1,3 +1,13 @@
+
+body{background:#080812;margin:0;}
+.shell{background:#080812!important;}
+.main-area{background:#080812!important;}
+.topbar{background:#0D0D1C!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;}
+.topbar-title{color:#ECEEFF!important;}
+.topbar-search{background:rgba(255,255,255,0.04)!important;border-color:rgba(255,255,255,0.08)!important;}
+.topbar-search input{color:#ECEEFF!important;background:transparent!important;}
+.topbar-search input::placeholder{color:#3A3A58!important;}
+.cyber-bg{display:none!important;}
 body{background:#080812;margin:0;}
 body {
   margin: 0;

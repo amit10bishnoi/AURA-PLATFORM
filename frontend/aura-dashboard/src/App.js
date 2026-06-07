@@ -8,6 +8,7 @@ import AIAssistant from "./AIAssistant";
 import TestEngine from "./TestEngine";
 import SOC2Hub from "./SOC2Hub";
 import DarkOverview from './DarkOverview';
+import AuraLogin from './AuraLogin';
 import ComplianceHub from './ComplianceHub';
 import DarkSidebar  from './DarkSidebar';
 import LandingPage from "./LandingPage";

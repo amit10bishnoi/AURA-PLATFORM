@@ -616,10 +616,11 @@ select option{background:var(--surface);color:var(--text);}
 }
 
 /* Main area */
-.main-area{flex:1;margin-left:var(--nav-w);display:flex;flex-direction:column;min-height:100vh;min-width:0;overflow-x:hidden;}
+.main-area{flex:1;margin-left:0;display:flex;flex-direction:column;min-height:100vh;min-width:0;overflow-x:hidden;background:#080812!important;}
 
 /* Topbar */
 .topbar{
+  background:#0D0D1C!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;
   height:var(--topbar-h);
   background:rgba(7,11,20,0.9);
   backdrop-filter:blur(20px);

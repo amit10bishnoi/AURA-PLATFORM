@@ -1,286 +1,480 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  Shield, Zap, FileText, Paperclip, Sparkles, ArrowRight, Check,
-  ScanLine, Cloud, Lock, Building2, ShieldCheck, RefreshCw, Gauge, Layers, Eye,
-} from "lucide-react";
+import { useState, useEffect, useRef } from 'react';
 
-/* ── Brand tokens ───────────────────────────────────────────── */
-const T = {
-  accent: "#7c3aed", accent2: "#8b5cf6", pink: "#db2777",
-  ink: "#1a0a3a", muted: "#a89dc8", text2: "#6b5b9e",
-  display: "'Syne',sans-serif", body: "'DM Sans',sans-serif", mono: "'JetBrains Mono',ui-monospace,monospace",
+/* ─── Brand tokens ───────────────────────────────────────────────────────── */
+const C = {
+  bg:      '#09090F',
+  bg2:     '#0E0E18',
+  card:    '#13131C',
+  cardHi:  '#181824',
+  border:  'rgba(255,255,255,0.08)',
+  borderHi:'rgba(255,255,255,0.14)',
+  purple:  '#7c3aed',
+  purpleL: '#a78bfa',
+  pink:    '#d946ef',
+  pinkL:   '#f472b6',
+  green:   '#10B981',
+  text:    '#FFFFFF',
+  muted:   '#9CA3AF',
+  faint:   '#4B5563',
+  mono:    "'JetBrains Mono','Fira Code',ui-monospace,monospace",
+  syne:    "'Syne',sans-serif",
+  body:    "'DM Sans',system-ui,sans-serif",
 };
 
-/* ── Interactive brand character: eyes follow the cursor, floats, blinks ── */
-function AuraMascot({ size = 360 }) {
-  const wrap = useRef(null);
-  const [p, setP] = useState({ x: 0, y: 0 });
-  useEffect(() => {
-    function onMove(e) {
-      const el = wrap.current; if (!el) return;
-      const r = el.getBoundingClientRect();
-      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      const dx = e.clientX - cx, dy = e.clientY - cy;
-      const d = Math.hypot(dx, dy) || 1, k = Math.min(7, d / 12);
-      setP({ x: +((dx / d) * k).toFixed(1), y: +((dy / d) * k).toFixed(1) });
-    }
-    window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
-  }, []);
-  const tr = `translate(${p.x} ${p.y})`;
+/* ─── Data ────────────────────────────────────────────────────────────────── */
+const INTEGRATIONS = [
+  {n:'AWS',       i:'☁️'},  {n:'GCP',        i:'🌐'}, {n:'Azure',      i:'💎'},
+  {n:'GitHub',    i:'🐙'},  {n:'GitLab',     i:'🦊'}, {n:'Jira',       i:'📋'},
+  {n:'Slack',     i:'💬'},  {n:'Okta',       i:'🔐'}, {n:'Crowdstrike',i:'⚔️'},
+  {n:'Qualys',    i:'🔍'},  {n:'Tenable',    i:'🛡️'}, {n:'Splunk',     i:'📊'},
+  {n:'Datadog',   i:'🐶'},  {n:'PagerDuty',  i:'🔔'},
+];
+
+const FRAMEWORKS = [
+  {name:'ISO 27001',      sub:'Information Security Management', color:'#a78bfa', border:'rgba(167,139,250,0.35)'},
+  {name:'SOC 2 Type II',  sub:'Trust Service Criteria',          color:'#34D399', border:'rgba(52,211,153,0.35)'},
+  {name:'RBI Cybersecurity',sub:'Reserve Bank Guidelines',       color:'#60A5FA', border:'rgba(96,165,250,0.35)'},
+  {name:'CERT-In',        sub:'National Cert Framework',         color:'#FBBF24', border:'rgba(251,191,36,0.35)'},
+  {name:'DPDP Act 2023',  sub:'Digital Personal Data Protection',color:'#F472B6', border:'rgba(244,114,182,0.35)'},
+];
+
+const FEATURES = [
+  {icon:'⚡', title:'AI-powered evidence collection', color:'#a78bfa',
+   desc:'Auto-collect evidence from 14+ integrations. AURA AI maps controls to evidence automatically, saving your team 90% of manual work.'},
+  {icon:'🇮🇳', title:'India-native frameworks', color:'#60A5FA',
+   desc:'First-class support for RBI Cybersecurity Framework, CERT-In guidelines, and the new DPDP Act 2023 with real-time regulatory updates.'},
+  {icon:'🤖', title:'Remediation copilot', color:'#34D399',
+   desc:"AURA's AI assistant writes remediation playbooks, generates security policies, and fixes control gaps with one click."},
+];
+
+const STEPS = [
+  {n:'01', title:'Connect integrations', desc:'Link your cloud, code, and security tools. AURA auto-discovers your infrastructure.'},
+  {n:'02', title:'AI maps controls', desc:'Our AI automatically maps evidence to framework controls across all selected standards.'},
+  {n:'03', title:'Fix gaps with copilot', desc:"AURA's remediation AI writes policies and fixes controls with guided workflows."},
+  {n:'04', title:'Share trust center', desc:'Publish your live compliance status to a branded trust center for customers and auditors.'},
+];
+
+const STATS = [
+  {val:'500+', label:'Controls automated'},
+  {val:'14',   label:'Integrations live'},
+  {val:'92%',  label:'Audit time saved'},
+  {val:'48h',  label:'Avg. cert turnaround'},
+];
+
+const SCORES = [
+  {name:'ISO',     val:95, color:'#a78bfa'},
+  {name:'SOC',     val:72, color:'#34D399'},
+  {name:'RBI',     val:95, color:'#60A5FA'},
+  {name:'CERT-In', val:81, color:'#FBBF24'},
+  {name:'DPDP',    val:86, color:'#F472B6'},
+];
+
+const TRUST = ['Razorpay','PhonePe','Groww','Zepto','BharatPe','Navi','Slice','Fi Money'];
+
+/* ─── AURA Mascot ────────────────────────────────────────────────────────── */
+function AuraMascot({size=260}) {
   return (
-    <div ref={wrap} className="am-float" style={{ cursor: "pointer", width: size, maxWidth: "100%" }}>
-      <svg width="100%" viewBox="0 0 280 330" aria-label="AURA guardian">
-        <defs>
-          <linearGradient id="aBody" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stopColor="#8b5cf6" /><stop offset="1" stopColor="#db2777" /></linearGradient>
-          <linearGradient id="aSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity="0.45" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></linearGradient>
-          <radialGradient id="aGlow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stopColor="#a78bfa" stopOpacity="0.45" /><stop offset="0.6" stopColor="#c084fc" stopOpacity="0.13" /><stop offset="1" stopColor="#c084fc" stopOpacity="0" /></radialGradient>
-        </defs>
-        <circle className="am-glow" cx="140" cy="182" r="122" fill="url(#aGlow)" />
-        <line x1="140" y1="100" x2="140" y2="72" stroke="#c084fc" strokeWidth="4" strokeLinecap="round" />
-        <circle className="am-tw" cx="140" cy="64" r="8" fill="#f0abfc" />
-        <rect x="58" y="100" width="164" height="172" rx="70" fill="url(#aBody)" />
-        <path d="M78 122 Q140 110 202 122 Q202 166 140 173 Q78 166 78 122 Z" fill="url(#aSheen)" />
-        <g className="am-eyes" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
-          <ellipse cx="108" cy="168" rx="22" ry="27" fill="#fff" />
-          <ellipse cx="172" cy="168" rx="22" ry="27" fill="#fff" />
-          <g transform={tr}><circle cx="108" cy="170" r="11" fill="#2b1769" /><circle cx="104" cy="166" r="3.6" fill="#fff" /></g>
-          <g transform={tr}><circle cx="172" cy="170" r="11" fill="#2b1769" /><circle cx="168" cy="166" r="3.6" fill="#fff" /></g>
-        </g>
-        <path d="M118 214 Q140 236 162 214" fill="none" stroke="#fff" strokeWidth="8" strokeLinecap="round" />
-        <path d="M140 238 C 133 238 124 240 120 242 C 120 256 126 263 140 270 C 154 263 160 256 160 242 C 156 240 147 238 140 238 Z" fill="#fff" fillOpacity="0.2" />
-        <path d="M132 252 l6 6 l12 -13" fill="none" stroke="#fff" strokeOpacity="0.65" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-        <g fill="#f0abfc">
-          <path className="am-tw" style={{ animationDelay: ".4s" }} d="M40 150 l5 11 l11 5 l-11 5 l-5 11 l-5 -11 l-11 -5 l11 -5 z" />
-          <path className="am-tw" style={{ animationDelay: "1s" }} d="M238 132 l4 9 l9 4 l-9 4 l-4 9 l-4 -9 l-9 -4 l9 -4 z" />
-          <path className="am-tw" style={{ animationDelay: "1.6s" }} d="M232 252 l3.5 8 l8 3.5 l-8 3.5 l-3.5 8 l-3.5 -8 l-8 -3.5 l8 -3.5 z" />
-        </g>
-      </svg>
-    </div>
+    <svg width={size} height={size*1.08} viewBox="0 0 260 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="mg1" cx="38%" cy="32%" r="68%">
+          <stop offset="0%" stopColor="#9B5DE5"/>
+          <stop offset="55%" stopColor="#7c3aed"/>
+          <stop offset="100%" stopColor="#5b21b6"/>
+        </radialGradient>
+        <radialGradient id="mg2" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.22"/>
+          <stop offset="100%" stopColor="#7c3aed" stopOpacity="0"/>
+        </radialGradient>
+        <radialGradient id="mg3" cx="50%" cy="65%" r="50%">
+          <stop offset="0%" stopColor="#d946ef" stopOpacity="0.55"/>
+          <stop offset="100%" stopColor="#d946ef" stopOpacity="0"/>
+        </radialGradient>
+      </defs>
+      {/* Outer glow ring */}
+      <ellipse cx="130" cy="140" rx="122" ry="130" fill="url(#mg2)"/>
+      {/* Pink bottom glow */}
+      <ellipse cx="130" cy="220" rx="85" ry="55" fill="url(#mg3)"/>
+      {/* Main body */}
+      <ellipse cx="130" cy="142" rx="93" ry="105" fill="url(#mg1)"/>
+      {/* Left eye */}
+      <circle cx="92" cy="114" r="21" fill="white" opacity="0.95"/>
+      <circle cx="92" cy="114" r="11" fill="#1a0932"/>
+      <circle cx="86" cy="108" r="4" fill="white" opacity="0.65"/>
+      {/* Right eye */}
+      <circle cx="168" cy="114" r="21" fill="white" opacity="0.95"/>
+      <circle cx="168" cy="114" r="11" fill="#1a0932"/>
+      <circle cx="162" cy="108" r="4" fill="white" opacity="0.65"/>
+      {/* AU badge */}
+      <rect x="107" y="155" width="46" height="26" rx="7" fill="rgba(255,255,255,0.16)"/>
+      <text x="130" y="173" textAnchor="middle" fill="white" fontSize="12" fontWeight="700" fontFamily="monospace">AU</text>
+      {/* Stars */}
+      <circle cx="28"  cy="46"  r="2.5" fill="rgba(255,255,255,0.45)"/>
+      <circle cx="225" cy="38"  r="2"   fill="rgba(255,255,255,0.38)"/>
+      <circle cx="242" cy="118" r="3"   fill="rgba(255,255,255,0.3)"/>
+      <circle cx="16"  cy="158" r="2"   fill="rgba(255,255,255,0.38)"/>
+      <circle cx="48"  cy="245" r="2.5" fill="rgba(255,255,255,0.28)"/>
+      <circle cx="212" cy="238" r="2"   fill="rgba(255,255,255,0.32)"/>
+      <circle cx="240" cy="195" r="1.5" fill="rgba(255,255,255,0.25)"/>
+    </svg>
   );
 }
 
-const FRAMEWORKS = ["ISO 27001:2022", "SOC 2 Type II", "RBI Cybersecurity", "CERT-In", "DPDP Act 2023"];
-const SECTORS = ["Fintech", "NBFCs", "SaaS", "Healthcare", "E-commerce", "Capital markets"];
-const INTEGRATIONS = ["AWS", "Google Cloud", "Azure", "Okta", "Google Workspace", "GitHub", "Microsoft 365", "Jira", "Slack", "Datadog", "Cloudflare", "Snyk"];
+/* ─── Main component ─────────────────────────────────────────────────────── */
+export default function LandingPage({onGetStarted, onSignIn}) {
+  const [scrolled, setScrolled] = useState(false);
 
-const DIFF = [
-  { Icon: Gauge, title: "Faster time-to-ready", body: "AURA handles scanning, mapping, and evidence so your first audit-ready posture is days, not quarters." },
-  { Icon: Zap, title: "It fixes, not just flags", body: "Most tools hand you a checklist. AURA remediates the gaps on approval — previewable and reversible." },
-  { Icon: Sparkles, title: "AI that drafts for you", body: "Policies written from your live stack and mapped to every framework, not generic boilerplate." },
-  { Icon: Building2, title: "India-native by design", body: "RBI, CERT-In and DPDP are core — with Aadhaar, PAN and UPI understood out of the box." },
-];
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 24);
+    window.addEventListener('scroll', fn, {passive:true});
+    return () => window.removeEventListener('scroll', fn);
+  }, []);
 
-const CAPS = [
-  { Icon: ScanLine, title: "Continuous scanning", body: "Posture mapped across all four frameworks in one pass." },
-  { Icon: Zap, title: "One-click remediation", body: "Fix gaps on approval, with preview and instant undo." },
-  { Icon: Sparkles, title: "AI policy drafting", body: "Audit-ready policies generated from your real stack." },
-  { Icon: Paperclip, title: "Auto evidence", body: "Timestamped proof for every control, collected for you." },
-  { Icon: RefreshCw, title: "Always-on monitoring", body: "Stay compliant between audits, not just during them." },
-  { Icon: Lock, title: "Privacy built in", body: "DPDP-grade data handling at the core of the platform." },
-];
+  const handleCTA = (cb) => {
+    if (cb) cb();
+    else window.location.reload();
+  };
 
-export default function LandingPage({ onEnter }) {
-  const enter = () => onEnter && onEnter();
-  const btnPrimary = { display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg,#7c3aed,#db2777)", color: "#fff", border: "none", borderRadius: 11, padding: "14px 26px", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: T.body, boxShadow: "0 8px 24px rgba(124,58,237,.3)" };
-  const btnGhostDark = { display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,.25)", borderRadius: 11, padding: "14px 24px", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: T.body, textDecoration: "none" };
-  const Eyebrow = ({ icon: Icon, children }) => (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 700, color: T.accent, textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 14 }}>
-      <Icon size={15} /> {children}
-    </div>
-  );
+  const S = {
+    page:    {background:C.bg, color:C.text, fontFamily:C.body, minHeight:'100vh', overflowX:'hidden'},
+    maxW:    {maxWidth:1160, margin:'0 auto', padding:'0 24px'},
+    section: {padding:'96px 0'},
+  };
 
   return (
-    <div style={{ fontFamily: T.body, color: T.ink, background: "#fff", minHeight: "100vh" }}>
+    <div style={S.page}>
       <style>{`
-        @keyframes amFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
-        @keyframes amGlow{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:.9;transform:scale(1.07)}}
-        @keyframes amBlink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
-        @keyframes amTw{0%,100%{opacity:.35}50%{opacity:1}}
-        @keyframes amDrift{0%,100%{transform:translate(0,0)}50%{transform:translate(60px,-50px)}}
-        @keyframes amDrift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-50px,40px)}}
-        .am-float{animation:amFloat 4s ease-in-out infinite}
-        .am-float:hover{animation-duration:1.1s}
-        .am-glow{animation:amGlow 3.5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
-        .am-eyes{animation:amBlink 4.8s infinite}
-        .am-tw{animation:amTw 2.2s ease-in-out infinite}
+        @keyframes lp-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+        @keyframes lp-pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+        @keyframes lp-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+        .lp-float { animation: lp-float 5s ease-in-out infinite; }
+        .lp-pill:hover { opacity:.85; cursor:pointer; }
+        .lp-int:hover { border-color:rgba(255,255,255,0.22) !important; transform:translateY(-2px); }
+        .lp-fw:hover { border-color:var(--hc) !important; transform:translateY(-2px); }
+        .lp-nav-link { color:${C.muted}; font-size:14px; cursor:pointer; text-decoration:none; transition:color .15s; }
+        .lp-nav-link:hover { color:${C.text}; }
+        * { box-sizing:border-box; }
       `}</style>
 
-      {/* NAV */}
-      <nav style={{ position: "sticky", top: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 40px", background: "rgba(26,10,58,.9)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg,#7c3aed,#db2777)", display: "flex", alignItems: "center", justifyContent: "center" }}><Shield size={18} color="#fff" /></div>
-          <span style={{ fontFamily: T.display, fontSize: 21, fontWeight: 800, letterSpacing: "-.5px", background: "linear-gradient(135deg,#a78bfa,#f0abfc)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>AURA</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
-          {["Platform", "Capabilities", "Frameworks"].map(l => (
-            <a key={l} href={"#" + l.toLowerCase()} style={{ color: "rgba(255,255,255,.75)", fontSize: 14, fontWeight: 500, textDecoration: "none" }}>{l}</a>
-          ))}
-          <button onClick={enter} style={{ background: "rgba(255,255,255,.1)", color: "#fff", border: "1px solid rgba(255,255,255,.2)", borderRadius: 9, padding: "9px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.body }}>Sign in</button>
+      {/* ── NAV ── */}
+      <nav style={{
+        position:'fixed', top:0, left:0, right:0, zIndex:100,
+        background: scrolled ? 'rgba(9,9,15,0.92)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        borderBottom: scrolled ? `1px solid ${C.border}` : '1px solid transparent',
+        transition: 'all .25s ease',
+        padding:'0 24px',
+      }}>
+        <div style={{...S.maxW, display:'flex', alignItems:'center', height:64, gap:32}}>
+          <div style={{display:'flex', alignItems:'center', gap:10, flexShrink:0}}>
+            <div style={{width:32, height:32, borderRadius:8, background:C.purple, display:'flex', alignItems:'center', justifyContent:'center'}}>
+              <span style={{fontFamily:C.syne, fontSize:16, fontWeight:800, color:'white'}}>A</span>
+            </div>
+            <span style={{fontFamily:C.syne, fontSize:18, fontWeight:800, color:C.text, letterSpacing:'-.4px'}}>AURA</span>
+          </div>
+          <div style={{display:'flex', gap:28, marginLeft:16}}>
+            {['Product','Frameworks','Pricing','Docs'].map(l => (
+              <a key={l} className="lp-nav-link">{l}</a>
+            ))}
+          </div>
+          <div style={{display:'flex', gap:10, marginLeft:'auto', alignItems:'center'}}>
+            <button className="lp-pill" onClick={() => handleCTA(onSignIn)} style={{
+              background:'transparent', border:`1px solid ${C.border}`, borderRadius:100,
+              padding:'7px 18px', fontSize:14, color:C.text, cursor:'pointer', fontFamily:C.body,
+              transition:'all .15s',
+            }}>Sign in</button>
+            <button className="lp-pill" onClick={() => handleCTA(onGetStarted)} style={{
+              background:C.purple, border:'none', borderRadius:100,
+              padding:'7px 18px', fontSize:14, color:'white', cursor:'pointer', fontWeight:500,
+              fontFamily:C.body, transition:'all .15s',
+            }}>Get started</button>
+          </div>
         </div>
       </nav>
 
-      {/* HERO with background video */}
-      <header style={{ position: "relative", overflow: "hidden", background: "linear-gradient(160deg,#1a0a3a,#2d1b5e 55%,#1a0a3a)", color: "#fff", padding: "76px 40px 64px" }}>
-        <video autoPlay muted loop playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.3 }}>
-          <source src="/aura-hero.mp4" type="video/mp4" />
-        </video>
-        <div className="am-blob" style={{ position: "absolute", top: -140, left: "6%", width: 460, height: 460, borderRadius: "50%", background: "radial-gradient(circle,rgba(124,58,237,.4),transparent 70%)", pointerEvents: "none", animation: "amDrift 9s ease-in-out infinite" }} />
-        <div className="am-blob" style={{ position: "absolute", bottom: -180, right: "4%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle,rgba(219,39,119,.28),transparent 70%)", pointerEvents: "none", animation: "amDrift2 11s ease-in-out infinite" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg,rgba(26,10,58,.6),rgba(45,27,94,.5))", pointerEvents: "none" }} />
-        <div style={{ position: "relative", maxWidth: 1180, margin: "0 auto", display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 36, alignItems: "center" }}>
+      {/* ── HERO ── */}
+      <section style={{
+        minHeight:'100vh', display:'flex', alignItems:'center',
+        paddingTop:80, position:'relative', overflow:'hidden',
+      }}>
+        {/* Background glows */}
+        <div style={{position:'absolute', top:'10%', left:'15%', width:480, height:480,
+          borderRadius:'50%', background:'rgba(124,58,237,0.12)', filter:'blur(80px)', pointerEvents:'none'}}/>
+        <div style={{position:'absolute', bottom:'5%', right:'10%', width:320, height:320,
+          borderRadius:'50%', background:'rgba(217,70,239,0.08)', filter:'blur(60px)', pointerEvents:'none'}}/>
+
+        <div style={{...S.maxW, display:'grid', gridTemplateColumns:'1fr 1fr', gap:48, alignItems:'center', width:'100%'}}>
+          {/* Left */}
           <div>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.18)", borderRadius: 100, padding: "6px 15px", fontSize: 13, fontWeight: 600, color: "#e9d5ff", marginBottom: 22 }}>
-              <Sparkles size={13} /> AI-powered · India-native · audit-ready
-            </span>
-            <h1 style={{ fontFamily: T.display, fontSize: 56, lineHeight: 1.02, fontWeight: 800, letterSpacing: "-1.6px", margin: "0 0 20px" }}>
-              Compliance,<br />
-              <span style={{ background: "linear-gradient(135deg,#a78bfa,#f0abfc)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>automated.</span>
+            {/* Badge */}
+            <div style={{
+              display:'inline-flex', alignItems:'center', gap:6,
+              background:'rgba(124,58,237,0.15)', border:`1px solid rgba(124,58,237,0.35)`,
+              borderRadius:100, padding:'6px 14px', marginBottom:28,
+            }}>
+              <div style={{width:6, height:6, borderRadius:'50%', background:C.green,
+                animation:'lp-pulse 2s infinite', flexShrink:0}}/>
+              <span style={{fontSize:13, color:'#c4b5fd', fontFamily:C.body}}>
+                Now live: DPDP Act 2023 compliance automation
+              </span>
+            </div>
+
+            {/* Headline */}
+            <h1 style={{fontFamily:C.syne, fontSize:'clamp(52px,5vw,80px)', fontWeight:800,
+              margin:'0 0 4px', lineHeight:1.05, letterSpacing:'-2px', color:C.text}}>
+              Compliance,
             </h1>
-            <p style={{ fontSize: 18, lineHeight: 1.6, color: "rgba(255,255,255,.8)", maxWidth: 480, margin: "0 0 30px" }}>
-              AURA scans your stack, fixes what's broken, drafts your policies, and gathers your evidence — across ISO 27001, SOC 2, RBI, and DPDP. The work, done for you.
+            <h1 style={{fontFamily:C.syne, fontSize:'clamp(52px,5vw,80px)', fontWeight:800,
+              margin:'0 0 28px', lineHeight:1.05, letterSpacing:'-2px',
+              background:`linear-gradient(135deg, ${C.pink}, ${C.purple})`,
+              WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
+            }}>
+              automated.
+            </h1>
+
+            <p style={{fontSize:18, color:C.muted, lineHeight:1.65, margin:'0 0 36px', maxWidth:480}}>
+              India's first AI-native GRC platform. Achieve ISO 27001, SOC 2 Type II, RBI Cybersecurity,
+              CERT-In and DPDP Act 2023 compliance — in weeks, not months.
             </p>
-            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 22 }}>
-              <button onClick={enter} style={btnPrimary}>Get started <ArrowRight size={17} /></button>
-              <a href="mailto:hello@auragrc.in?subject=AURA%20demo%20request" style={btnGhostDark}>Book a demo</a>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "rgba(255,255,255,.62)" }}>
-              <ShieldCheck size={15} color="#a78bfa" /> No credit card · live in minutes
-            </div>
-          </div>
-          <div style={{ display: "flex", justifyContent: "center" }}><AuraMascot size={380} /></div>
-        </div>
-        <div style={{ position: "relative", maxWidth: 1180, margin: "44px auto 0", display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-          {FRAMEWORKS.map(f => (
-            <span key={f} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 100, padding: "7px 15px", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.88)" }}>
-              <Check size={13} color="#a78bfa" /> {f}
-            </span>
-          ))}
-        </div>
-      </header>
 
-      {/* TRUST STRIP */}
-      <section style={{ padding: "30px 40px", borderBottom: "1px solid rgba(124,58,237,.08)", textAlign: "center" }}>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 700, marginBottom: 14, textTransform: "uppercase", letterSpacing: "1px" }}>Built for regulated teams across India</div>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}>
-          {SECTORS.map((s, i) => (
-            <span key={s} style={{ fontSize: 16, fontWeight: 600, color: T.text2, fontFamily: T.display, opacity: .9 }}>{s}{i < SECTORS.length - 1 ? "   ·" : ""}</span>
-          ))}
-        </div>
-      </section>
-
-      {/* DIFFERENTIATORS */}
-      <section id="platform" style={{ padding: "84px 40px", maxWidth: 1160, margin: "0 auto" }}>
-        <div style={{ textAlign: "center", marginBottom: 50 }}>
-          <Eyebrow icon={Sparkles}>Why teams choose AURA</Eyebrow>
-          <h2 style={{ fontFamily: T.display, fontSize: 40, fontWeight: 800, letterSpacing: "-1px", margin: 0 }}>Not another checklist tool</h2>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))", gap: 20 }}>
-          {DIFF.map(({ Icon, title, body }) => (
-            <div key={title} style={{ background: "#fff", border: "1px solid rgba(124,58,237,.12)", borderRadius: 18, padding: "28px 26px", boxShadow: "0 2px 16px rgba(26,10,58,.04)" }}>
-              <div style={{ width: 48, height: 48, borderRadius: 13, background: "linear-gradient(135deg,rgba(124,58,237,.12),rgba(219,39,119,.1))", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}><Icon size={23} color={T.accent} /></div>
-              <h3 style={{ fontFamily: T.display, fontSize: 19, fontWeight: 700, margin: "0 0 9px" }}>{title}</h3>
-              <p style={{ fontSize: 14.5, lineHeight: 1.6, color: T.text2, margin: 0 }}>{body}</p>
+            {/* CTAs */}
+            <div style={{display:'flex', gap:12, marginBottom:24, flexWrap:'wrap'}}>
+              <button className="lp-pill" onClick={() => handleCTA(onGetStarted)} style={{
+                background:C.purple, border:'none', borderRadius:10,
+                padding:'13px 28px', fontSize:15, color:'white', cursor:'pointer',
+                fontWeight:600, fontFamily:C.body, letterSpacing:'-.2px',
+              }}>Start free trial →</button>
+              <button className="lp-pill" style={{
+                background:'rgba(255,255,255,0.06)', border:`1px solid ${C.border}`, borderRadius:10,
+                padding:'13px 28px', fontSize:15, color:C.text, cursor:'pointer',
+                fontFamily:C.body,
+              }}>▶ Watch demo</button>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* CAPABILITIES GRID */}
-      <section id="capabilities" style={{ background: "linear-gradient(180deg,#faf8ff,#fff)", padding: "84px 40px", borderTop: "1px solid rgba(124,58,237,.06)", borderBottom: "1px solid rgba(124,58,237,.06)" }}>
-        <div style={{ maxWidth: 1160, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 50 }}>
-            <Eyebrow icon={Layers}>Capabilities</Eyebrow>
-            <h2 style={{ fontFamily: T.display, fontSize: 40, fontWeight: 800, letterSpacing: "-1px", margin: 0 }}>One engine. The whole job.</h2>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 18 }}>
-            {CAPS.map(({ Icon, title, body }) => (
-              <div key={title} style={{ display: "flex", gap: 14, background: "#fff", border: "1px solid rgba(124,58,237,.12)", borderRadius: 16, padding: "22px 22px" }}>
-                <div style={{ flexShrink: 0, width: 42, height: 42, borderRadius: 11, background: "linear-gradient(135deg,#7c3aed,#db2777)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={20} color="#fff" /></div>
-                <div>
-                  <h3 style={{ fontFamily: T.display, fontSize: 17, fontWeight: 700, margin: "0 0 5px" }}>{title}</h3>
-                  <p style={{ fontSize: 14, lineHeight: 1.55, color: T.text2, margin: 0 }}>{body}</p>
+            {/* Checkmarks */}
+            <div style={{display:'flex', gap:20, flexWrap:'wrap'}}>
+              {['SOC 2 certified','DPDP compliant','ISO 27001 ready'].map(t => (
+                <div key={t} style={{display:'flex', alignItems:'center', gap:6}}>
+                  <span style={{color:C.green, fontSize:14, fontWeight:600}}>✓</span>
+                  <span style={{fontSize:13, color:C.muted}}>{t}</span>
                 </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right — mascot + score widget */}
+          <div style={{position:'relative', display:'flex', justifyContent:'center', alignItems:'center'}}>
+            <div className="lp-float" style={{position:'relative'}}>
+              <AuraMascot size={280}/>
+              {/* Compliance score widget */}
+              <div style={{
+                position:'absolute', bottom:-16, right:-24,
+                background:'rgba(18,18,28,0.96)', backdropFilter:'blur(12px)',
+                border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 14px', width:210,
+              }}>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
+                  <span style={{fontSize:9, color:C.muted, textTransform:'uppercase', letterSpacing:'.6px', fontFamily:C.mono}}>
+                    Compliance Score
+                  </span>
+                  <span style={{fontSize:9, color:C.green, fontFamily:C.mono}}>+3.2% this week</span>
+                </div>
+                {SCORES.map(s => (
+                  <div key={s.name} style={{display:'flex', alignItems:'center', gap:6, marginBottom:5}}>
+                    <span style={{fontSize:9, color:C.muted, width:40, fontFamily:C.mono}}>{s.name}</span>
+                    <div style={{flex:1, height:3, background:'rgba(255,255,255,0.08)', borderRadius:2}}>
+                      <div style={{height:'100%', width:`${s.val}%`, background:s.color, borderRadius:2}}/>
+                    </div>
+                    <span style={{fontSize:9, color:s.color, fontFamily:C.mono, width:28, textAlign:'right'}}>{s.val}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TRUST STRIP ── */}
+      <div style={{background:C.bg2, borderTop:`1px solid ${C.border}`, borderBottom:`1px solid ${C.border}`, padding:'18px 0', overflow:'hidden'}}>
+        <div style={{...S.maxW, display:'flex', alignItems:'center', gap:24}}>
+          <span style={{fontSize:11, color:C.faint, textTransform:'uppercase', letterSpacing:'1px', fontWeight:500, flexShrink:0}}>
+            Trusted by India's leading fintechs
+          </span>
+          <div style={{flex:1, overflow:'hidden', position:'relative'}}>
+            <div className="lp-scroll" style={{display:'flex', gap:32, width:'max-content', animation:'lp-scroll 20s linear infinite'}}>
+              {[...TRUST,...TRUST].map((t,i) => (
+                <span key={i} style={{fontSize:14, color:C.faint, fontWeight:500, whiteSpace:'nowrap'}}>{t}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── BUILT FOR INDIA ── */}
+      <section style={{...S.section, background:C.bg}}>
+        <div style={S.maxW}>
+          <div style={{textAlign:'center', marginBottom:56}}>
+            <h2 style={{fontFamily:C.syne, fontSize:'clamp(36px,4vw,56px)', fontWeight:800, margin:'0 0 16px', letterSpacing:'-1.5px', lineHeight:1.1}}>
+              Built for India.{' '}
+              <span style={{background:`linear-gradient(135deg,${C.purpleL},${C.pink})`,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+                Certified globally.
+              </span>
+            </h2>
+            <p style={{fontSize:18, color:C.muted, maxWidth:560, margin:'0 auto'}}>
+              The only GRC platform purpose-built for RBI, CERT-In and DPDP alongside international standards.
+            </p>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:20}}>
+            {FEATURES.map(f => (
+              <div key={f.title} style={{
+                background:C.card, border:`1px solid ${C.border}`, borderRadius:14,
+                padding:'28px 24px', transition:'border-color .2s',
+              }}>
+                <div style={{fontSize:28, marginBottom:14}}>{f.icon}</div>
+                <h3 style={{fontFamily:C.syne, fontSize:18, fontWeight:700, color:f.color, margin:'0 0 12px', lineHeight:1.3}}>
+                  {f.title}
+                </h3>
+                <p style={{fontSize:14, color:C.muted, lineHeight:1.7, margin:0}}>{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* INTEGRATIONS */}
-      <section style={{ padding: "84px 40px", maxWidth: 1160, margin: "0 auto", textAlign: "center" }}>
-        <Eyebrow icon={Cloud}>Connects to your stack</Eyebrow>
-        <h2 style={{ fontFamily: T.display, fontSize: 40, fontWeight: 800, letterSpacing: "-1px", margin: "0 0 36px" }}>Plays well with everything</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12, maxWidth: 880, margin: "0 auto" }}>
-          {INTEGRATIONS.map(name => (
-            <div key={name} style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff", border: "1px solid rgba(124,58,237,.12)", borderRadius: 12, padding: "14px 16px" }}>
-              <Cloud size={16} color={T.accent} /><span style={{ fontSize: 14, fontWeight: 600 }}>{name}</span>
+      {/* ── INTEGRATIONS ── */}
+      <section style={{...S.section, background:C.bg2}}>
+        <div style={S.maxW}>
+          <div style={{textAlign:'center', marginBottom:48}}>
+            <h2 style={{fontFamily:C.syne, fontSize:'clamp(32px,3.5vw,52px)', fontWeight:800, margin:'0 0 12px', letterSpacing:'-1.5px'}}>
+              14 integrations. One command center.
+            </h2>
+            <p style={{fontSize:17, color:C.muted}}>Connect your entire security stack in minutes.</p>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:12}}>
+            {INTEGRATIONS.map(ig => (
+              <div key={ig.n} className="lp-int" style={{
+                background:C.card, border:`1px solid ${C.border}`, borderRadius:12,
+                padding:'18px 8px', textAlign:'center', cursor:'pointer',
+                transition:'all .2s ease',
+              }}>
+                <div style={{fontSize:28, marginBottom:8}}>{ig.i}</div>
+                <div style={{fontSize:12, color:C.muted, fontWeight:500}}>{ig.n}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FRAMEWORKS ── */}
+      <section style={{...S.section, background:C.bg}}>
+        <div style={S.maxW}>
+          <h2 style={{fontFamily:C.syne, fontSize:'clamp(32px,3.5vw,52px)', fontWeight:800,
+            textAlign:'center', marginBottom:48, letterSpacing:'-1.5px'}}>
+            Every framework. One platform.
+          </h2>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14}}>
+            {FRAMEWORKS.map(fw => (
+              <div key={fw.name} className="lp-fw" style={{
+                '--hc': fw.border,
+                background:C.card, border:`1px solid ${fw.border}`, borderRadius:14,
+                padding:'22px 18px', cursor:'pointer', transition:'all .2s ease',
+              }}>
+                <div style={{width:10, height:10, borderRadius:3, background:fw.color, marginBottom:14}}/>
+                <div style={{fontFamily:C.syne, fontSize:15, fontWeight:700, color:fw.color, marginBottom:6}}>{fw.name}</div>
+                <div style={{fontSize:12, color:C.muted, lineHeight:1.5}}>{fw.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section style={{...S.section, background:C.bg2}}>
+        <div style={S.maxW}>
+          <h2 style={{fontFamily:C.syne, fontSize:'clamp(30px,3vw,48px)', fontWeight:800,
+            textAlign:'center', marginBottom:56, letterSpacing:'-1.5px'}}>
+            From zero to certified in 4 steps
+          </h2>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:0, position:'relative'}}>
+            {/* connector line */}
+            <div style={{position:'absolute', top:28, left:'12.5%', right:'12.5%', height:1, background:`linear-gradient(90deg,${C.purple},${C.pink})`, opacity:.25, zIndex:0}}/>
+            {STEPS.map((st,i) => (
+              <div key={st.n} style={{padding:'0 16px', position:'relative', zIndex:1}}>
+                <div style={{
+                  fontFamily:C.mono, fontSize:42, fontWeight:700, lineHeight:1,
+                  color:'rgba(255,255,255,0.06)', marginBottom:16, letterSpacing:'-2px',
+                }}>{st.n}</div>
+                <h3 style={{fontFamily:C.syne, fontSize:17, fontWeight:700, margin:'0 0 10px', color:C.text}}>{st.title}</h3>
+                <p style={{fontSize:13, color:C.muted, lineHeight:1.65, margin:0}}>{st.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── STATS BAND ── */}
+      <section style={{background:C.card, borderTop:`1px solid ${C.border}`, borderBottom:`1px solid ${C.border}`, padding:'64px 0'}}>
+        <div style={{...S.maxW, display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:0}}>
+          {STATS.map((s,i) => (
+            <div key={s.label} style={{
+              textAlign:'center', padding:'0 24px',
+              borderRight: i < 3 ? `1px solid ${C.border}` : 'none',
+            }}>
+              <div style={{
+                fontFamily:C.syne, fontSize:'clamp(40px,4vw,64px)', fontWeight:800,
+                background:`linear-gradient(135deg,${C.pinkL},${C.purpleL})`,
+                WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
+                marginBottom:8, letterSpacing:'-2px', lineHeight:1,
+              }}>{s.val}</div>
+              <div style={{fontSize:14, color:C.muted}}>{s.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* BY THE NUMBERS */}
-      <section style={{ background: "linear-gradient(135deg,#1a0a3a,#2d1b5e)", color: "#fff", padding: "76px 40px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
-          <Eyebrow icon={Gauge}>By the numbers</Eyebrow>
-          <h2 style={{ fontFamily: T.display, fontSize: 38, fontWeight: 800, letterSpacing: "-1px", margin: "0 0 48px", color: "#fff" }}>What AURA covers out of the box</h2>
-          <div style={{ display: "flex", justifyContent: "center", gap: 56, flexWrap: "wrap" }}>
-            {[["199+", "Controls automated"], ["4", "Frameworks, one engine"], ["12+", "Integrations supported"], ["Minutes", "To your first scan"]].map(([v, l]) => (
-              <div key={l} style={{ textAlign: "center", minWidth: 150 }}>
-                <div style={{ fontFamily: T.display, fontSize: 46, fontWeight: 800, background: "linear-gradient(135deg,#a78bfa,#f0abfc)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: 1 }}>{v}</div>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,.6)", marginTop: 10, textTransform: "uppercase", letterSpacing: ".5px" }}>{l}</div>
-              </div>
-            ))}
+      {/* ── CTA ── */}
+      <section style={{...S.section, background:C.bg, textAlign:'center'}}>
+        <div style={S.maxW}>
+          <h2 style={{fontFamily:C.syne, fontSize:'clamp(32px,4vw,60px)', fontWeight:800, margin:'0 0 8px', letterSpacing:'-2px', lineHeight:1.1}}>
+            Ready to automate your
+          </h2>
+          <h2 style={{fontFamily:C.syne, fontSize:'clamp(32px,4vw,60px)', fontWeight:800, margin:'0 0 20px', letterSpacing:'-2px',
+            background:`linear-gradient(135deg,${C.pinkL},${C.purpleL})`,
+            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
+          }}>compliance program?</h2>
+          <p style={{fontSize:16, color:C.muted, marginBottom:36}}>
+            Join 120+ Indian fintechs and SaaS companies already on AURA.
+          </p>
+          <div style={{display:'flex', gap:14, justifyContent:'center', flexWrap:'wrap'}}>
+            <button className="lp-pill" onClick={() => handleCTA(onGetStarted)} style={{
+              background:C.purple, border:'none', borderRadius:10,
+              padding:'14px 32px', fontSize:16, color:'white', cursor:'pointer',
+              fontWeight:600, fontFamily:C.body,
+            }}>Start your free trial</button>
+            <button className="lp-pill" style={{
+              background:'rgba(255,255,255,0.06)', border:`1px solid ${C.border}`, borderRadius:10,
+              padding:'14px 32px', fontSize:16, color:C.text, cursor:'pointer', fontFamily:C.body,
+            }}>Schedule a demo</button>
           </div>
         </div>
       </section>
 
-      {/* INDIA / FRAMEWORKS */}
-      <section id="frameworks" style={{ padding: "84px 40px", maxWidth: 1160, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center" }}>
-          <div>
-            <Eyebrow icon={Building2}>Coverage</Eyebrow>
-            <h2 style={{ fontFamily: T.display, fontSize: 36, fontWeight: 800, letterSpacing: "-.8px", margin: "0 0 16px" }}>The Indian stack, built in — not bolted on</h2>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: T.text2, margin: "0 0 24px" }}>
-              Most GRC tools treat Indian regulation as an afterthought. AURA was designed for it from day one — RBI, CERT-In and DPDP are core frameworks, with cross-mappings so one control satisfies many requirements at once. Aadhaar, PAN and UPI are understood natively.
-            </p>
-            <button onClick={enter} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: T.ink, border: "1px solid rgba(124,58,237,.25)", borderRadius: 11, padding: "13px 22px", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: T.body }}>Explore the platform <ArrowRight size={16} /></button>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            {[{ Icon: ShieldCheck, label: "ISO 27001:2022" }, { Icon: FileText, label: "SOC 2 Type II" }, { Icon: Building2, label: "RBI Cybersecurity" }, { Icon: ScanLine, label: "CERT-In Directions" }, { Icon: Lock, label: "DPDP Act 2023" }, { Icon: Eye, label: "Continuous monitoring" }].map(({ Icon, label }) => (
-              <div key={label} style={{ display: "flex", alignItems: "center", gap: 11, background: "#fff", border: "1px solid rgba(124,58,237,.12)", borderRadius: 13, padding: "16px 18px" }}>
-                <Icon size={20} color={T.accent} /><span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA BAND */}
-      <section style={{ padding: "0 40px 84px" }}>
-        <div style={{ maxWidth: 1000, margin: "0 auto", position: "relative", overflow: "hidden", background: "linear-gradient(135deg,#1a0a3a,#3a1f6e)", borderRadius: 24, padding: "52px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
-          <div style={{ position: "absolute", top: -100, right: "22%", width: 360, height: 360, background: "radial-gradient(circle,rgba(219,39,119,.3),transparent 70%)", pointerEvents: "none" }} />
-          <div style={{ position: "relative", flex: 1, minWidth: 280 }}>
-            <h2 style={{ fontFamily: T.display, fontSize: 34, fontWeight: 800, color: "#fff", letterSpacing: "-.8px", margin: "0 0 12px" }}>Take the first step to audit-ready</h2>
-            <p style={{ fontSize: 17, color: "rgba(255,255,255,.8)", margin: "0 0 26px" }}>Stop managing checklists. Let AURA do the work.</p>
-            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-              <button onClick={enter} style={btnPrimary}>Get started <ArrowRight size={17} /></button>
-              <a href="mailto:hello@auragrc.in?subject=AURA%20demo%20request" style={btnGhostDark}>Book a demo</a>
+      {/* ── FOOTER ── */}
+      <footer style={{background:C.bg2, borderTop:`1px solid ${C.border}`, padding:'28px 0'}}>
+        <div style={{...S.maxW, display:'flex', alignItems:'center', gap:16, flexWrap:'wrap'}}>
+          <div style={{display:'flex', alignItems:'center', gap:8}}>
+            <div style={{width:28, height:28, borderRadius:7, background:C.purple, display:'flex', alignItems:'center', justifyContent:'center'}}>
+              <span style={{fontFamily:C.syne, fontSize:14, fontWeight:800, color:'white'}}>A</span>
             </div>
+            <span style={{fontFamily:C.syne, fontSize:16, fontWeight:700, color:C.text}}>AURA</span>
           </div>
-          <div style={{ position: "relative", flexShrink: 0 }}><AuraMascot size={170} /></div>
+          <span style={{fontSize:13, color:C.faint, marginLeft:8}}>
+            © 2026 AURA GRC Pvt. Ltd. · auragrc.in · Made in India 🇮🇳
+          </span>
+          <div style={{marginLeft:'auto', display:'flex', gap:20}}>
+            {['Privacy','Terms','Security'].map(l => (
+              <a key={l} style={{fontSize:13, color:C.faint, cursor:'pointer', textDecoration:'none'}}>{l}</a>
+            ))}
+          </div>
         </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer style={{ background: "#1a0a3a", color: "rgba(255,255,255,.6)", padding: "40px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#7c3aed,#db2777)", display: "flex", alignItems: "center", justifyContent: "center" }}><Shield size={15} color="#fff" /></div>
-          <span style={{ fontFamily: T.display, fontWeight: 800, color: "#fff", fontSize: 16 }}>AURA</span>
-          <span style={{ fontSize: 13, marginLeft: 8 }}>Unified Risk &amp; Compliance</span>
-        </div>
-        <div style={{ fontSize: 13 }}>© {new Date().getFullYear()} AURA · auragrc.in</div>
       </footer>
     </div>
   );

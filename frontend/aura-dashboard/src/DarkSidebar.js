@@ -1,182 +1,157 @@
 import {
-  LayoutDashboard, Sparkles, Zap,
-  Shield, Award, ShieldAlert, Lock, ClipboardList,
-  AlertTriangle, FileBarChart, Building2,
-  FileCheck, FileText, AlertCircle, CheckSquare, Activity, Radio,
-  BarChart2, ShieldCheck, Terminal, Users,
+  LayoutDashboard, ShieldCheck, AlertTriangle, Zap, FolderOpen,
+  Terminal, Globe, Shield, Award, ShieldAlert, Lock, Sparkles,
+  Search,
 } from 'lucide-react';
 
-/* ─── Nav structure ──────────────────────────────────────────────────────────── */
 const SECTIONS = [
-  {
-    title: 'Overview',
-    items: [
-      { id:'overview',     label:'Dashboard',      Icon:LayoutDashboard  },
-      { id:'ai-assistant', label:'AI Copilot',      Icon:Sparkles         },
-      { id:'automation',   label:'Automation Hub',  Icon:Zap              },
-    ],
-  },
-  {
-    title: 'Compliance',
-    items: [
-      { id:'iso27001',   label:'ISO 27001',     Icon:Shield,      color:'#a78bfa' },
-      { id:'soc2',       label:'SOC 2',         Icon:Award,       color:'#34D399' },
-      { id:'rbi',        label:'RBI',           Icon:ShieldAlert, color:'#60A5FA' },
-      { id:'dpdp',       label:'DPDP',          Icon:Lock,        color:'#F472B6' },
-      { id:'compliance', label:'Framework Map', Icon:ClipboardList              },
-    ],
-  },
-  {
-    title: 'Risk',
-    items: [
-      { id:'risk-register', label:'Risk Register',   Icon:AlertTriangle },
-      { id:'assessment',    label:'Assessments',      Icon:FileBarChart  },
-      { id:'vendors',       label:'Third-Party Risk', Icon:Building2     },
-    ],
-  },
-  {
-    title: 'Operations',
-    items: [
-      { id:'evidence',    label:'Evidence',       Icon:FileCheck    },
-      { id:'policies',    label:'Policies',       Icon:FileText     },
-      { id:'audit',       label:'Incidents',      Icon:AlertCircle  },
-      { id:'checklist',   label:'Controls',       Icon:CheckSquare  },
-      { id:'test-engine', label:'Live Checks',    Icon:Activity     },
-      { id:'monitoring',  label:'Monitoring',     Icon:Radio        },
-      { id:'ssh',         label:'SSH Servers',    Icon:Terminal     },
-    ],
-  },
-  {
-    title: 'Trust',
-    items: [
-      { id:'trust-center', label:'Trust Center',   Icon:ShieldCheck },
-      { id:'executive',    label:'Executive View', Icon:BarChart2   },
-      { id:'auditor',      label:'Auditor Portal', Icon:FileCheck   },
-      { id:'msp-portal',   label:'MSP Portal',     Icon:Building2   },
-    ],
-  },
+  { title:'Overview', items:[
+    { id:'overview',     label:'Overview',      Icon:LayoutDashboard },
+  ]},
+  { title:'Compliance', items:[
+    { id:'compliance',   label:'Compliance Hub', Icon:ShieldCheck },
+  ]},
+  { title:'Risk', items:[
+    { id:'risk-register',label:'Risk Register',  Icon:AlertTriangle },
+  ]},
+  { title:'Operations', items:[
+    { id:'automation',   label:'Automation',     Icon:Zap       },
+    { id:'evidence',     label:'Evidence Vault',  Icon:FolderOpen},
+    { id:'ssh',          label:'SSH Manager',    Icon:Terminal  },
+  ]},
+  { title:'Trust', items:[
+    { id:'trust-center', label:'Trust Center',   Icon:Globe     },
+    { id:'ai-assistant', label:'AI Assistant',   Icon:Sparkles  },
+  ]},
 ];
 
-/* ─── Sidebar component ──────────────────────────────────────────────────────── */
-export default function DarkSidebar({ activeTab, onTabChange, tenantId, userEmail, role }) {
+const FW_ITEMS = [
+  { id:'iso27001',  label:'ISO 27001',  color:'#a78bfa' },
+  { id:'soc2',      label:'SOC 2',      color:'#34D399' },
+  { id:'rbi',       label:'RBI Cyber',  color:'#60A5FA' },
+  { id:'dpdp',      label:'CERT-In',    color:'#FBBF24' },
+  { id:'certin',    label:'DPDP Act',   color:'#F472B6' },
+];
+
+export default function DarkSidebar({ activeTab, onTabChange, tenantId, userEmail }) {
   return (
     <div style={{
-      width: 220,
-      minWidth: 220,
-      background: '#0D0D1C',
-      borderRight: '1px solid rgba(255,255,255,0.06)',
-      display: 'flex',
-      flexDirection: 'column',
-      flexShrink: 0,
-      fontFamily: "'DM Sans',sans-serif",
-      overflowY: 'auto',
-      height: '100%',
+      width:220, minWidth:220, height:'100vh', position:'sticky', top:0,
+      background:'#0D0D1C',
+      borderRight:'1px solid rgba(255,255,255,0.06)',
+      display:'flex', flexDirection:'column',
+      fontFamily:"'DM Sans',system-ui,sans-serif",
+      overflowY:'auto', flexShrink:0,
     }}>
 
-      {/* ── Logo ── */}
+      {/* Logo */}
       <div style={{
-        padding: '16px 16px 14px',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        flexShrink: 0,
+        padding:'16px 16px 14px',
+        borderBottom:'1px solid rgba(255,255,255,0.06)',
+        display:'flex', alignItems:'center', gap:10, flexShrink:0,
       }}>
         <div style={{
-          width: 28, height: 28, borderRadius: 7,
-          background: '#7c3aed',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
+          width:32, height:32, borderRadius:8, background:'#7c3aed',
+          display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
         }}>
-          <Shield size={14} color="#fff"/>
+          <span style={{fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:800, color:'white'}}>A</span>
         </div>
-        <span style={{
-          fontFamily: "'Syne',sans-serif",
-          fontSize: 17, fontWeight: 800,
-          color: '#ECEEFF', letterSpacing: '-0.4px',
-        }}>AURA</span>
+        <span style={{fontFamily:"'Syne',sans-serif", fontSize:18, fontWeight:800, color:'#ECEEFF', letterSpacing:'-.4px'}}>
+          AURA
+        </span>
       </div>
 
-      {/* ── Nav ── */}
-      <div style={{ flex: 1, paddingTop: 8, overflow: 'auto' }}>
+      {/* Nav */}
+      <div style={{flex:1, paddingTop:8, overflow:'auto'}}>
         {SECTIONS.map(sec => (
-          <div key={sec.title} style={{ marginBottom: 2 }}>
-
-            {/* Section label */}
+          <div key={sec.title} style={{marginBottom:2}}>
             <div style={{
-              padding: '8px 16px 4px',
-              fontSize: 9,
-              color: '#1E1E32',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              fontWeight: 600,
-            }}>
-              {sec.title}
-            </div>
+              padding:'7px 16px 4px', fontSize:9, color:'#1E1E32',
+              textTransform:'uppercase', letterSpacing:'1px', fontWeight:600,
+            }}>{sec.title}</div>
 
-            {/* Nav items */}
-            {sec.items.map(({ id, label, Icon, color }) => {
+            {sec.items.map(({id, label, Icon}) => {
               const active = activeTab === id;
-              const activeColor = color || '#a78bfa';
               return (
                 <button key={id} onClick={() => onTabChange(id)} style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: `7px 16px 7px ${active ? '14px' : '16px'}`,
-                  background: active ? 'rgba(124,58,237,0.14)' : 'transparent',
-                  border: 'none',
-                  borderLeft: `2px solid ${active ? activeColor : 'transparent'}`,
-                  cursor: 'pointer',
-                  color: active ? activeColor : '#4A4A68',
-                  fontSize: 12,
-                  fontFamily: "'DM Sans',sans-serif",
-                  fontWeight: active ? 500 : 400,
-                  textAlign: 'left',
-                  transition: 'all 0.12s ease',
-                  boxSizing: 'border-box',
-                }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.color = '#7070A0'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.color = '#4A4A68'; e.currentTarget.style.background = 'transparent'; }}}
-                >
-                  <Icon
-                    size={14}
-                    color={active ? activeColor : (color ? `${color}60` : '#3A3A58')}
-                    style={{ flexShrink: 0 }}
-                  />
+                  width:'100%', display:'flex', alignItems:'center', gap:8,
+                  padding:`7px 16px 7px ${active?'14px':'16px'}`,
+                  background: active ? 'rgba(124,58,237,0.16)' : 'transparent',
+                  border:'none', borderLeft:`2px solid ${active ? '#7c3aed' : 'transparent'}`,
+                  cursor:'pointer', color: active ? '#a78bfa' : '#4A4A68',
+                  fontSize:13, fontFamily:"'DM Sans',system-ui,sans-serif",
+                  fontWeight: active ? 500 : 400, textAlign:'left',
+                  transition:'all .12s ease', boxSizing:'border-box',
+                }}>
+                  <Icon size={14} color={active ? '#a78bfa' : '#3A3A58'} style={{flexShrink:0}}/>
                   {label}
                 </button>
               );
             })}
           </div>
         ))}
+
+        {/* Frameworks section */}
+        <div style={{marginBottom:2}}>
+          <div style={{
+            padding:'7px 16px 4px', fontSize:9, color:'#1E1E32',
+            textTransform:'uppercase', letterSpacing:'1px', fontWeight:600,
+          }}>Frameworks</div>
+
+          {FW_ITEMS.map(({id, label, color}) => {
+            const active = activeTab === id;
+            return (
+              <button key={id} onClick={() => onTabChange(id)} style={{
+                width:'100%', display:'flex', alignItems:'center', gap:8,
+                padding:`7px 16px 7px ${active?'14px':'16px'}`,
+                background: active ? `${color}18` : 'transparent',
+                border:'none', borderLeft:`2px solid ${active ? color : 'transparent'}`,
+                cursor:'pointer', color: active ? color : '#4A4A68',
+                fontSize:13, fontFamily:"'DM Sans',system-ui,sans-serif",
+                fontWeight: active ? 500 : 400, textAlign:'left',
+                transition:'all .12s ease', boxSizing:'border-box',
+              }}>
+                <div style={{
+                  width:6, height:6, borderRadius:2,
+                  background: active ? color : `${color}60`, flexShrink:0,
+                }}/>
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* ── Footer / tenant info ── */}
+      {/* Footer */}
       <div style={{
-        padding: '12px 16px',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        flexShrink: 0,
+        padding:'12px 16px', borderTop:'1px solid rgba(255,255,255,0.06)', flexShrink:0,
       }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4,
-        }}>
-          <div style={{
-            width: 6, height: 6, borderRadius: '50%',
-            background: '#10B981', flexShrink: 0,
-          }}/>
-          <span style={{ fontSize: 10, color: '#10B981', fontFamily: "'JetBrains Mono',monospace" }}>
-            Live
+        <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:6}}>
+          <div style={{width:6, height:6, borderRadius:'50%', background:'#10B981', animation:'sb-pulse 2s infinite'}}/>
+          <span style={{fontSize:10, color:'#10B981', fontFamily:"'JetBrains Mono',monospace"}}>
+            All systems live
           </span>
         </div>
-        <div style={{ fontSize: 11, color: '#3A3A55', fontFamily: "'JetBrains Mono',monospace", marginBottom: 1 }}>
-          {tenantId || 'democorp'}
-        </div>
-        <div style={{ fontSize: 11, color: '#252540' }}>
-          {userEmail || 'ciso@democorp.com'}
+        <div style={{display:'flex', alignItems:'center', gap:8}}>
+          <div style={{
+            width:26, height:26, borderRadius:'50%', background:'#7c3aed',
+            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+          }}>
+            <span style={{fontSize:11, fontWeight:600, color:'white'}}>R</span>
+          </div>
+          <div>
+            <div style={{fontSize:12, color:'#ECEEFF', fontWeight:500}}>
+              {tenantId === 'democorp' ? 'Rahul Sharma' : (tenantId || 'Rahul Sharma')}
+            </div>
+            <div style={{fontSize:10, color:'#3A3A55'}}>CISO</div>
+          </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes sb-pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+        button:hover { opacity:.85 !important; }
+      `}</style>
     </div>
   );
 }

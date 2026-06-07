@@ -120,7 +120,7 @@ function AuraMascot({size=260}) {
 }
 
 /* ─── Main component ─────────────────────────────────────────────────────── */
-export default function LandingPage({onGetStarted, onSignIn}) {
+export default function LandingPage({onGetStarted, onSignIn, onEnter}) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -130,8 +130,8 @@ export default function LandingPage({onGetStarted, onSignIn}) {
   }, []);
 
   const handleCTA = (cb) => {
-    if (cb) cb();
-    else window.location.reload();
+    const fn = cb || onEnter;
+    if (fn) fn();
   };
 
   const S = {

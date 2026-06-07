@@ -3675,6 +3675,6 @@ export default function App() {
   return session
     ?<Dashboard token={session.token} userName={session.userName} role={session.role} tenantId={session.tenantId} tenantName={session.tenantName} onLogout={()=>setSession(null)}/>
     : showLogin
-  ? <Login onLogin={handleLogin}/>
+  ? <AuraLogin onBack={()=>setShowLogin(false)} onSuccess={(d)=>handleLogin(d.access_token||d.token, d.user_name||d.userName||"CISO", d.role||"ciso", d.tenant_id||d.tenantId, d.tenant_name||d.tenantName)}/>
   : <LandingPage onEnter={()=>setShowLogin(true)}/>;
 }

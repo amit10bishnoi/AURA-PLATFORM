@@ -3631,7 +3631,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="audit"                        &&<AuditTrail token={token} tenantId={tenantId} role={role} onExpired={handleExpired}/>}
             {activeTab==="remediation"                  &&<RemediationBoard token={token} tenantId={tenantId} role={role} onExpired={handleExpired}/>}
             {activeTab==="team-mgmt"&&role==="ciso"&&<TeamManagement token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
-            {activeTab==="trustcenter"                  &&<TrustCenterTab token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
+            {activeTab==="trustcenter"&&<TrustCenter token={token} tenantId={tenantId}/>}
             {activeTab==="integrations"                 &&<IntegrationsTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
             {activeTab==="audit-logs"&&<AuditLogs token={token} tenantId={tenantId}/>}
             {activeTab==="evidence"&&<EvidenceVault token={token} tenantId={tenantId}/>}

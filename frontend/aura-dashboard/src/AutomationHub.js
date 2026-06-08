@@ -1,405 +1,433 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  ScanLine, FileText, Paperclip, Sparkles, Zap, RefreshCw, X, AlertTriangle,
-  Undo2, CircleCheck, CircleDot, Circle, ShieldCheck, Cloud, Download, Play,
+  Play, RefreshCw, CheckCircle, XCircle, AlertCircle,
+  Clock, Zap, Shield, FileText, Plus, ChevronRight
 } from "lucide-react";
 
-const API = "https://web-production-320c3.up.railway.app";
+const API = "http://localhost:8000";
 
-/* ─── Theme tokens (aligned with App.js + the hubs) ─────────────── */
 const T = {
-  accent: "#7c3aed",
-  pink: "#db2777",
-  ink: "#1a0a3a",
-  muted: "#a89dc8",
-  text2: "#6b5b9e",
-  green: "#16a34a",
-  amber: "#d97706",
-  orange: "#ea580c",
-  red: "#e11d48",
-  border: "rgba(124,58,237,.1)",
-  borderHi: "rgba(124,58,237,.22)",
-  card: "#fff",
-  mono: "'JetBrains Mono',ui-monospace,monospace",
-  display: "'Syne',sans-serif",
+  bg:       "#09090F",
+  surface:  "#111118",
+  surface2: "#16161F",
+  border:   "rgba(255,255,255,0.06)",
+  borderHi: "rgba(139,92,246,0.3)",
+  accent:   "#8b5cf6",
+  accent2:  "#a78bfa",
+  text:     "#E2E8F0",
+  muted:    "#64748B",
+  muted2:   "#94A3B8",
+  mono:     "'JetBrains Mono', ui-monospace, monospace",
+  display:  "'Syne', sans-serif",
+  body:     "'DM Sans', sans-serif",
+  red:      "#EF4444",
+  orange:   "#F97316",
+  amber:    "#F59E0B",
+  green:    "#10B981",
+  blue:     "#3B82F6",
+  purple:   "#8B5CF6",
 };
 
-const PROVIDER_LABEL = {
-  aws: "AWS", gcp: "GCP", azure: "Azure", okta: "Okta",
-  google_workspace: "Google Workspace", github: "GitHub", m365: "Microsoft 365",
-  jira: "Jira", slack: "Slack", datadog: "Datadog", cloudflare: "Cloudflare",
-  snyk: "Snyk", jamf: "Jamf", kandji: "Kandji", auth0: "Auth0",
-  pagerduty: "PagerDuty", zoom: "Zoom", salesforce: "Salesforce", notion: "Notion",
-};
-const provLabel = p => PROVIDER_LABEL[p] || p;
+const INTEGRATIONS = [
+  { id:"aws",         name:"AWS",         icon:"☁️",  ctls:47, lastScan:"2m ago",  status:"connected" },
+  { id:"gcp",         name:"GCP",         icon:"🌐",  ctls:31, lastScan:"5m ago",  status:"connected" },
+  { id:"azure",       name:"Azure",       icon:"🔷",  ctls:28, lastScan:"8m ago",  status:"connected" },
+  { id:"github",      name:"GitHub",      icon:"🐙",  ctls:22, lastScan:"12m ago", status:"connected" },
+  { id:"gitlab",      name:"GitLab",      icon:"🦊",  ctls:null, lastScan:"—",     status:"connected" },
+  { id:"jira",        name:"Jira",        icon:"📋",  ctls:8,  lastScan:"1h ago",  status:"connected" },
+  { id:"slack",       name:"Slack",       icon:"💬",  ctls:5,  lastScan:"1h ago",  status:"connected" },
+  { id:"okta",        name:"Okta",        icon:"🔐",  ctls:35, lastScan:"15m ago", status:"connected" },
+  { id:"crowdstrike",name:"Crowdstrike",  icon:"🪖",  ctls:41, lastScan:"3m ago",  status:"connected" },
+  { id:"qualys",      name:"Qualys",      icon:"🔍",  ctls:null, lastScan:"—",     status:"warning"   },
+  { id:"tenable",     name:"Tenable",     icon:"🛡️",  ctls:29, lastScan:"30m ago", status:"connected" },
+  { id:"splunk",      name:"Splunk",      icon:"📊",  ctls:18, lastScan:"7m ago",  status:"connected" },
+  { id:"datadog",     name:"Datadog",     icon:"🐶",  ctls:14, lastScan:"4m ago",  status:"connected" },
+  { id:"pagerduty",   name:"PagerDuty",   icon:"🚨",  ctls:6,  lastScan:"45m ago", status:"connected" },
+];
 
-const STATE = {
-  PASS: { color: T.green, bg: "rgba(22,163,74,.08)", label: "Passing", Icon: CircleCheck },
-  PARTIAL: { color: T.amber, bg: "rgba(217,119,6,.08)", label: "Partial", Icon: CircleDot },
-  FAIL: { color: T.red, bg: "rgba(225,29,72,.06)", label: "Failing", Icon: Circle },
-  UNKNOWN: { color: T.muted, bg: "rgba(168,157,200,.1)", label: "Unknown", Icon: Circle },
-};
-const RISK = { LOW: T.green, MEDIUM: T.amber, HIGH: T.red };
+const LOG_ENTRIES = [
+  { time:"14:32:01", integration:"AWS",        icon:"☁️",  event:"IAM policy scan completed",          ctls:47, duration:"1m 23s", status:"Pass" },
+  { time:"14:30:18", integration:"Okta",       icon:"🔐",  event:"MFA coverage check — 98.4% coverage",ctls:35, duration:"0m 42s", status:"Pass" },
+  { time:"14:28:55", integration:"Crowdstrike",icon:"🪖",  event:"EDR policy sync completed",          ctls:41, duration:"0m 18s", status:"Pass" },
+  { time:"14:25:10", integration:"GitHub",     icon:"🐙",  event:"Branch protection rule audit",       ctls:22, duration:"0m 55s", status:"Warn" },
+  { time:"14:20:44", integration:"Splunk",     icon:"📊",  event:"SIEM alert rule verification",       ctls:18, duration:"1m 02s", status:"Pass" },
+  { time:"14:15:30", integration:"GCP",        icon:"🌐",  event:"Storage bucket ACL scan",            ctls:31, duration:"2m 14s", status:"Fail" },
+  { time:"14:10:22", integration:"Tenable",    icon:"🛡️",  event:"Vulnerability scan — 3 critical found",ctls:29,duration:"4m 38s", status:"Warn" },
+  { time:"14:05:01", integration:"Azure",      icon:"🔷",  event:"AD conditional access policy check", ctls:28, duration:"1m 07s", status:"Pass" },
+];
 
-const cardBase = { background: T.card, border: `1px solid ${T.border}`, borderRadius: 16 };
-const authHdr = token => ({ Authorization: `Bearer ${token}` });
+const CONTROLS = [
+  { provider:"AWS",  provIcon:"☁️",  id:"CC6.1", name:"Enforce MFA on all IAM users",        desc:"SOC2 · Partially configured — some resources non-compliant.", risk:"MEDIUM", status:"Partial"  },
+  { provider:"AWS",  provIcon:"☁️",  id:"CC6.7", name:"Enable default S3 bucket encryption", desc:"SOC2 · Partially configured — some resources non-compliant.", risk:"LOW",    status:"Partial"  },
+  { provider:"AWS",  provIcon:"☁️",  id:"CC7.2", name:"Enable CloudTrail across all regions",desc:"SOC2 · Already configured correctly.",                        risk:"LOW",    status:"Passing"  },
+  { provider:"AWS",  provIcon:"☁️",  id:"A.8.2", name:"Restrict public security groups",     desc:"ISO27001 · Not configured — remediation available.",         risk:"HIGH",   status:"Failing"  },
+  { provider:"Okta", provIcon:"🔐",  id:"CC6.2", name:"Require strong password policy",      desc:"SOC2 · Not configured — remediation available.",             risk:"LOW",    status:"Failing"  },
+  { provider:"GitHub",provIcon:"🐙", id:"CC8.1", name:"Enforce branch protection rules",     desc:"SOC2 · Partially configured.",                               risk:"MEDIUM", status:"Partial"  },
+  { provider:"GCP",  provIcon:"🌐",  id:"AC-1.1",name:"Restrict public GCS buckets",         desc:"ISO27001 · Failing — public access enabled on 3 buckets.",   risk:"HIGH",   status:"Failing"  },
+];
+
+function StatusBadge({ status }) {
+  const map = {
+    Pass:    { color:"#10B981", bg:"rgba(16,185,129,0.12)",  icon:<CheckCircle size={12}/> },
+    Warn:    { color:"#F59E0B", bg:"rgba(245,158,11,0.12)",  icon:<AlertCircle size={12}/> },
+    Fail:    { color:"#EF4444", bg:"rgba(239,68,68,0.12)",   icon:<XCircle size={12}/> },
+    Passing: { color:"#10B981", bg:"rgba(16,185,129,0.12)",  icon:<CheckCircle size={12}/> },
+    Partial: { color:"#F59E0B", bg:"rgba(245,158,11,0.12)",  icon:<AlertCircle size={12}/> },
+    Failing: { color:"#EF4444", bg:"rgba(239,68,68,0.12)",   icon:<XCircle size={12}/> },
+  };
+  const c = map[status] || map.Fail;
+  return (
+    <span style={{
+      display:"inline-flex", alignItems:"center", gap:4,
+      background:c.bg, color:c.color,
+      border:`1px solid ${c.color}30`,
+      borderRadius:20, padding:"3px 10px",
+      fontSize:11, fontWeight:600, fontFamily:T.mono,
+    }}>
+      {c.icon}{status}
+    </span>
+  );
+}
+
+function RiskBadge({ risk }) {
+  const map = {
+    HIGH:   "#EF4444",
+    MEDIUM: "#F59E0B",
+    LOW:    "#10B981",
+  };
+  const color = map[risk] || T.muted;
+  return (
+    <span style={{
+      fontSize:10, fontWeight:700, color,
+      background:`${color}15`, border:`1px solid ${color}30`,
+      borderRadius:4, padding:"2px 7px", fontFamily:T.mono,
+      letterSpacing:"0.06em"
+    }}>
+      {risk}
+    </span>
+  );
+}
 
 export default function AutomationHub({ token, tenantId }) {
-  const [tab, setTab] = useState("scan");
+  const [tab, setTab]         = useState("scan");
+  const [scanning, setScanning] = useState(false);
+  const [scanDone, setScanDone] = useState(false);
+  const [showRemediable, setShowRemediable] = useState(false);
 
-  // scan state
-  const [summary, setSummary] = useState(null);
-  const [findings, setFindings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [onlyRemediable, setOnlyRemediable] = useState(false);
-  const [fixed, setFixed] = useState({}); // control_id -> rollback_token
-
-  // remediation modal
-  const [modal, setModal] = useState(null); // {finding, preview, applying, applied}
-
-  // policies
-  const [policyTypes, setPolicyTypes] = useState([]);
-  const [genPolicy, setGenPolicy] = useState(null);
-  const [genKey, setGenKey] = useState(null);
-
-  // evidence
-  const [artifacts, setArtifacts] = useState([]);
-  const [collecting, setCollecting] = useState(false);
-
-  const scan = useCallback(async () => {
-    setLoading(true);
-    try {
-      const r = await fetch(`${API}/api/automation/scan?tenant_id=${tenantId || "demo"}`, { headers: authHdr(token) }).then(x => x.json());
-      setSummary(r.summary); setFindings(r.findings || []);
-    } catch (e) { console.error(e); }
-    setLoading(false);
-  }, [token, tenantId]);
-
-  const loadPolicyTypes = useCallback(async () => {
-    try {
-      const r = await fetch(`${API}/api/automation/policies/types`, { headers: authHdr(token) }).then(x => x.json());
-      setPolicyTypes(r.policies || []);
-    } catch (e) { console.error(e); }
-  }, [token]);
-
-  useEffect(() => { scan(); loadPolicyTypes(); }, [scan, loadPolicyTypes]);
-
-  // ── remediation flow ──
-  const openFix = async finding => {
-    setModal({ finding, preview: null, applying: false, applied: null });
-    try {
-      const preview = await fetch(`${API}/api/automation/remediate`, {
-        method: "POST", headers: { ...authHdr(token), "Content-Type": "application/json" },
-        body: JSON.stringify({ control_id: finding.control_id, dry_run: true, approved: false }),
-      }).then(x => x.json());
-      setModal(m => m && { ...m, preview });
-    } catch { setModal(m => m && { ...m, preview: { error: "Preview failed" } }); }
+  const runScan = () => {
+    setScanning(true);
+    setTimeout(() => { setScanning(false); setScanDone(true); }, 2200);
   };
 
-  const applyFix = async () => {
-    if (!modal) return;
-    setModal(m => ({ ...m, applying: true }));
-    try {
-      const applied = await fetch(`${API}/api/automation/remediate`, {
-        method: "POST", headers: { ...authHdr(token), "Content-Type": "application/json" },
-        body: JSON.stringify({ control_id: modal.finding.control_id, dry_run: false, approved: true }),
-      }).then(x => x.json());
-      setModal(m => ({ ...m, applying: false, applied }));
-      if (applied.rollback_token) setFixed(f => ({ ...f, [modal.finding.control_id]: applied.rollback_token }));
-    } catch { setModal(m => ({ ...m, applying: false, applied: { error: "Apply failed" } })); }
-  };
+  const visibleControls = showRemediable
+    ? CONTROLS.filter(c => c.status !== "Passing")
+    : CONTROLS;
 
-  const undoFix = async (controlId) => {
-    const tokenRb = fixed[controlId];
-    if (!tokenRb) return;
-    try {
-      await fetch(`${API}/api/automation/rollback`, {
-        method: "POST", headers: { ...authHdr(token), "Content-Type": "application/json" },
-        body: JSON.stringify({ rollback_token: tokenRb }),
-      });
-      setFixed(f => { const n = { ...f }; delete n[controlId]; return n; });
-    } catch (e) { console.error(e); }
-  };
-
-  // ── policy flow ──
-  const generate = async key => {
-    setGenKey(key); setGenPolicy(null);
-    try {
-      const p = await fetch(`${API}/api/automation/policies/generate`, {
-        method: "POST", headers: { ...authHdr(token), "Content-Type": "application/json" },
-        body: JSON.stringify({ policy_key: key, company_context: { company_name: "DemoCorp Technologies" } }),
-      }).then(x => x.json());
-      setGenPolicy(p);
-    } catch { setGenPolicy({ error: "Generation failed" }); }
-    setGenKey(null);
-  };
-
-  // ── evidence flow ──
-  const collectEvidence = async () => {
-    setCollecting(true);
-    try {
-      const r = await fetch(`${API}/api/automation/evidence?tenant_id=${tenantId || "demo"}`, { headers: authHdr(token) }).then(x => x.json());
-      setArtifacts(r.artifacts || []);
-    } catch (e) { console.error(e); }
-    setCollecting(false);
-  };
-
-  const TABS = [
-    { id: "scan", label: "Scan & Fix", Icon: ScanLine },
-    { id: "policies", label: "AI Policies", Icon: FileText },
-    { id: "evidence", label: "Evidence", Icon: Paperclip },
+  const stats = [
+    { label:"CONNECTED",          value:"12/14", color:T.purple },
+    { label:"CONTROLS AUTOMATED", value:"284/500", color:T.blue },
+    { label:"EVIDENCE COLLECTED", value:"1,847",   color:T.green },
+    { label:"LAST SCAN",          value:"2m ago",  color:T.muted2 },
   ];
 
-  const shown = onlyRemediable ? findings.filter(f => f.remediable) : findings;
-
   return (
-    <div style={{ padding: "28px 32px", fontFamily: "'DM Sans',sans-serif" }}>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 16 }}>
+    <div style={{ background:T.bg, minHeight:"100vh", color:T.text, fontFamily:T.body, padding:"28px 32px" }}>
+
+      {/* ─── Header ─── */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start",
+        marginBottom:24, flexWrap:"wrap", gap:16 }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#7c3aed,#db2777)", borderRadius: 7, padding: "4px 11px", fontSize: 11, fontWeight: 700, color: "#fff", letterSpacing: ".3px" }}>
-              <Sparkles size={12} /> AUTOMATION
-            </span>
-            <span style={{ background: "rgba(22,163,74,.1)", color: T.green, border: "1px solid rgba(22,163,74,.2)", borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>Live engine</span>
-          </div>
-          <h2 style={{ fontFamily: T.display, fontSize: 25, fontWeight: 800, color: T.ink, marginBottom: 4, letterSpacing: "-.3px" }}>Automation Hub</h2>
-          <p style={{ color: T.muted, fontSize: 13 }}>One-click remediation · AI-drafted policies · auto-collected evidence — across every integration</p>
+          <h1 style={{ margin:"0 0 4px", fontFamily:T.display, fontSize:24, fontWeight:800,
+            color:T.text, letterSpacing:"-0.4px" }}>
+            Automation
+          </h1>
+          <p style={{ margin:0, fontSize:13, color:T.muted }}>
+            12 integrations connected · 284 controls automated
+          </p>
         </div>
-        <button onClick={scan}
-          onMouseEnter={e => e.currentTarget.style.borderColor = T.borderHi}
-          onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(124,58,237,.15)"}
-          style={{ padding: "10px 16px", background: "#fff", border: "1px solid rgba(124,58,237,.15)", borderRadius: 10, color: T.accent, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "border-color .15s" }}>
-          <RefreshCw size={14} style={loading ? { animation: "spin 1s linear infinite" } : undefined} /> Re-scan
+        <button onClick={runScan} disabled={scanning} style={{
+          display:"flex", alignItems:"center", gap:8, padding:"11px 22px",
+          background:"linear-gradient(135deg, #7c3aed, #8b5cf6)",
+          border:"none", borderRadius:10, color:"#fff",
+          fontSize:14, fontWeight:700, cursor:"pointer",
+          boxShadow:"0 4px 20px rgba(139,92,246,0.35)",
+          opacity: scanning ? 0.7 : 1, transition:"all 0.2s"
+        }}>
+          {scanning
+            ? <><RefreshCw size={15} style={{ animation:"spin 1s linear infinite" }}/> Scanning...</>
+            : <><Play size={15}/> Run full scan</>}
         </button>
       </div>
 
-      {/* Stat cards */}
-      {summary && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
-          {[
-            { label: "Controls scanned", value: summary.total, color: T.accent },
-            { label: "Passing", value: summary.passing, color: T.green },
-            { label: "Remediable", value: summary.remediable, color: T.amber },
-            { label: "Auto-fix (low risk)", value: summary.auto_fixable_low_risk, color: T.green },
-            { label: "Integrations", value: summary.providers?.length || 0, color: T.accent },
-          ].map(s => (
-            <div key={s.label} style={{ ...cardBase, borderRadius: 12, padding: "16px 18px", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: s.color }} />
-              <div style={{ fontFamily: T.display, fontSize: 26, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: T.muted, textTransform: "uppercase", letterSpacing: ".5px", marginTop: 5 }}>{s.label}</div>
+      {/* ─── Stat Cards ─── */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:28 }}>
+        {stats.map(({ label, value, color }) => (
+          <div key={label} style={{
+            background:T.surface, border:`1px solid ${T.border}`,
+            borderRadius:12, padding:"18px 20px"
+          }}>
+            <div style={{ fontSize:11, fontWeight:700, color:T.muted,
+              textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:8 }}>
+              {label}
+            </div>
+            <div style={{ fontFamily:T.mono, fontSize:26, fontWeight:800, color, letterSpacing:"-0.5px" }}>
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ─── Integrations Grid ─── */}
+      <h2 style={{ fontFamily:T.display, fontSize:17, fontWeight:800, color:T.text,
+        margin:"0 0 14px", letterSpacing:"-0.2px" }}>
+        Integrations
+      </h2>
+      <div style={{
+        display:"grid",
+        gridTemplateColumns:"repeat(7, 1fr)",
+        gap:10, marginBottom:32
+      }}>
+        {INTEGRATIONS.map(intg => (
+          <div key={intg.id} style={{
+            background:T.surface, border:`1px solid ${T.border}`,
+            borderRadius:10, padding:"14px 12px",
+            display:"flex", flexDirection:"column", alignItems:"center", gap:6,
+            cursor:"pointer", transition:"all 0.15s", position:"relative",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = T.borderHi; e.currentTarget.style.background = T.surface2; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = T.border;   e.currentTarget.style.background = T.surface;  }}
+          >
+            {/* Status dot */}
+            <div style={{
+              position:"absolute", top:8, right:8,
+              width:7, height:7, borderRadius:"50%",
+              background: intg.status === "warning" ? T.amber : T.green,
+              boxShadow: `0 0 6px ${intg.status === "warning" ? T.amber : T.green}`,
+            }}/>
+
+            <div style={{ fontSize:26, lineHeight:1 }}>{intg.icon}</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.text, textAlign:"center" }}>
+              {intg.name}
+            </div>
+            <div style={{ fontSize:10, color:T.muted, textAlign:"center", fontFamily:T.mono }}>
+              {intg.ctls ? `${intg.ctls} ctls` : "—"}
+            </div>
+            <div style={{ fontSize:10, color:T.muted, textAlign:"center" }}>
+              {intg.lastScan}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ─── Tabs: Scan & Fix / AI Policies / Evidence ─── */}
+      <div style={{ display:"flex", gap:0, borderBottom:`1px solid ${T.border}`, marginBottom:20 }}>
+        {[
+          { id:"scan",     label:"Scan & Fix",   Icon:Zap },
+          { id:"policies", label:"AI Policies",  Icon:FileText },
+          { id:"evidence", label:"Evidence",     Icon:Shield },
+          { id:"log",      label:"Automation log", Icon:Clock },
+        ].map(({ id, label, Icon }) => (
+          <button key={id} onClick={() => setTab(id)} style={{
+            display:"flex", alignItems:"center", gap:7, padding:"10px 18px",
+            background:"none", border:"none",
+            borderBottom: tab===id ? `2px solid ${T.accent}` : "2px solid transparent",
+            color: tab===id ? T.accent : T.muted,
+            fontFamily:T.body, fontSize:13, fontWeight:600, cursor:"pointer",
+            transition:"all 0.15s", marginBottom:-1,
+          }}>
+            <Icon size={13}/>{label}
+          </button>
+        ))}
+      </div>
+
+      {/* ═══ SCAN & FIX TAB ═══ */}
+      {tab === "scan" && (
+        <>
+          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16 }}>
+            <button onClick={() => setShowRemediable(!showRemediable)} style={{
+              padding:"6px 14px", borderRadius:20, fontSize:12, fontWeight:600,
+              background: showRemediable ? T.accent : T.surface,
+              border: showRemediable ? `1px solid ${T.accent}` : `1px solid ${T.border}`,
+              color: showRemediable ? "#fff" : T.muted2, cursor:"pointer", transition:"all 0.15s"
+            }}>
+              Show remediable only
+            </button>
+            <span style={{ fontSize:12, color:T.muted, fontFamily:T.mono }}>
+              {visibleControls.length} controls
+            </span>
+          </div>
+
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {visibleControls.map((ctrl, i) => (
+              <div key={i} style={{
+                background:T.surface, border:`1px solid ${T.border}`,
+                borderRadius:10, padding:"14px 18px",
+                display:"flex", alignItems:"center", gap:14,
+                transition:"all 0.12s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(139,92,246,0.15)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = T.border}
+              >
+                {/* Provider badge */}
+                <div style={{
+                  background:T.surface2, border:`1px solid ${T.border}`,
+                  borderRadius:7, padding:"5px 10px",
+                  display:"flex", alignItems:"center", gap:5, flexShrink:0
+                }}>
+                  <span style={{ fontSize:14 }}>{ctrl.provIcon}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:T.muted2 }}>{ctrl.provider}</span>
+                  <span style={{ fontSize:10, color:T.muted, fontFamily:T.mono }}>{ctrl.id}</span>
+                </div>
+
+                {/* Control info */}
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:3 }}>
+                    {ctrl.name}
+                  </div>
+                  <div style={{ fontSize:12, color:T.muted }}>
+                    {ctrl.desc}
+                  </div>
+                </div>
+
+                {/* Risk + Status + Fix */}
+                <div style={{ display:"flex", alignItems:"center", gap:10, flexShrink:0 }}>
+                  <RiskBadge risk={ctrl.risk}/>
+                  <StatusBadge status={ctrl.status}/>
+                  {ctrl.status !== "Passing" && (
+                    <button style={{
+                      display:"flex", alignItems:"center", gap:5,
+                      padding:"7px 14px",
+                      background:"linear-gradient(135deg, #7c3aed, #8b5cf6)",
+                      border:"none", borderRadius:8, color:"#fff",
+                      fontSize:12, fontWeight:700, cursor:"pointer",
+                    }}>
+                      <Zap size={11}/> Fix
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ═══ AUTOMATION LOG TAB ═══ */}
+      {tab === "log" && (
+        <div style={{
+          background:T.surface, border:`1px solid ${T.border}`,
+          borderRadius:14, overflow:"hidden"
+        }}>
+          {/* Table header */}
+          <div style={{
+            display:"grid",
+            gridTemplateColumns:"90px 140px 1fr 90px 100px 90px",
+            padding:"10px 20px",
+            borderBottom:`1px solid ${T.border}`,
+            background:T.surface2
+          }}>
+            {["TIME","INTEGRATION","EVENT","CONTROLS","DURATION","STATUS"].map(h => (
+              <div key={h} style={{
+                fontSize:10, fontWeight:700, color:T.muted,
+                textTransform:"uppercase", letterSpacing:"0.1em"
+              }}>{h}</div>
+            ))}
+          </div>
+
+          {LOG_ENTRIES.map((entry, i) => (
+            <div key={i} style={{
+              display:"grid",
+              gridTemplateColumns:"90px 140px 1fr 90px 100px 90px",
+              padding:"14px 20px",
+              borderBottom: i < LOG_ENTRIES.length-1 ? `1px solid ${T.border}` : "none",
+              alignItems:"center",
+              transition:"background 0.12s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              <div style={{ fontFamily:T.mono, fontSize:12, color:T.muted }}>
+                {entry.time}
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                <span style={{ fontSize:14 }}>{entry.icon}</span>
+                <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{entry.integration}</span>
+              </div>
+              <div style={{ fontSize:12, color:T.muted2, paddingRight:16 }}>{entry.event}</div>
+              <div style={{ fontFamily:T.mono, fontSize:13, fontWeight:700, color:T.accent2 }}>
+                {entry.ctls}
+              </div>
+              <div style={{ fontFamily:T.mono, fontSize:12, color:T.muted }}>{entry.duration}</div>
+              <div><StatusBadge status={entry.status}/></div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 24, borderBottom: `1px solid ${T.border}` }}>
-        {TABS.map(({ id, label, Icon }) => {
-          const on = tab === id;
-          return (
-            <button key={id} onClick={() => setTab(id)}
-              style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, color: on ? T.accent : T.text2, borderBottom: `2px solid ${on ? T.accent : "transparent"}`, marginBottom: -1, transition: "color .15s" }}>
-              <Icon size={15} /> {label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ═══════ SCAN & FIX ═══════ */}
-      {tab === "scan" && (
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-            <button onClick={() => setOnlyRemediable(v => !v)}
-              style={{ padding: "6px 13px", borderRadius: 100, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "1px solid", borderColor: onlyRemediable ? "rgba(124,58,237,.4)" : "rgba(124,58,237,.12)", background: onlyRemediable ? "rgba(124,58,237,.1)" : "#fff", color: onlyRemediable ? T.accent : T.text2 }}>
-              {onlyRemediable ? "Showing remediable only" : "Show remediable only"}
-            </button>
-            <span style={{ fontSize: 12, color: T.muted }}>{shown.length} controls</span>
-          </div>
-
-          {loading ? (
-            <div style={{ textAlign: "center", padding: 60, color: T.muted }}><RefreshCw size={22} style={{ animation: "spin 1s linear infinite" }} /><div style={{ marginTop: 12, fontSize: 13 }}>Scanning all integrations…</div></div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {shown.map(f => {
-                const stt = STATE[f.state?.status] || STATE.UNKNOWN;
-                const StIcon = stt.Icon;
-                const isFixed = !!fixed[f.control_id];
-                return (
-                  <div key={f.control_id} style={{ ...cardBase, borderRadius: 11, padding: "13px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, color: T.accent, background: "rgba(124,58,237,.07)", borderRadius: 5, padding: "3px 8px" }}>
-                        <Cloud size={11} /> {provLabel(f.provider)}
-                      </span>
-                      <span style={{ fontFamily: T.mono, fontSize: 11, color: T.muted, minWidth: 64 }}>{f.control_id}</span>
-                      <div style={{ flex: 1, minWidth: 180 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{f.title}</div>
-                        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{f.framework} · {f.state?.detail}</div>
-                      </div>
-                      <span style={{ fontSize: 9, fontWeight: 700, color: RISK[f.risk], background: `${RISK[f.risk]}14`, borderRadius: 4, padding: "2px 7px" }}>{f.risk}</span>
-                      {isFixed ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(22,163,74,.1)", color: T.green, borderRadius: 100, padding: "4px 11px", fontSize: 11, fontWeight: 700 }}><CircleCheck size={12} /> Fixed</span>
-                          <button onClick={() => undoFix(f.control_id)} title="Undo" style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "none", border: "1px solid rgba(124,58,237,.15)", borderRadius: 8, padding: "4px 9px", fontSize: 11, color: T.text2, fontWeight: 600, cursor: "pointer" }}><Undo2 size={12} /> Undo</button>
-                        </span>
-                      ) : (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, background: stt.bg, color: stt.color, borderRadius: 100, padding: "4px 11px", fontSize: 11, fontWeight: 700, minWidth: 96 }}><StIcon size={12} /> {stt.label}</span>
-                          {f.remediable && (
-                            <button onClick={() => openFix(f)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "linear-gradient(135deg,#7c3aed,#db2777)", border: "none", borderRadius: 8, padding: "6px 13px", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 3px 10px rgba(124,58,237,.25)" }}><Zap size={12} /> Fix</button>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ═══════ AI POLICIES ═══════ */}
+      {/* ═══ AI POLICIES TAB ═══ */}
       {tab === "policies" && (
-        <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 20, alignItems: "start" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {policyTypes.map(p => (
-              <div key={p.key} style={{ ...cardBase, padding: "16px 18px" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginBottom: 4 }}>{p.title}</div>
-                <div style={{ fontSize: 11, color: T.muted, marginBottom: 12 }}>{p.frameworks.join(" · ")} · {p.section_count} sections</div>
-                <button onClick={() => generate(p.key)} disabled={genKey === p.key}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 6, background: genKey === p.key ? "rgba(124,58,237,.4)" : "linear-gradient(135deg,#7c3aed,#db2777)", border: "none", borderRadius: 8, padding: "7px 14px", color: "#fff", fontSize: 12, fontWeight: 700, cursor: genKey === p.key ? "default" : "pointer" }}>
-                  {genKey === p.key ? <><RefreshCw size={12} style={{ animation: "spin 1s linear infinite" }} /> Drafting…</> : <><Sparkles size={12} /> Generate with AI</>}
-                </button>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+          {[
+            { title:"Access Control Policy",        desc:"Generated from ISO 27001 A.9 + SOC 2 CC6", icon:"🔐", status:"Ready" },
+            { title:"Incident Response Policy",     desc:"Generated from CERT-In + ISO 27001 A.16",  icon:"🚨", status:"Ready" },
+            { title:"Data Retention Policy",        desc:"Generated from DPDP Act + ISO 27001 A.8",  icon:"🗄️", status:"Ready" },
+            { title:"Vendor Risk Policy",           desc:"Generated from ISO 27001 A.15 + SOC 2 CC9",icon:"🤝", status:"Ready" },
+            { title:"Business Continuity Policy",   desc:"Generated from ISO 27001 A.17",            icon:"♻️", status:"Draft" },
+            { title:"Cryptography Policy",          desc:"Generated from ISO 27001 A.10",            icon:"🔑", status:"Draft" },
+          ].map((p, i) => (
+            <div key={i} style={{
+              background:T.surface, border:`1px solid ${T.border}`,
+              borderRadius:12, padding:"18px 20px",
+              cursor:"pointer", transition:"all 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = T.borderHi; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = T.border;   }}
+            >
+              <div style={{ fontSize:24, marginBottom:10 }}>{p.icon}</div>
+              <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:6 }}>{p.title}</div>
+              <div style={{ fontSize:11, color:T.muted, marginBottom:12 }}>{p.desc}</div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <span style={{
+                  fontSize:10, fontWeight:700,
+                  color: p.status === "Ready" ? T.green : T.amber,
+                  background: p.status === "Ready" ? "rgba(16,185,129,0.1)" : "rgba(245,158,11,0.1)",
+                  padding:"2px 8px", borderRadius:4
+                }}>{p.status}</span>
+                <button style={{
+                  fontSize:11, fontWeight:700, color:T.accent2,
+                  background:"none", border:`1px solid ${T.borderHi}`,
+                  borderRadius:6, padding:"4px 12px", cursor:"pointer"
+                }}>Generate</button>
               </div>
-            ))}
-          </div>
-
-          <div style={{ ...cardBase, padding: 28, minHeight: 320 }}>
-            {!genPolicy && (
-              <div style={{ textAlign: "center", color: T.muted, paddingTop: 70 }}>
-                <FileText size={32} style={{ opacity: .3 }} />
-                <p style={{ marginTop: 12, fontSize: 13 }}>Pick a policy on the left and AURA drafts it from your live stack.</p>
-              </div>
-            )}
-            {genPolicy?.error && <div style={{ color: T.red }}>{genPolicy.error}</div>}
-            {genPolicy && !genPolicy.error && (
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, gap: 12, flexWrap: "wrap" }}>
-                  <h3 style={{ fontFamily: T.display, fontSize: 20, fontWeight: 800, color: T.ink, margin: 0 }}>{genPolicy.title}</h3>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, borderRadius: 100, padding: "4px 10px", background: genPolicy.generated_by === "ai" ? "rgba(124,58,237,.1)" : "rgba(168,157,200,.14)", color: genPolicy.generated_by === "ai" ? T.accent : T.text2 }}>
-                    {genPolicy.generated_by === "ai" ? <><Sparkles size={11} /> AI-drafted</> : "Template"}
-                  </span>
-                </div>
-                <div style={{ fontSize: 12, color: T.muted, marginBottom: 18 }}>{genPolicy.company} · v{genPolicy.version} · effective {genPolicy.effective_date} · {genPolicy.frameworks?.join(", ")}</div>
-                {genPolicy.sections?.map((s, i) => (
-                  <div key={i} style={{ marginBottom: 16 }}>
-                    <div style={{ fontFamily: T.display, fontSize: 14, fontWeight: 700, color: T.ink, marginBottom: 5 }}>{i + 1}. {s.heading}</div>
-                    <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.6, margin: 0 }}>{s.body}</p>
-                  </div>
-                ))}
-                <button style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8, background: "#fff", border: "1px solid rgba(124,58,237,.15)", borderRadius: 9, padding: "8px 14px", color: T.accent, fontSize: 12, fontWeight: 600, cursor: "pointer" }}><Download size={13} /> Export</button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ═══════ EVIDENCE ═══════ */}
-      {tab === "evidence" && (
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 13, color: T.text2 }}>{artifacts.length ? `${artifacts.length} evidence artifacts collected` : "Auto-collect evidence for every control in one click."}</div>
-            <button onClick={collectEvidence} disabled={collecting}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#7c3aed,#db2777)", border: "none", borderRadius: 9, padding: "9px 16px", color: "#fff", fontSize: 12, fontWeight: 700, cursor: collecting ? "default" : "pointer", boxShadow: "0 4px 14px rgba(124,58,237,.25)" }}>
-              {collecting ? <><RefreshCw size={13} style={{ animation: "spin 1s linear infinite" }} /> Collecting…</> : <><Play size={13} /> Collect all evidence</>}
-            </button>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {artifacts.map(a => (
-              <div key={a.artifact_id} style={{ ...cardBase, borderRadius: 11, padding: "13px 16px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <Paperclip size={15} color={T.accent} style={{ flexShrink: 0 }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, color: T.accent, background: "rgba(124,58,237,.07)", borderRadius: 5, padding: "3px 8px" }}><Cloud size={11} /> {provLabel(a.provider)}</span>
-                <span style={{ fontFamily: T.mono, fontSize: 11, color: T.muted, minWidth: 64 }}>{a.control_id}</span>
-                <div style={{ flex: 1, minWidth: 180 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: T.ink }}>{a.description}</div>
-                  <div style={{ fontSize: 11, color: T.muted, marginTop: 2, fontFamily: T.mono }}>{a.preview}</div>
-                </div>
-                <span style={{ fontSize: 10, color: T.text2, background: "rgba(124,58,237,.06)", borderRadius: 5, padding: "3px 8px", fontWeight: 600 }}>{a.evidence_type}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══════ REMEDIATION MODAL ═══════ */}
-      {modal && (
-        <div onClick={e => e.target === e.currentTarget && setModal(null)}
-          style={{ position: "fixed", inset: 0, background: "rgba(26,10,58,0.45)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: "#fff", border: `1px solid ${T.borderHi}`, borderRadius: 16, padding: 26, width: "100%", maxWidth: 520, boxShadow: "0 20px 60px rgba(26,10,58,.25)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontFamily: T.mono, fontSize: 11, color: T.accent, fontWeight: 700 }}>{modal.finding.control_id}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: RISK[modal.finding.risk], background: `${RISK[modal.finding.risk]}14`, borderRadius: 4, padding: "2px 7px" }}>{modal.finding.risk} RISK</span>
-                </div>
-                <h3 style={{ fontFamily: T.display, fontSize: 17, fontWeight: 800, color: T.ink, margin: 0 }}>{modal.finding.title}</h3>
-              </div>
-              <button onClick={() => setModal(null)} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer" }}><X size={18} /></button>
             </div>
-
-            <div style={{ fontSize: 12, color: T.muted, marginBottom: 16 }}>{provLabel(modal.finding.provider)} · {modal.finding.framework}</div>
-
-            {!modal.applied && (
-              <>
-                <div style={{ background: "rgba(124,58,237,.04)", border: `1px solid ${T.border}`, borderRadius: 11, padding: "14px 16px", marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: T.text2, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>Proposed action</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginBottom: 4 }}>{modal.finding.remediation_action}</div>
-                  <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.5 }}>{modal.finding.remediation_desc}</div>
-                </div>
-
-                {!modal.preview && <div style={{ textAlign: "center", color: T.muted, padding: "10px 0 16px" }}><RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /><div style={{ fontSize: 12, marginTop: 8 }}>Generating preview…</div></div>}
-
-                {modal.preview && !modal.preview.error && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, fontSize: 13 }}>
-                    <span style={{ background: "rgba(225,29,72,.08)", color: T.red, borderRadius: 8, padding: "8px 14px", fontWeight: 600, flex: 1, textAlign: "center" }}>{modal.preview.before}</span>
-                    <span style={{ color: T.muted }}>→</span>
-                    <span style={{ background: "rgba(22,163,74,.1)", color: T.green, borderRadius: 8, padding: "8px 14px", fontWeight: 600, flex: 1, textAlign: "center" }}>{modal.preview.after}</span>
-                  </div>
-                )}
-
-                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: modal.finding.reversible ? T.green : T.amber, marginBottom: 16 }}>
-                  {modal.finding.reversible ? <CircleCheck size={13} /> : <AlertTriangle size={13} />}
-                  {modal.finding.reversible ? "Reversible — you can undo this instantly after applying." : "Not auto-reversible — review carefully before applying."}
-                </div>
-
-                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-                  <button onClick={() => setModal(null)} style={{ background: "#fff", border: "1px solid rgba(124,58,237,.15)", borderRadius: 9, padding: "9px 16px", color: T.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                  <button onClick={applyFix} disabled={!modal.preview || modal.applying || modal.preview?.error}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 6, background: (!modal.preview || modal.applying) ? "rgba(124,58,237,.4)" : "linear-gradient(135deg,#7c3aed,#db2777)", border: "none", borderRadius: 9, padding: "9px 18px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: (!modal.preview || modal.applying) ? "default" : "pointer" }}>
-                    {modal.applying ? <><RefreshCw size={13} style={{ animation: "spin 1s linear infinite" }} /> Applying…</> : <><ShieldCheck size={14} /> Approve & apply</>}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {modal.applied && !modal.applied.error && (
-              <div style={{ textAlign: "center", padding: "10px 0" }}>
-                <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(22,163,74,.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}><CircleCheck size={28} color={T.green} /></div>
-                <h3 style={{ fontFamily: T.display, fontSize: 17, fontWeight: 800, color: T.ink, marginBottom: 6 }}>Remediation applied</h3>
-                <p style={{ fontSize: 13, color: T.text2, marginBottom: 16 }}>{modal.finding.title} is now compliant. This action is logged and reversible.</p>
-                <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-                  <button onClick={() => { undoFix(modal.finding.control_id); setModal(null); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#fff", border: "1px solid rgba(124,58,237,.15)", borderRadius: 9, padding: "9px 16px", color: T.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}><Undo2 size={13} /> Undo</button>
-                  <button onClick={() => setModal(null)} style={{ background: "linear-gradient(135deg,#7c3aed,#db2777)", border: "none", borderRadius: 9, padding: "9px 18px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Done</button>
-                </div>
-              </div>
-            )}
-            {modal.applied?.error && <div style={{ color: T.red, textAlign: "center" }}>{modal.applied.error}</div>}
-          </div>
+          ))}
         </div>
       )}
 
-      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+      {/* ═══ EVIDENCE TAB ═══ */}
+      {tab === "evidence" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {CONTROLS.map((ctrl, i) => (
+            <div key={i} style={{
+              background:T.surface, border:`1px solid ${T.border}`,
+              borderRadius:10, padding:"13px 18px",
+              display:"flex", alignItems:"center", gap:14,
+            }}>
+              <span style={{ fontSize:16 }}>{ctrl.provIcon}</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.text }}>{ctrl.name}</div>
+                <div style={{ fontSize:11, color:T.muted, fontFamily:T.mono }}>{ctrl.id}</div>
+              </div>
+              <button style={{
+                fontSize:11, fontWeight:700, color:T.green,
+                background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.2)",
+                borderRadius:6, padding:"5px 12px", cursor:"pointer"
+              }}>Collect</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import EvidenceVault from './EvidenceVault';
+import SSHManager from './SSHManager';
 import TrustCenter from './TrustCenter';
 import ExecutiveDashboard from './ExecutiveDashboard';
 import CustomControls from './CustomControls';
@@ -3632,13 +3634,13 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="trustcenter"                  &&<TrustCenterTab token={token} tenantId={tenantId} tenantName={tenantName} onExpired={handleExpired}/>}
             {activeTab==="integrations"                 &&<IntegrationsTab token={token} tenantId={tenantId} onExpired={handleExpired}/>}
             {activeTab==="audit-logs"&&<AuditLogs token={token} tenantId={tenantId}/>}
-            {activeTab==="evidence"&&<div style={{background:"#f8f9fa",minHeight:"100vh",flex:1,overflow:"auto"}}><EvidenceCollection token={token} tenantId={tenantId}/></div>}
+            {activeTab==="evidence"&&<EvidenceVault token={token} tenantId={tenantId}/>}
             {activeTab==="policies"&&<PolicyManagement token={token} tenantId={tenantId}/>}
             {activeTab==="vendors"&&<VendorRisk token={token} tenantId={tenantId}/>}
             {activeTab==="team-mgmt"&&<UserManagement token={token} tenantId={tenantId}/>}
             {activeTab==="notifications"&&<Notifications token={token} tenantId={tenantId}/>}
             {activeTab==="reports"&&<Reports token={token} tenantId={tenantId}/>}
-            {activeTab==="auto-evidence"&&<AutoEvidence token={token} tenantId={tenantId}/>}
+            {activeTab==="auto-evidence"&&<EvidenceVault token={token} tenantId={tenantId}/>}
             {activeTab==="auditor"&&<AuditorPortal token={token} tenantId={tenantId}/>}
             {activeTab==="test-engine"&&<TestEngine token={token} tenantId={tenantId}/>}
             {activeTab==="soc2"&&<div style={{background:"#f8f9fa",minHeight:"100vh",flex:1,overflow:"auto"}}><SOC2Hub token={token} tenantId={tenantId}/></div>}

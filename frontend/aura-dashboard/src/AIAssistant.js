@@ -1,89 +1,438 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Sparkles, Send, RefreshCw, ChevronRight, AlertTriangle, CheckCircle } from "lucide-react";
-const API="https://web-production-320c3.up.railway.app";
-const CAT_COLORS={"Risk Analysis":"#F87171","Remediation Guide":"#34D399","Compliance Insights":"#60A5FA","Vendor Risk":"#FBBF24","Evidence":"#A78BFA","General Insights":"#94A3B8"};
-function TypingDots(){return(<div style={{display:"flex",gap:4,alignItems:"center",padding:"12px 16px"}}>{[0,1,2].map(i=>(<div key={i} style={{width:6,height:6,borderRadius:"50%",background:"#475569",animation:`bounce 1.2s ease-in-out ${i*0.2}s infinite`}}/>))}<style>{`@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}`}</style></div>);}
-export default function AIAssistant({token,tenantId,onNavigate}){
-const[messages,setMessages]=useState([{id:0,role:"assistant",content:"Hi! I'm AURA AI — your compliance copilot for ISO 27001, SOC 2, RBI Cybersecurity & DPDP Act 2023. Ask me anything about your risk score, compliance gaps, or how to fix a finding.",category:"General",timestamp:new Date().toISOString()}]);
-const[input,setInput]=useState("");
-const[loading,setLoading]=useState(false);
-const[suggestions,setSuggestions]=useState([]);
-const[summary,setSummary]=useState(null);
-const[recommendations,setRecommendations]=useState([]);
-const[tab,setTab]=useState("chat");
-const[summaryLoading,setSummaryLoading]=useState(false);
-const bottomRef=useRef(null);
-useEffect(()=>{
-fetch(`${API}/api/ai/suggestions?tenant_id=${tenantId||"demo"}`,{headers:{Authorization:`Bearer ${token}`}})
-    .then(r=>r.json()).then(d=>setSuggestions(d.suggestions||[])).catch(()=>setSuggestions([]));
-  fetch(`${API}/api/ai/recommendations?tenant_id=${tenantId||"demo"}`,{headers:{Authorization:`Bearer ${token}`}})
-    .then(r=>r.json()).then(d=>setRecommendations(d.recommendations||[])).catch(()=>setRecommendations([]));
-},[token,tenantId]);
-useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"});},[messages]);
-const sendMessage=async(text)=>{
-const msg=text||input.trim();if(!msg)return;
-setInput("");
-setMessages(m=>[...m,{id:Date.now(),role:"user",content:msg,timestamp:new Date().toISOString()}]);
-setLoading(true);
-try{
-const res=await fetch(`${API}/api/ai/chat?tenant_id=${tenantId||"demo"}`,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify({message:msg})});
-const data=await res.json();
-setMessages(m=>[...m,{id:Date.now()+1,role:"assistant",content:data.response,category:data.category,actions:data.actions,confidence:data.confidence,timestamp:data.timestamp}]);
-}catch{setMessages(m=>[...m,{id:Date.now()+1,role:"assistant",content:"I'm having trouble connecting. Please try again.",timestamp:new Date().toISOString()}]);}
-finally{setLoading(false);}};
-const loadSummary=async()=>{setSummaryLoading(true);try{const res=await fetch(`${API}/api/ai/summary?tenant_id=${tenantId||"demo"}`,{headers:{Authorization:`Bearer ${token}`}});const data=await res.json();setSummary(data);}catch{}finally{setSummaryLoading(false);}};
-useEffect(()=>{if(tab==="summary"&&!summary)loadSummary();},[tab]);
-const effortColor=e=>e==="Low"?"#34D399":e==="Medium"?"#FBBF24":"#F87171";
-return(<div style={{padding:"28px 32px",height:"calc(100vh - 52px)",display:"flex",flexDirection:"column"}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
-<div><h2 style={{margin:0,fontSize:22,fontWeight:700,color:"#F1F5F9",display:"flex",alignItems:"center",gap:10}}><Sparkles size={22} color="#A78BFA"/>AI Risk Assistant</h2><p style={{margin:"6px 0 0",color:"#64748B",fontSize:13}}>Ask anything about your compliance posture, risk score, or remediation steps</p></div>
-<div style={{display:"flex",gap:8}}>{["chat","summary","actions"].map(t=>(<button key={t} onClick={()=>setTab(t)} style={{padding:"7px 14px",borderRadius:7,fontSize:12,fontWeight:500,cursor:"pointer",border:"1px solid",borderColor:tab===t?"rgba(167,139,250,.3)":"#1E293B",background:tab===t?"rgba(167,139,250,.1)":"transparent",color:tab===t?"#A78BFA":"#64748B"}}>{t==="chat"?"💬 Chat":t==="summary"?"📊 Summary":"⚡ Actions"}</button>))}</div>
-</div>
-{tab==="chat"&&(<>
-<div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:12,marginBottom:16,paddingRight:4}}>
-{messages.map(m=>(<div key={m.id} style={{display:"flex",gap:10,flexDirection:m.role==="user"?"row-reverse":"row",alignItems:"flex-start"}}>
-{m.role==="assistant"&&<div style={{width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#6366F1,#A78BFA)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Sparkles size={14} color="white"/></div>}
-<div style={{maxWidth:"75%"}}>
-{m.category&&<div style={{fontSize:10,fontWeight:600,color:CAT_COLORS[m.category]||"#94A3B8",marginBottom:4,textTransform:"uppercase",letterSpacing:".05em",display:"flex",alignItems:"center",gap:8}}><span>{m.category}</span>{m.confidence&&<span style={{color:"#475569"}}>· {m.confidence}% confidence</span>}{m.source==="claude-ai"&&<span style={{background:"rgba(139,92,246,0.15)",color:"#a78bfa",borderRadius:4,padding:"1px 6px",fontSize:9,fontWeight:700}}>⚡ Claude AI</span>}</div>}
-<div style={{background:m.role==="user"?"rgba(99,102,241,.15)":"#0F172A",border:`1px solid ${m.role==="user"?"rgba(99,102,241,.3)":"#1E293B"}`,borderRadius:m.role==="user"?"12px 12px 2px 12px":"12px 12px 12px 2px",padding:"10px 14px",color:"#CBD5E1",fontSize:13,lineHeight:1.6}}>{m.content.split('\n').map((line,i)=>{
-    const parts = line.split(/\*\*([^*]+)\*\*/g);
-    return <span key={i}>{parts.map((p,j)=>j%2===1?<strong key={j} style={{color:"#e2e8f0",fontWeight:700}}>{p}</strong>:<span key={j}>{p}</span>)}<br/></span>;
-  })}</div>
-{m.actions&&m.actions.length>0&&(<div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>{m.actions.map(a=>(<button key={a.label} onClick={()=>onNavigate&&onNavigate(a.tab)} style={{background:"rgba(99,102,241,.1)",border:"1px solid rgba(99,102,241,.25)",borderRadius:6,padding:"4px 10px",color:"#818CF8",fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>{a.label}<ChevronRight size={10}/></button>))}</div>)}
-</div>
-</div>))}
-{loading&&(<div style={{display:"flex",gap:10,alignItems:"flex-start"}}><div style={{width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#6366F1,#A78BFA)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Sparkles size={14} color="white"/></div><div style={{background:"#0F172A",border:"1px solid #1E293B",borderRadius:"12px 12px 12px 2px"}}><TypingDots/></div></div>)}
-<div ref={bottomRef}/>
-</div>
-{suggestions.length>0&&messages.length<=1&&(<div style={{marginBottom:12}}><div style={{color:"#475569",fontSize:11,marginBottom:8,textTransform:"uppercase",letterSpacing:".05em"}}>Suggested questions</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{suggestions.slice(0,6).map(s=>(<button key={s} onClick={()=>sendMessage(s)} style={{background:"#0F172A",border:"1px solid #1E293B",borderRadius:7,padding:"6px 11px",color:"#64748B",fontSize:12,cursor:"pointer"}}>{s}</button>))}</div></div>)}
-<div style={{display:"flex",gap:10}}>
-<input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage()} placeholder="Ask about your risk score, compliance gaps, or how to fix a finding…" style={{flex:1,background:"#0F172A",border:"1px solid #1E293B",borderRadius:10,padding:"11px 16px",color:"#F1F5F9",fontSize:13,outline:"none"}} onFocus={e=>e.target.style.borderColor="rgba(99,102,241,.4)"} onBlur={e=>e.target.style.borderColor="#1E293B"}/>
-<button onClick={()=>sendMessage()} disabled={loading||!input.trim()} style={{background:"linear-gradient(135deg,#6366F1,#818CF8)",border:"none",borderRadius:10,padding:"11px 18px",color:"white",cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontSize:13,fontWeight:500,opacity:loading||!input.trim()?0.5:1}}><Send size={14}/>Send</button>
-</div>
-</>)}
-{tab==="summary"&&(<div style={{flex:1,overflowY:"auto"}}>
-{summaryLoading?<div style={{textAlign:"center",padding:60,color:"#475569"}}><RefreshCw size={20} style={{animation:"spin 1s linear infinite"}}/><div style={{marginTop:8,fontSize:13}}>Generating AI summary…</div></div>:
-summary&&(<div style={{display:"flex",flexDirection:"column",gap:16}}>
-<div style={{background:"linear-gradient(135deg,rgba(99,102,241,.1),rgba(167,139,250,.05))",border:"1px solid rgba(99,102,241,.2)",borderRadius:14,padding:24}}>
-<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><Sparkles size={16} color="#A78BFA"/><span style={{color:"#A78BFA",fontSize:12,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em"}}>AI Executive Summary</span></div>
-<p style={{color:"#CBD5E1",fontSize:14,lineHeight:1.7,margin:"0 0 16px"}}>{summary.summary}</p>
-<div style={{display:"flex",gap:20}}>{[{l:"Risk Score",v:summary.risk_score,c:"#34D399"},{l:"Trend",v:summary.trend,c:"#60A5FA"},{l:"Audit Ready",v:summary.audit_ready_in,c:"#A78BFA"}].map(s=>(<div key={s.l}><div style={{color:"#475569",fontSize:11}}>{s.l}</div><div style={{color:s.c,fontSize:18,fontWeight:700}}>{s.v}</div></div>))}</div>
-</div>
-<div style={{background:"#0F172A",border:"1px solid #1E293B",borderRadius:14,padding:20}}>
-<h4 style={{margin:"0 0 14px",color:"#94A3B8",fontSize:12,textTransform:"uppercase",letterSpacing:".05em"}}>Key Highlights</h4>
-{summary.highlights.map((h,i)=>{const color=h.type==="positive"?"#34D399":h.type==="warning"?"#FBBF24":"#F87171";const Icon=h.type==="positive"?CheckCircle:AlertTriangle;return(<div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><Icon size={14} color={color}/><span style={{color:"#CBD5E1",fontSize:13}}>{h.text}</span></div>);})}
-</div>
-</div>)}
-</div>)}
-{tab==="actions"&&(<div style={{flex:1,overflowY:"auto"}}>
-<div style={{color:"#64748B",fontSize:13,marginBottom:16}}>AI-prioritized action items based on your current risk posture.</div>
-<div style={{display:"flex",flexDirection:"column",gap:10}}>
-{recommendations.map(r=>(<div key={r.priority} style={{background:"#0F172A",border:"1px solid #1E293B",borderRadius:12,padding:"16px 20px",display:"flex",alignItems:"center",gap:16}} onMouseEnter={e=>e.currentTarget.style.borderColor="#334155"} onMouseLeave={e=>e.currentTarget.style.borderColor="#1E293B"}>
-<div style={{width:28,height:28,borderRadius:"50%",background:"rgba(99,102,241,.1)",border:"1px solid rgba(99,102,241,.2)",display:"flex",alignItems:"center",justifyContent:"center",color:"#818CF8",fontSize:12,fontWeight:700,flexShrink:0}}>#{r.priority}</div>
-<div style={{flex:1}}><div style={{color:"#E2E8F0",fontSize:13,fontWeight:500,marginBottom:4}}>{r.title}</div><div style={{display:"flex",gap:8}}><span style={{color:"#475569",fontSize:11}}>{r.framework} · {r.control}</span><span style={{color:effortColor(r.effort),fontSize:11}}>Effort: {r.effort}</span></div></div>
-<button onClick={()=>onNavigate&&onNavigate(r.tab)} style={{background:"rgba(99,102,241,.1)",border:"1px solid rgba(99,102,241,.2)",borderRadius:7,padding:"6px 12px",color:"#818CF8",fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:4,flexShrink:0}}>Fix Now<ChevronRight size={12}/></button>
-</div>))}
-</div>
-</div>)}
-<style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
-</div>);}
+import { useState, useRef, useEffect } from "react";
+import { Send, Zap, FileText, AlertTriangle, CheckSquare, ChevronRight, Sparkles } from "lucide-react";
+
+const T = {
+  bg:       "#09090F",
+  surface:  "#111118",
+  surface2: "#16161F",
+  surface3: "#1C1C28",
+  border:   "rgba(255,255,255,0.06)",
+  borderHi: "rgba(139,92,246,0.3)",
+  accent:   "#8b5cf6",
+  accent2:  "#a78bfa",
+  text:     "#E2E8F0",
+  muted:    "#64748B",
+  muted2:   "#94A3B8",
+  mono:     "'JetBrains Mono', ui-monospace, monospace",
+  display:  "'Syne', sans-serif",
+  body:     "'DM Sans', sans-serif",
+  red:      "#EF4444",
+  orange:   "#F97316",
+  amber:    "#F59E0B",
+  green:    "#10B981",
+  blue:     "#3B82F6",
+};
+
+const FRAMEWORKS = [
+  { name:"ISO 27001",    passing:96, total:114, color:"#8b5cf6", status:"Good",   statusColor:"#10B981" },
+  { name:"SOC 2",        passing:81, total:89,  color:"#10B981", status:"Good",   statusColor:"#10B981" },
+  { name:"RBI Cyber",    passing:49, total:67,  color:"#3B82F6", status:"Review", statusColor:"#F59E0B" },
+  { name:"CERT-In",      passing:31, total:45,  color:"#F59E0B", status:"Review", statusColor:"#F59E0B" },
+  { name:"DPDP Act",     passing:21, total:38,  color:"#EF4444", status:"Gap",    statusColor:"#EF4444" },
+];
+
+const SUGGESTED_PROMPTS = [
+  "What are my top 3 compliance risks?",
+  "Draft a DPDP consent notice",
+  "Generate RBI gap analysis report",
+  "Write a vendor risk questionnaire",
+];
+
+const QUICK_ACTIONS = [
+  { label:"Generate security policy", icon:FileText,      color:"rgba(139,92,246,0.15)", border:"rgba(139,92,246,0.3)" },
+  { label:"Fix control gap",          icon:Zap,           color:"rgba(59,130,246,0.15)", border:"rgba(59,130,246,0.3)" },
+  { label:"Risk assessment",          icon:AlertTriangle, color:"rgba(245,158,11,0.15)", border:"rgba(245,158,11,0.3)" },
+  { label:"Audit checklist",          icon:CheckSquare,   color:"rgba(16,185,129,0.15)", border:"rgba(16,185,129,0.3)" },
+];
+
+const INITIAL_MESSAGE = {
+  role: "assistant",
+  content: `I've analyzed your compliance posture across all 5 frameworks. Here's what I found:
+
+**Current status:** Overall 78% compliance — you're in good shape for ISO 27001 and SOC 2, but DPDP Act needs urgent attention.
+
+**Top 3 priorities I recommend:**
+
+1. **DPDP Act personal data inventory** (Critical)
+You're at 56% on DPDP. The personal data inventory gap is your biggest risk — Indian regulators have begun enforcement. I can generate a data discovery workflow.
+
+2. **RBI CC-2.1 key management** (High)
+No formal key management lifecycle documented. This blocks your RBI audit. I can draft a Key Management Policy in 30 seconds.
+
+3. **CERT-In IR plan sign-off** (Medium)
+Draft exists but needs CISO approval. Schedule this in the next sprint.
+
+Want me to tackle any of these? Just ask or click a quick action above.`,
+  time: "08:34 am",
+};
+
+function formatMessage(text) {
+  // Bold **text**
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} style={{ color: T.text, fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
+function MessageBubble({ msg }) {
+  const isUser = msg.role === "user";
+  return (
+    <div style={{
+      display: "flex",
+      gap: 12,
+      flexDirection: isUser ? "row-reverse" : "row",
+      marginBottom: 20,
+    }}>
+      {/* Avatar */}
+      {!isUser && (
+        <div style={{
+          width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
+          background: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Sparkles size={16} color="#fff" />
+        </div>
+      )}
+
+      <div style={{ maxWidth: "72%", display: "flex", flexDirection: "column",
+        alignItems: isUser ? "flex-end" : "flex-start" }}>
+        {!isUser && (
+          <div style={{ fontSize: 11, color: T.muted, marginBottom: 5, fontFamily: T.mono }}>
+            AURA · {msg.time}
+          </div>
+        )}
+        <div style={{
+          background: isUser
+            ? "linear-gradient(135deg, #7c3aed, #8b5cf6)"
+            : T.surface2,
+          border: isUser ? "none" : `1px solid ${T.border}`,
+          borderRadius: isUser ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
+          padding: "13px 16px",
+          fontSize: 13,
+          color: T.text,
+          lineHeight: 1.65,
+          fontFamily: T.body,
+          whiteSpace: "pre-wrap",
+        }}>
+          {msg.content.split("\n").map((line, i) => (
+            <div key={i}>{line ? formatMessage(line) : <br />}</div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function AIAssistant({ token, tenantId }) {
+  const [messages, setMessages] = useState([INITIAL_MESSAGE]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const sendMessage = async (text) => {
+    if (!text.trim()) return;
+    const userMsg = { role: "user", content: text, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+    setMessages(prev => [...prev, userMsg]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: `You are AURA AI — a GRC (Governance, Risk & Compliance) copilot for an Indian enterprise. You help with ISO 27001, SOC 2, RBI Cybersecurity, CERT-In, and DPDP Act 2023 compliance. 
+The tenant is Demo Corporation at 78% overall compliance: ISO 27001 (96/114), SOC 2 (81/89), RBI Cyber (49/67), CERT-In (31/45), DPDP Act (21/38).
+Be concise, actionable, and professional. Use **bold** for emphasis. Respond in 2-4 short paragraphs max.`,
+          messages: [{ role: "user", content: text }],
+        }),
+      });
+      const data = await res.json();
+      const reply = data.content?.[0]?.text || "I couldn't generate a response. Please try again.";
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: reply,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      }]);
+    } catch {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "Connection error. Please check your network and try again.",
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      background: T.bg, minHeight: "100vh", color: T.text,
+      fontFamily: T.body, display: "flex", flexDirection: "column",
+    }}>
+      {/* ─── Top bar ─── */}
+      <div style={{
+        borderBottom: `1px solid ${T.border}`,
+        padding: "0 32px",
+        display: "flex", alignItems: "center", gap: 12,
+        height: 56, flexShrink: 0,
+      }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: 8,
+          background: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Sparkles size={14} color="#fff" />
+        </div>
+        <div>
+          <span style={{ fontSize: 15, fontWeight: 800, fontFamily: T.display, color: T.text }}>
+            AURA AI Assistant
+          </span>
+          <span style={{ fontSize: 11, color: T.muted, marginLeft: 10 }}>
+            GRC copilot · Powered by Claude
+          </span>
+        </div>
+        <div style={{
+          width: 7, height: 7, borderRadius: "50%",
+          background: T.green, boxShadow: `0 0 8px ${T.green}`,
+          marginLeft: 4,
+        }} />
+      </div>
+
+      {/* ─── Main layout ─── */}
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+
+        {/* ─── Chat area ─── */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+
+          {/* Quick action pills */}
+          <div style={{
+            padding: "16px 28px 12px",
+            display: "flex", gap: 8, flexWrap: "wrap",
+            borderBottom: `1px solid ${T.border}`,
+          }}>
+            {QUICK_ACTIONS.map(({ label, icon: Icon, color, border }) => (
+              <button
+                key={label}
+                onClick={() => sendMessage(label)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "6px 14px",
+                  background: color, border: `1px solid ${border}`,
+                  borderRadius: 20, color: T.text,
+                  fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                <Icon size={12} />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Messages */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
+            {messages.map((msg, i) => (
+              <MessageBubble key={i} msg={msg} />
+            ))}
+            {loading && (
+              <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+                <div style={{
+                  width: 34, height: 34, borderRadius: "50%",
+                  background: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  <Sparkles size={16} color="#fff" />
+                </div>
+                <div style={{
+                  background: T.surface2, border: `1px solid ${T.border}`,
+                  borderRadius: "4px 16px 16px 16px",
+                  padding: "13px 18px", display: "flex", gap: 5, alignItems: "center",
+                }}>
+                  {[0, 1, 2].map(i => (
+                    <div key={i} style={{
+                      width: 6, height: 6, borderRadius: "50%",
+                      background: T.accent2,
+                      animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+                    }} />
+                  ))}
+                </div>
+              </div>
+            )}
+            <div ref={endRef} />
+          </div>
+
+          {/* Suggested questions */}
+          <div style={{
+            padding: "10px 28px 14px",
+            borderTop: `1px solid ${T.border}`,
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.muted,
+              textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
+              Suggested questions
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {SUGGESTED_PROMPTS.map(p => (
+                <button
+                  key={p}
+                  onClick={() => sendMessage(p)}
+                  style={{
+                    padding: "5px 12px",
+                    background: T.surface, border: `1px solid ${T.border}`,
+                    borderRadius: 20, color: T.muted2,
+                    fontSize: 11, fontWeight: 500, cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = T.borderHi; e.currentTarget.style.color = T.accent2; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.muted2; }}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Input */}
+          <div style={{
+            padding: "14px 28px 20px",
+            borderTop: `1px solid ${T.border}`,
+          }}>
+            <div style={{
+              display: "flex", gap: 10, alignItems: "flex-end",
+              background: T.surface2, border: `1px solid ${T.border}`,
+              borderRadius: 14, padding: "10px 14px",
+              transition: "border-color 0.15s",
+            }}
+            onFocus={e => e.currentTarget.style.borderColor = T.borderHi}
+            onBlur={e => e.currentTarget.style.borderColor = T.border}
+            >
+              <textarea
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
+                placeholder="Ask about compliance, generate policies, fix control gaps..."
+                style={{
+                  flex: 1, background: "none", border: "none", outline: "none",
+                  color: T.text, fontSize: 13, fontFamily: T.body,
+                  resize: "none", lineHeight: 1.5, minHeight: 20, maxHeight: 120,
+                }}
+                rows={1}
+              />
+              <button
+                onClick={() => sendMessage(input)}
+                disabled={!input.trim() || loading}
+                style={{
+                  width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                  background: input.trim() && !loading
+                    ? "linear-gradient(135deg, #7c3aed, #8b5cf6)"
+                    : T.surface,
+                  border: "none", cursor: input.trim() && !loading ? "pointer" : "default",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 0.2s",
+                }}
+              >
+                <Send size={15} color={input.trim() && !loading ? "#fff" : T.muted} />
+              </button>
+            </div>
+            <div style={{ fontSize: 10, color: T.muted, marginTop: 6, textAlign: "center" }}>
+              AURA AI can make mistakes. Please double-check responses with a qualified GRC professional.
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Right sidebar: Framework context ─── */}
+        <div style={{
+          width: 280, borderLeft: `1px solid ${T.border}`,
+          padding: "20px 20px", overflowY: "auto", flexShrink: 0,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: T.text,
+            fontFamily: T.display, marginBottom: 16 }}>
+            Framework context
+          </div>
+
+          {FRAMEWORKS.map(fw => {
+            const pct = Math.round((fw.passing / fw.total) * 100);
+            return (
+              <div key={fw.name} style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between",
+                  alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: fw.color }}>
+                    {fw.name}
+                  </span>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700,
+                    color: fw.statusColor,
+                    background: `${fw.statusColor}15`,
+                    padding: "1px 7px", borderRadius: 4,
+                  }}>
+                    {fw.status}
+                  </span>
+                </div>
+                {/* Progress bar */}
+                <div style={{
+                  height: 4, background: "rgba(255,255,255,0.06)",
+                  borderRadius: 2, marginBottom: 4, overflow: "hidden",
+                }}>
+                  <div style={{
+                    height: "100%", width: `${pct}%`,
+                    background: fw.color, borderRadius: 2,
+                    transition: "width 0.6s ease",
+                  }} />
+                </div>
+                <div style={{ fontSize: 11, color: T.muted, fontFamily: T.mono }}>
+                  {fw.passing}/{fw.total} controls passing
+                </div>
+              </div>
+            );
+          })}
+
+          <div style={{
+            marginTop: 24,
+            borderTop: `1px solid ${T.border}`,
+            paddingTop: 20,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: T.text,
+              fontFamily: T.display, marginBottom: 12 }}>
+              Suggested prompts
+            </div>
+            {SUGGESTED_PROMPTS.map(p => (
+              <button
+                key={p}
+                onClick={() => sendMessage(p)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  width: "100%", padding: "9px 12px", marginBottom: 6,
+                  background: T.surface, border: `1px solid ${T.border}`,
+                  borderRadius: 8, color: T.muted2, cursor: "pointer",
+                  fontSize: 11, fontWeight: 500, textAlign: "left",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = T.borderHi; e.currentTarget.style.color = T.accent2; e.currentTarget.style.background = T.surface2; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.muted2; e.currentTarget.style.background = T.surface; }}
+              >
+                <ChevronRight size={11} style={{ flexShrink: 0 }} />
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+          30% { opacity: 1; transform: scale(1.1); }
+        }
+      `}</style>
+    </div>
+  );
+}

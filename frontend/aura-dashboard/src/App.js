@@ -3651,7 +3651,7 @@ function Dashboard({token,userName,role,tenantId,tenantName,onLogout}) {
             {activeTab==="iso27001"&&<div style={{background:"#f8f9fa",minHeight:"100vh",flex:1,overflow:"auto"}}><ISO27001Hub token={token} tenantId={tenantId}/></div>}
             {activeTab==="monitoring"&&<ContinuousMonitoring token={token} tenantId={tenantId}/>}
             {activeTab==="msp-portal"&&<MSPPortal token={token} tenantId={tenantId}/>}
-            {activeTab==="ssh"&&<SSHIntegration token={token}/>}
+            {activeTab==="ssh"&&<SSHManager token={token} tenantId={tenantId}/>}
             {activeTab==="ai-assistant"&&<AIAssistant token={token} tenantId={tenantId} onNavigate={setActiveTab}/>}
             {activeTab==="questionnaires"&&<QuestionnaireBuilder token={token} tenantId={tenantId}/>}
             {activeTab==="sso"&&<SSOSettings token={token} tenantId={tenantId}/>}
